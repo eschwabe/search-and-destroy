@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
+# Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UWGame", "UWGame_2008.vcproj", "{D3D09114-96D0-4629-88B8-122C0256058C}"
 EndProject
 Global
