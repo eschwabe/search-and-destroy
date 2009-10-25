@@ -19,6 +19,7 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
     // allocate triangles for size of grid
     // (3 verticies per triangle, 2 triangles per rectangle, 6 rectangles per cube)
     int max_vertices = 3 * 2 * 6 * grid.GetHeight() * grid.GetWidth();
+   
     CustomVertex* vertices = new CustomVertex[max_vertices];
 
     // current vertex in buffer
@@ -32,18 +33,18 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
             switch(grid(y,x))
             {
                 case WorldFile::EMPTY_CELL:
-                    // short cube, red color
-                    DrawBufferCube(x, y, 1, 0xffff0000, vertices, max_vertices, &current_vertex);
+                    // short cube, black color
+                    DrawBufferCube(x, y, 0, 0x00000000, vertices, max_vertices, &current_vertex);
                     break;
 
                 case WorldFile::OCCUPIED_CELL:
                     // tall cube, blue color
-                    DrawBufferCube(x, y, 2, 0x0000ffff, vertices, max_vertices, &current_vertex);
+                    DrawBufferCube(x, y, 1, 0x00009f9f, vertices, max_vertices, &current_vertex);
                     break;
 
                 default:
-                    // short cube, black color
-                    DrawBufferCube(x, y, 1, 0x00000000, vertices, max_vertices, &current_vertex);
+                    // short cube, white color
+                    DrawBufferCube(x, y, 0, 0xffffffff, vertices, max_vertices, &current_vertex);
                     break;
             }
         }
@@ -74,7 +75,8 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
 //------------------------------------------------------------------------------
 WorldNode::~WorldNode()
 {
-    m_pVB->Release();
+    if(m_pVB)
+        m_pVB->Release();
 }
 
 //------------------------------------------------------------------------------
@@ -83,24 +85,94 @@ WorldNode::~WorldNode()
 //
 // @param x cube column location
 // @param y cube row location
-// @param height cube height
+// @param h cube height
 // @param cube color
 //------------------------------------------------------------------------------
 void WorldNode::DrawBufferCube(
-    const int& x, const int& y, const int& height, const DWORD& color, 
+    const int& x, const int& y, const int& h, const DWORD& color, 
     CustomVertex* vertices, int max_vertices, int* current_vertex )
 {
+    FLOAT b = 0.0f; // base
+    FLOAT o = 1.0f; // offset
+
+    // bottom side
     DrawBufferTriangle(
-        CustomVertex( x+0.0f, y+0.0f, height+0.0f, color ),
-        CustomVertex( x+0.0f, y+1.0f, height+0.0f, color ),
-        CustomVertex( x+1.0f, y+1.0f, height+0.0f, color ),
+        CustomVertex( x+b, y+b, -b, color ),
+        CustomVertex( x+b, y+o, -b, color ),
+        CustomVertex( x+o, y+o, -b, color ),
         vertices, max_vertices, current_vertex);
     
     DrawBufferTriangle(
-        CustomVertex( x+0.0f, y+0.0f, height+0.0f, color ),
-        CustomVertex( x+1.0f, y+1.0f, height+0.0f, color ),
-        CustomVertex( x+1.0f, y+0.0f, height+0.0f, color ),
+        CustomVertex( x+b, y+b, -b, color ),
+        CustomVertex( x+o, y+o, -b, color ),
+        CustomVertex( x+o, y+b, -b, color ),
         vertices, max_vertices, current_vertex);
+
+    // top side
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+b, -b-h, color ),
+        CustomVertex( x+b, y+o, -b-h, color ),
+        CustomVertex( x+o, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+    
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+b, -b-h, color ),
+        CustomVertex( x+o, y+o, -b-h, color ),
+        CustomVertex( x+o, y+b, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+
+    // left side
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+b, -b, color ),
+        CustomVertex( x+b, y+o, -b, color ),
+        CustomVertex( x+b, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+    
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+b, -b, color ),
+        CustomVertex( x+b, y+b, -b-h, color ),
+        CustomVertex( x+b, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+
+    // right side
+    DrawBufferTriangle(
+        CustomVertex( x+o, y+b, -b, color ),
+        CustomVertex( x+o, y+o, -b, color ),
+        CustomVertex( x+o, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+    
+    DrawBufferTriangle(
+        CustomVertex( x+o, y+b, -b, color ),
+        CustomVertex( x+o, y+b, -b-h, color ),
+        CustomVertex( x+o, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+
+    // up side
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+o, -b, color ),
+        CustomVertex( x+b, y+o, -b-h, color ),
+        CustomVertex( x+o, y+o, -b, color ),
+        vertices, max_vertices, current_vertex);
+    
+    DrawBufferTriangle(
+        CustomVertex( x+o, y+o, -b, color ),
+        CustomVertex( x+o, y+o, -b-h, color ),
+        CustomVertex( x+b, y+o, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+
+    // down side
+    DrawBufferTriangle(
+        CustomVertex( x+b, y+b, -b, color ),
+        CustomVertex( x+b, y+b, -b-h, color ),
+        CustomVertex( x+o, y+b, -b, color ),
+        vertices, max_vertices, current_vertex);
+    
+    DrawBufferTriangle(
+        CustomVertex( x+o, y+b, -b, color ),
+        CustomVertex( x+o, y+b, -b-h, color ),
+        CustomVertex( x+b, y+b, -b-h, color ),
+        vertices, max_vertices, current_vertex);
+
 }
 
 // DRAW rectangle
