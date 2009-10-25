@@ -86,16 +86,18 @@ bool InitApp()
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
     
-    // Setup the camera with view matrix
-    D3DXVECTOR3 vEye(0.0f, 0.0f, -10.f);
-    D3DXVECTOR3 vAt(0.0f, 0.0f, -9.f);
-    g_Camera.SetViewParams( &vEye, &vAt );
-    g_Camera.SetScalers( 0.01f, 1.0f );  // Camera movement parameters
-
-	g_World.InitializeSingletons();
-
     // load grid data
     g_GridData.Load(L"level.grd");
+    FLOAT mid_x = g_GridData.GetWidth()/2.0f;
+    FLOAT mid_y = g_GridData.GetHeight()/2.0f;
+
+    // setup the camera with view matrix
+    D3DXVECTOR3 vEye(mid_x, mid_y, -(mid_x+mid_y));
+    D3DXVECTOR3 vAt(mid_x, mid_y, 0.0f);
+    g_Camera.SetViewParams( &vEye, &vAt );
+    g_Camera.SetScalers( 0.01f, 5.0f );  // Camera movement parameters
+
+	g_World.InitializeSingletons();
 
 	return true;
 }
