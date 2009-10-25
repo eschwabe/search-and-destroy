@@ -1,34 +1,58 @@
+//------------------------------------------------------------------------------
+// Project: Game Development (2009)
+// 
+// World Node
+//------------------------------------------------------------------------------
+
 #pragma once
 #include "Node.h"
+#include "WorldFile.h"
 
-////////////////////////////////////////////////////////////////////////////
-
-
+//------------------------------------------------------------------------------
+// WorldNode Class
+//------------------------------------------------------------------------------
 class WorldNode : public Node
 {
-public:
-	WorldNode(IDirect3DDevice9* pd3dDevice);
-	~WorldNode();
+    public:
 
-// Our custom FVF, which describes our custom vertex structure
-#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
+	    WorldNode(const WorldFile&, IDirect3DDevice9*);
+	    ~WorldNode();
 
-						// Update traversal for physics, AI, etc.
-	virtual void		Update(double fTime);
+        // custom FVF, which describes our custom vertex structure
+        #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
 
-						// Render traversal for drawing objects
-	virtual void		Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld);
+		// Update traversal for physics, AI, etc.
+	    virtual void Update(double fTime);
 
-private:
+		// Render traversal for drawing objects
+	    virtual void Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld);
 
-	// A structure for our custom vertex type
-	struct CUSTOMVERTEX
-	{
-		FLOAT x, y, z;      // The untransformed, 3D position for the vertex
-		DWORD color;        // The vertex color
-	};
+    private:
 
-	LPDIRECT3DVERTEXBUFFER9 m_pVB; // Buffer to hold Vertices
+	    // custom vertex type
+	    struct CustomVertex
+	    {
+		    FLOAT x, y, z;  // untransformed, 3D position for the vertex
+		    DWORD color;    // vertex color
+
+            // default constructor
+            CustomVertex() :
+                x(0.0f), y(0.0f), z(0.0f), color(0x00000000)
+            {}
+
+            // initialization constructor
+            CustomVertex(const FLOAT& ix, const FLOAT& iy, const FLOAT& iz, const DWORD& icolor) :
+                x(ix), y(iy), z(iz), color(icolor)
+            {}
+	    };
+
+        // draw verticies into buffer
+        void DrawBufferCube(const int& x, const int& y, const int& height, const DWORD& color, 
+            CustomVertex* vertices, int max_vertices, int* current_vertex );
+
+        void DrawBufferTriangle(const CustomVertex& p1, const CustomVertex& p2, const CustomVertex& p3, 
+            CustomVertex* vertices, int max_vertices, int* current_vertex );
+
+        int m_triangle_count;           // number of triangles
+	    LPDIRECT3DVERTEXBUFFER9 m_pVB;  // vertices buffer
 };
-
-////////////////////////////////////////////////////////////////////////////

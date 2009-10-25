@@ -538,6 +538,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\level.grd"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\resource.h"
 				>
 			</File>

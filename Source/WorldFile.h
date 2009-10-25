@@ -1,32 +1,42 @@
+//------------------------------------------------------------------------------
+// Project: Game Development (2009)
+// 
+// World File
+//------------------------------------------------------------------------------
+
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////
-
-
-////////////////////////////////////////////////////////////////////////////
-
-
+//------------------------------------------------------------------------------
+// WorldFile Class
+//------------------------------------------------------------------------------
 class WorldFile
 {
-public:
-    WorldFile();
-    ~WorldFile();
+    public:
+        
+        // cell type
+        enum ECell
+        {
+            INVALID_CELL = -1, 
+            EMPTY_CELL = 0, 
+            OCCUPIED_CELL = 1, 
+            CELL_MAX
+        };
 
-    enum ECell
-    {
-        INVALID_CELL = -1, 
-        EMPTY_CELL = 0, 
-        OCCUPIED_CELL = 1, 
-        CELL_MAX
-    };
+        WorldFile();
+        ~WorldFile();
 
-    bool        Load(const LPCWSTR szFilename);
+        // load file
+        bool Load(const LPCWSTR szFilename);
 
-    ECell       operator () ( int row, int col ) const;
-	int         GetWidth()  { return m_cx; }
-	int         GetHeight() { return m_cy; }
+        // get cell type
+        ECell operator () ( int row, int col ) const;
 
-private:
-    int m_cx, m_cy;
-    ECell* m_pGrid;
+        // get grid size
+	    int GetWidth() const { return m_cx; }
+	    int GetHeight() const { return m_cy; }
+
+    private:
+
+        int m_cx, m_cy;
+        ECell* m_pGrid;
 };

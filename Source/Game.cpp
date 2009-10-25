@@ -17,6 +17,7 @@
 #include "Game.h"
 #include "TeapotNode.h"
 #include "WorldNode.h"
+#include "WorldFile.h"
 #include "World.h"
 
 using namespace std;
@@ -36,7 +37,7 @@ bool                    g_bShowHelp = true;     // If true, it renders the UI co
 bool                    g_bPlaySounds = true;   // whether to play sounds
 double                  g_fLastAnimTime = 0.0;  // Time for the animations
 World					g_World;				// World for creating singletons and objects
-
+WorldFile               g_GridData;             // Grid data (from file)
 Node*					g_pScene = 0;
 
 //--------------------------------------------------------------------------------------
@@ -92,6 +93,9 @@ bool InitApp()
     g_Camera.SetScalers( 0.01f, 1.0f );  // Camera movement parameters
 
 	g_World.InitializeSingletons();
+
+    // load grid data
+    g_GridData.Load(L"level.grd");
 
 	return true;
 }
@@ -205,9 +209,11 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                          L"Arial", &g_pFont ) );
 
-	// Create the default scene
-	g_pScene = new TeapotNode(pd3dDevice);
-//	g_pScene = new WorldNode(pd3dDevice);
+	// Create the default scene (teapot)
+	//g_pScene = new TeapotNode(pd3dDevice);
+	
+    // Create world node
+    g_pScene = new WorldNode(g_GridData, pd3dDevice);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
