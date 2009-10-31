@@ -175,8 +175,6 @@ void WorldNode::DrawBufferCube(
 
 }
 
-// DRAW rectangle
-
 //------------------------------------------------------------------------------
 // Draw a triangle into the verticies buffer. Draws a triagle with the
 // three verticies. Updates number of triangles for rendering.

@@ -14,6 +14,7 @@
 #include "DXUT\DXUTsettingsdlg.h"
 #include "DXUT\SDKmisc.h"
 #include "DXUT\SDKsound.h"
+#include "DebugCamera.h"
 #include "Game.h"
 #include "TeapotNode.h"
 #include "WorldNode.h"
@@ -22,22 +23,22 @@
 
 using namespace std;
 
-
 //--------------------------------------------------------------------------------------
 // Global variables
 //--------------------------------------------------------------------------------------
-ID3DXFont*              g_pFont = NULL;         // Font for drawing text
-ID3DXSprite*            g_pTextSprite = NULL;   // Sprite for batching draw text calls
-CFirstPersonCamera      g_Camera;               // A model viewing camera
+ID3DXFont*              g_pFont = NULL;             // font for drawing text
+ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
+//CFirstPersonCamera      g_Camera;                 // first person view camera
+CDebugCamera            g_Camera;                   // debug camera
 CDXUTDialogResourceManager g_DialogResourceManager; // manager for shared resources of dialogs
-CD3DSettingsDlg         g_SettingsDlg;          // Device settings dialog
-CDXUTDialog             g_HUD;                  // dialog for standard controls
-CDXUTDialog             g_SampleUI;             // dialog for sample specific controls
-bool                    g_bShowHelp = true;     // If true, it renders the UI control text
-bool                    g_bPlaySounds = true;   // whether to play sounds
-double                  g_fLastAnimTime = 0.0;  // Time for the animations
-World					g_World;				// World for creating singletons and objects
-WorldFile               g_GridData;             // Grid data (from file)
+CD3DSettingsDlg         g_SettingsDlg;              // device settings dialog
+CDXUTDialog             g_HUD;                      // dialog for standard controls
+CDXUTDialog             g_SampleUI;                 // dialog for sample specific controls
+bool                    g_bShowHelp = true;         // render the UI control text if true
+bool                    g_bPlaySounds = true;       // play sounds if true
+double                  g_fLastAnimTime = 0.0;      // animation time
+World					g_World;				    // world for creating singletons and objects
+WorldFile               g_GridData;                 // drid data loaded from file
 Node*					g_pScene = 0;
 
 //--------------------------------------------------------------------------------------
@@ -51,16 +52,14 @@ Node*					g_pScene = 0;
 #define IDC_RESETCAMERA         11
 #define IDC_RESETTIME           12
 
-
 //--------------------------------------------------------------------------------------
 // Forward declarations
 //--------------------------------------------------------------------------------------
 
-void    CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
+void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
 
 HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh );
-void    RenderText();
-
+void RenderText();
 
 //--------------------------------------------------------------------------------------
 // Initialize the app
@@ -102,7 +101,6 @@ bool InitApp()
 	return true;
 }
 
-
 //--------------------------------------------------------------------------------------
 // Clean up the app
 //--------------------------------------------------------------------------------------
@@ -110,7 +108,6 @@ void    CleanupApp()
 {
 	// Do any sort of app cleanup here 
 }
-
 
 //--------------------------------------------------------------------------------------
 // Called during device initialization, this code checks the device for some
@@ -138,7 +135,6 @@ bool CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,
 
     return true;
 }
-
 
 //--------------------------------------------------------------------------------------
 // This callback function is called immediately before a device is created to allow the
@@ -192,7 +188,6 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, const D
     return true;
 }
 
-
 //--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has been
 // created, which will happen during application initialization and windowed/full screen
@@ -209,7 +204,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     // Initialize the font
     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
-                         L"Arial", &g_pFont ) );
+                         L"Consolas", &g_pFont ) );
 
 	// Create the default scene (teapot)
 	//g_pScene = new TeapotNode(pd3dDevice);
@@ -219,7 +214,6 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
-
 
 //--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has been
@@ -305,7 +299,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
 
-
 //--------------------------------------------------------------------------------------
 // This callback function will be called once at the beginning of every frame. This is the
 // best location for your application to handle updates to the scene, but is not
@@ -322,7 +315,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // Update the camera's position based on user input
     g_Camera.FrameMove( fElapsedTime );
 }
-
 
 //--------------------------------------------------------------------------------------
 // This callback function will be called at the end of every frame to perform all the
@@ -369,12 +361,14 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         g_pScene->Render(pd3dDevice, matIdentity);
         }
 
+        // display text on hud
+        RenderText();
+
         V( g_HUD.OnRender( fElapsedTime ) );
 
         pd3dDevice->EndScene();
     }
 }
-
 
 //--------------------------------------------------------------------------------------
 // Render the help and statistics text. This function uses the ID3DXFont interface for
@@ -389,28 +383,29 @@ void RenderText()
     CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, 15 );
     const D3DSURFACE_DESC* pd3dsdBackBuffer = DXUTGetD3D9BackBufferSurfaceDesc();
 
-    // Output statistics
+    // configure text
     txtHelper.Begin();
     txtHelper.SetInsertionPos( 5, 5 );
-    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
-    txtHelper.DrawTextLine( DXUTGetFrameStats() );
-    txtHelper.DrawTextLine( DXUTGetDeviceStats() );
+    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
 
-    // Dump out the FPS and device stats
-    //txtHelper.SetInsertionPos( 5, 150 );
-    //txtHelper.DrawFormattedTextLine( L"  Time: %2.3f", DXUTGetGlobalTimer()->GetTime() );
+    // frame and device stats
+    //txtHelper.DrawTextLine( DXUTGetFrameStats() );
+    //txtHelper.DrawTextLine( DXUTGetDeviceStats() );
+
+    // statistics
     //txtHelper.DrawFormattedTextLine( L"  Number of models: %d", g_v_pCharacters.size() );
+    txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"Time:", DXUTGetGlobalTimer()->GetTime() );
+    txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"FPS:", DXUTGetFPS() );
 
-    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 0.0f, 1.0f ) );
-    txtHelper.SetInsertionPos( 5, 70 );
-
-    if( g_bShowHelp )
-    {
-    }
+    // camera details
+    txtHelper.SetInsertionPos( 5, 40 );
+    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
+        L"Eye:", g_Camera.GetEyePt()->x, g_Camera.GetEyePt()->y, g_Camera.GetEyePt()->z);
+    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
+        L"LookAt:", g_Camera.GetLookAtPt()->x, g_Camera.GetLookAtPt()->y, g_Camera.GetLookAtPt()->z);
 
     txtHelper.End();
 }
-
 
 //--------------------------------------------------------------------------------------
 // Before handling window messages, DXUT passes incoming windows
@@ -447,7 +442,6 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
     return 0;
 }
 
-
 //--------------------------------------------------------------------------------------
 // As a convenience, DXUT inspects the incoming windows messages for
 // keystroke messages and decodes the message parameters to pass relevant keyboard
@@ -467,7 +461,6 @@ void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUse
         }
     }
 }
-
 
 //--------------------------------------------------------------------------------------
 // Handles the GUI events
@@ -498,7 +491,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
     }
 }
 
-
 //--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has
 // entered a lost state and before IDirect3DDevice9::Reset is called. Resources created
@@ -515,7 +507,6 @@ void CALLBACK OnLostDevice( void* pUserContext )
 
     SAFE_RELEASE( g_pTextSprite );
 }
-
 
 //--------------------------------------------------------------------------------------
 // This callback function will be called immediately after the Direct3D device has
