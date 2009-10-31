@@ -47,7 +47,7 @@ class WorldNode : public Node
 	    };
 
         // draw verticies into buffer
-        void DrawBufferCube(const int& x, const int& y, const int& h, const DWORD& color, 
+        void DrawBufferCube( const float& col, const float& row, const float& h, const DWORD& tbcolor, const DWORD& scolor,
             CustomVertex* vertices, int max_vertices, int* current_vertex );
 
         void DrawBufferTriangle(const CustomVertex& p1, const CustomVertex& p2, const CustomVertex& p3, 

@@ -103,10 +103,10 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     if( DXUTGetGlobalTimer()->IsStopped() )
         fElapsedTime = 1.0f / DXUTGetFPS();
 
-    // Reset keyboard direction
+    // reset keyboard direction
     m_vKeyboardDirection = D3DXVECTOR3(0,0,0);
 
-    // Update acceleration vector based on keyboard state
+    // update acceleration vector based on keyboard state
     if( m_CameraMovement[kMoveForward] )
         m_vKeyboardDirection.z += 1.0f;
     if( m_CameraMovement[kMoveBackward] )
@@ -138,7 +138,7 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     m_fCameraPitchAngle += fPitchDelta;
     m_fCameraYawAngle   += fYawDelta;
 
-    // Limit pitch to straight up or straight down
+    // limit pitch to straight up or straight down
     m_fCameraPitchAngle = __max( -D3DX_PI/2.0f,  m_fCameraPitchAngle );
     m_fCameraPitchAngle = __min( +D3DX_PI/2.0f,  m_fCameraPitchAngle );
 
@@ -164,12 +164,13 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     if( m_bClipToBoundary )
         ConstrainToBoundary( &m_vEye );
 
-    // Update the lookAt position based on the eye position 
+    // Update lookAt position based on the eye position 
     m_vLookAt = m_vEye + vWorldAhead;
 
-    // Update the view matrix
+    // update the view matrix
     D3DXMatrixLookAtLH( &m_mView, &m_vEye, &m_vLookAt, &vWorldUp );
 
+    // set camera world matrix
     D3DXMatrixInverse( &m_mCameraWorld, NULL, &m_mView );
 }
 
