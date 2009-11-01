@@ -51,7 +51,7 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
 
                     // tall cube, blue color
                     DrawBufferCube(
-                        (float)col, (float)row, 1.0, 0x00257323, 0x0019D812,
+                        (float)col, (float)row, 1.0, 0x0019D812, 0x00257323,
                         lside, rside, uside, dside,
                         vertices, max_vertices, &current_vertex);
                     break;
