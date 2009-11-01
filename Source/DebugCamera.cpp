@@ -1,7 +1,8 @@
 //------------------------------------------------------------------------------
 // Project: Game Development (2009)
 // 
-// World Node
+// Debug Camera
+// Handles keyboard input and camera movement
 //------------------------------------------------------------------------------
 
 #include "DXUT.h"
@@ -26,7 +27,7 @@ CDebugCamera::~CDebugCamera()
 // Handle user input messages. 
 //
 // @param hWnd Handle to the window procedure to receive the message
-// @param uMsg Specifies the message
+// @param uMsg Specifies the message type
 // @param wParam Specifies additional message-specific information. The contents 
 //               of this parameter depend on the value of the Msg parameter.
 // @param lParam Specifies additional message-specific information. The contents 
@@ -34,6 +35,9 @@ CDebugCamera::~CDebugCamera()
 //------------------------------------------------------------------------------
 LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    // uMsg is the message type (i.e. key down or key up)
+    // wParam is the assocaited keyboard key
+
     UNREFERENCED_PARAMETER( hWnd );
     UNREFERENCED_PARAMETER( lParam );
 
@@ -106,7 +110,7 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     // reset keyboard direction
     m_vKeyboardDirection = D3DXVECTOR3(0,0,0);
 
-    // update acceleration vector based on keyboard state
+    // update keyboard direction based on keyboard state
     if( m_CameraMovement[kMoveForward] )
         m_vKeyboardDirection.z += 1.0f;
     if( m_CameraMovement[kMoveBackward] )
@@ -116,55 +120,56 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     if( m_CameraMovement[kMoveDown] )
         m_vKeyboardDirection.y -= 1.0f;
 
-    // Get amount of velocity based on the keyboard input and drag (if any)
+    // compute velocity based on the keyboard input and drag (if any)
     UpdateVelocity( fElapsedTime );
 
-    // Simple euler method to calculate position delta
+    // simple euler method to calculate position delta
+    //vAccel *= m_fMoveScaler;
     D3DXVECTOR3 vPosDelta = m_vVelocity * fElapsedTime;
 
-    // Update the pitch and yaw angles
-    float fYawDelta   = 0.0;
-    float fPitchDelta = 0.0;
+    // update yaw and pitch angles
+    float fYawDelta = 0.0f;
+    float fPitchDelta = 0.0f;
 
     if( m_CameraMovement[kRotateLeft] )
-        fYawDelta -= 0.01;
+        fYawDelta -= 0.01f;
     if( m_CameraMovement[kRotateRight] )
-        fYawDelta += 0.01;
+        fYawDelta += 0.01f;
     if( m_CameraMovement[kPitchUp] )
-        fPitchDelta -= 0.01;
+        fPitchDelta -= 0.01f;
     if( m_CameraMovement[kPitchDown] )
-        fPitchDelta += 0.01;
+        fPitchDelta += 0.01f;
 
     m_fCameraPitchAngle += fPitchDelta;
     m_fCameraYawAngle   += fYawDelta;
 
     // limit pitch to straight up or straight down
-    m_fCameraPitchAngle = __max( -D3DX_PI/2.0f,  m_fCameraPitchAngle );
-    m_fCameraPitchAngle = __min( +D3DX_PI/2.0f,  m_fCameraPitchAngle );
+    // note: the normal to the x-z plane causes everything to disappear
+    m_fCameraPitchAngle = __max( (float)-D3DX_PI/2.0f-.01f,  m_fCameraPitchAngle );
+    m_fCameraPitchAngle = __min( (float)+D3DX_PI/2.0f-.01f,  m_fCameraPitchAngle );
 
-    // Make a rotation matrix based on the camera's yaw & pitch
+    // create rotation matrix based on yaw and pitch
     D3DXMATRIX mCameraRot;
     D3DXMatrixRotationYawPitchRoll( &mCameraRot, m_fCameraYawAngle, m_fCameraPitchAngle, 0 );
 
-    // Transform vectors based on camera's rotation matrix
+    // transform vectors based on camera rotation matrix
     D3DXVECTOR3 vWorldUp;
     D3DXVECTOR3 vWorldAhead;
     D3DXVECTOR3 vLocalUp    = D3DXVECTOR3(0,1,0);
     D3DXVECTOR3 vLocalAhead = D3DXVECTOR3(0,0,1);
 
-    D3DXVec3TransformCoord( &vWorldUp, &vLocalUp, &mCameraRot );
+    // transform local up to world up (equal due to no roll rotation)
+    vWorldUp = vLocalUp;
+    //D3DXVec3TransformCoord( &vWorldUp, &vLocalUp, &mCameraRot );
+
+    // transform look ahead direction via yaw and pitch
     D3DXVec3TransformCoord( &vWorldAhead, &vLocalAhead, &mCameraRot );
 
-    // Transform the position delta by the camera's rotation 
-    D3DXVECTOR3 vPosDeltaWorld;
-    D3DXVec3TransformCoord( &vPosDeltaWorld, &vPosDelta, &mCameraRot );
+    // move eye position: the eye does not need to transformed by the rotation matrix
+    // since the yaw and pitch rotations occur independently of the current camera position
+    m_vEye += vPosDelta;
 
-    // Move the eye position 
-    m_vEye += vPosDeltaWorld;
-    if( m_bClipToBoundary )
-        ConstrainToBoundary( &m_vEye );
-
-    // Update lookAt position based on the eye position 
+    // update lookAt position based on the eye position 
     m_vLookAt = m_vEye + vWorldAhead;
 
     // update the view matrix

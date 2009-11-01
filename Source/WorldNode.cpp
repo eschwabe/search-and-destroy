@@ -26,29 +26,45 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
     int current_vertex = 0;
 
     // draw cubes
-    for(int x = 0; x < grid.GetWidth(); x++)
+    for(int col = 0; col < grid.GetWidth(); col++)
     {
-        for(int y = 0; y < grid.GetHeight(); y++)
+        for(int row = 0; row < grid.GetHeight(); row++)
         {
-            switch(grid(y,x))
+            switch(grid(row,col))
             {
                 case WorldFile::EMPTY_CELL:
-                    // short cube, black color
-                    DrawBufferCube((float)x, (float)y, 0.0, 0x00222222, 0x00222222,
+                {
+                    // flat cube, black color, no sides
+                    DrawBufferCube(
+                        (float)col, (float)row, 0.0, 0x00222222, 0x00222222,
+                        false, false, false, false,
                         vertices, max_vertices, &current_vertex);
                     break;
-
+                }
                 case WorldFile::OCCUPIED_CELL:
-                    // tall cube, blue color
-                    DrawBufferCube((float)x, (float)y, 1.0, 0x00257323, 0x0019D812,
-                        vertices, max_vertices, &current_vertex);
-                    break;
+                {
+                    // check for occupied cells next to cell, do not draw sides if occupied
+                    bool lside = (grid(row,col-1) == WorldFile::OCCUPIED_CELL) ? false : true;
+                    bool rside = (grid(row,col+1) == WorldFile::OCCUPIED_CELL) ? false : true;
+                    bool uside = (grid(row+1,col) == WorldFile::OCCUPIED_CELL) ? false : true;
+                    bool dside = (grid(row-1,col) == WorldFile::OCCUPIED_CELL) ? false : true;
 
-                default:
-                    // short cube, white color
-                    DrawBufferCube((float)x, (float)y, 0.0, 0xffffffff, 0xffffffff,
+                    // tall cube, blue color
+                    DrawBufferCube(
+                        (float)col, (float)row, 1.0, 0x00257323, 0x0019D812,
+                        lside, rside, uside, dside,
                         vertices, max_vertices, &current_vertex);
                     break;
+                }
+                default:
+                {
+                    // flat cube, white color, no sides
+                    DrawBufferCube(
+                        (float)col, (float)row, 0.0, 0xffffffff, 0xffffffff,
+                        false, false, false, false,
+                        vertices, max_vertices, &current_vertex);
+                    break;
+                }
             }
         }
     }
@@ -91,12 +107,27 @@ WorldNode::~WorldNode()
 // @param h cube height
 // @param tbcolor top and bottom cube color
 // @param scolor side cube color
+// @param lside draw left side of cube
+// @param rside draw right side of cube
+// @param uside draw up side of cube
+// @param dside draw down side of cube
 //------------------------------------------------------------------------------
 void WorldNode::DrawBufferCube(
     const float& col, const float& row, const float& h, const DWORD& tbcolor, const DWORD& scolor,
+    const bool& lside, const bool& rside, const bool& uside, const bool& dside,
     CustomVertex* vertices, int max_vertices, int* current_vertex )
 {
     const float s = 1.0; // side length (NOTE: cannot change unless col and row are scaled)
+
+    // (0,0,1) (1,0,1)
+    // --------------
+    // |      U     |
+    // |            |
+    // | L        R |
+    // |            |
+    // |      D     |
+    // --------------
+    // (0,0,0) (1,0,0)
 
     // bottom side
     DrawBufferTriangle(
@@ -125,72 +156,83 @@ void WorldNode::DrawBufferCube(
         vertices, max_vertices, current_vertex);
 
     // left side
-    DrawBufferTriangle(
-        CustomVertex( col,      0.0,    row,    scolor ),
-        CustomVertex( col,      0.0,    row+s,  scolor ),
-        CustomVertex( col,      h,      row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
-    
-    DrawBufferTriangle(
-        CustomVertex( col,      0.0,    row,    scolor ),
-        CustomVertex( col,      h,      row,    scolor ),
-        CustomVertex( col,      h,      row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
+    if(lside)
+    {
+        DrawBufferTriangle(
+            CustomVertex( col,      0.0,    row,    scolor ),
+            CustomVertex( col,      0.0,    row+s,  scolor ),
+            CustomVertex( col,      h,      row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+        
+        DrawBufferTriangle(
+            CustomVertex( col,      0.0,    row,    scolor ),
+            CustomVertex( col,      h,      row,    scolor ),
+            CustomVertex( col,      h,      row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+    }
 
     // right side
-    DrawBufferTriangle(
-        CustomVertex( col+s,    0.0,    row,    scolor ),
-        CustomVertex( col+s,    0.0,    row+s,  scolor ),
-        CustomVertex( col+s,    h,      row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
-    
-    DrawBufferTriangle(
-        CustomVertex( col+s,    0.0,    row,    scolor ),
-        CustomVertex( col+s,    h,      row,    scolor ),
-        CustomVertex( col+s,    h,      row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
+    if(rside)
+    {
+        DrawBufferTriangle(
+            CustomVertex( col+s,    0.0,    row,    scolor ),
+            CustomVertex( col+s,    0.0,    row+s,  scolor ),
+            CustomVertex( col+s,    h,      row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+        
+        DrawBufferTriangle(
+            CustomVertex( col+s,    0.0,    row,    scolor ),
+            CustomVertex( col+s,    h,      row,    scolor ),
+            CustomVertex( col+s,    h,      row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+    }
 
     // up side
-    DrawBufferTriangle(
-        CustomVertex( col,      0.0,    row+s,  scolor ),
-        CustomVertex( col,      h,      row+s,  scolor ),
-        CustomVertex( col+s,    0.0,    row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
-    
-    DrawBufferTriangle(
-        CustomVertex( col+s,    0.0,    row+s,  scolor ),
-        CustomVertex( col+s,    h,      row+s,  scolor ),
-        CustomVertex( col,      h,      row+s,  scolor ),
-        vertices, max_vertices, current_vertex);
+    if(uside)
+    {
+        DrawBufferTriangle(
+            CustomVertex( col,      0.0,    row+s,  scolor ),
+            CustomVertex( col,      h,      row+s,  scolor ),
+            CustomVertex( col+s,    0.0,    row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+        
+        DrawBufferTriangle(
+            CustomVertex( col+s,    0.0,    row+s,  scolor ),
+            CustomVertex( col+s,    h,      row+s,  scolor ),
+            CustomVertex( col,      h,      row+s,  scolor ),
+            vertices, max_vertices, current_vertex);
+    }
 
     // down side
-    DrawBufferTriangle(
-        CustomVertex( col,      0.0,    row,    scolor ),
-        CustomVertex( col,      h,      row,    scolor ),
-        CustomVertex( col+s,    0.0,    row,    scolor ),
-        vertices, max_vertices, current_vertex);
-    
-    DrawBufferTriangle(
-        CustomVertex( col+s,    0.0,    row,    scolor ),
-        CustomVertex( col+s,    h,      row,    scolor ),
-        CustomVertex( col,      h,      row,    scolor ),
-        vertices, max_vertices, current_vertex);
+    if(dside)
+    {
+        DrawBufferTriangle(
+            CustomVertex( col,      0.0,    row,    scolor ),
+            CustomVertex( col,      h,      row,    scolor ),
+            CustomVertex( col+s,    0.0,    row,    scolor ),
+            vertices, max_vertices, current_vertex);
+        
+        DrawBufferTriangle(
+            CustomVertex( col+s,    0.0,    row,    scolor ),
+            CustomVertex( col+s,    h,      row,    scolor ),
+            CustomVertex( col,      h,      row,    scolor ),
+            vertices, max_vertices, current_vertex);
+    }
 }
 
 //------------------------------------------------------------------------------
 // Draw a triangle into the verticies buffer. Draws a triagle with the
-// three verticies. Updates number of triangles for rendering.
+// three verticies. Updates number of triangles for rendering. Will only draw
+// the triangle if the vertices buffer has enough space.
 //------------------------------------------------------------------------------
 void WorldNode::DrawBufferTriangle(
     const CustomVertex& p1, const CustomVertex& p2, const CustomVertex& p3, 
     CustomVertex* vertices, int max_vertices, int* current_vertex )
 {
-    if((*current_vertex) < max_vertices)
-        vertices[(*current_vertex)++] = p1;
-    if((*current_vertex) < max_vertices)
-        vertices[(*current_vertex)++] = p2;
-    if((*current_vertex) < max_vertices)
+    if((*current_vertex)+2 < max_vertices)
     {
+        vertices[(*current_vertex)++] = p1;
+        vertices[(*current_vertex)++] = p2;
         vertices[(*current_vertex)++] = p3;
         m_triangle_count++;
     }

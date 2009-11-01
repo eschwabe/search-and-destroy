@@ -87,14 +87,17 @@ bool InitApp()
     
     // load grid data
     g_GridData.Load(L"level.grd");
-    FLOAT mid_x = g_GridData.GetWidth()/2.0f;
-    FLOAT mid_y = g_GridData.GetHeight()/2.0f;
+    float mid_col = g_GridData.GetWidth()/2.0f;
+    float mid_row = g_GridData.GetHeight()/2.0f;
 
     // setup the camera with view matrix
-    D3DXVECTOR3 vEye(mid_x, mid_y, -(mid_x+mid_y));
-    D3DXVECTOR3 vAt(mid_x, mid_y, 0.0f);
+    // initialize to lower middle of grid, looking at grid center
+    D3DXVECTOR3 vEye(mid_col, mid_row, -mid_row);
+    D3DXVECTOR3 vAt(mid_col, 0.0f, mid_row);
+
+    // set camera movement parameters
     g_Camera.SetViewParams( &vEye, &vAt );
-    g_Camera.SetScalers( 0.01f, 5.0f );  // Camera movement parameters
+    g_Camera.SetScalers( 0.01f, 5.0f );
 
 	g_World.InitializeSingletons();
 
