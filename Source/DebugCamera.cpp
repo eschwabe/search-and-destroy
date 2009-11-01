@@ -117,11 +117,11 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     // update z axis movement
     if( m_CameraMovement[kMoveForward] )
     {  
-        vPosDelta.z += 1.0;
+        vPosDelta.z += 1.0f;
     }
     if( m_CameraMovement[kMoveBackward] )
     {
-        vPosDelta.z += -1.0;
+        vPosDelta.z += -1.0f;
     }
 
     // rotate position delta based on yaw
@@ -154,7 +154,7 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
 
     // limit pitch to straight up or straight down
     // note: the normal to the x-z plane causes everything to disappear
-    m_fCameraPitchAngle = __max( (float)-D3DX_PI/2.0f-.01f,  m_fCameraPitchAngle );
+    m_fCameraPitchAngle = __max( (float)-D3DX_PI/2.0f+.01f,  m_fCameraPitchAngle );
     m_fCameraPitchAngle = __min( (float)+D3DX_PI/2.0f-.01f,  m_fCameraPitchAngle );
 
     // create rotation matrix based on yaw and pitch
