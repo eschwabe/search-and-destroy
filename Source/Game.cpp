@@ -17,6 +17,7 @@
 #include "DebugCamera.h"
 #include "Game.h"
 #include "TeapotNode.h"
+#include "PlayerNode.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
@@ -39,7 +40,8 @@ bool                    g_bPlaySounds = true;       // play sounds if true
 double                  g_fLastAnimTime = 0.0;      // animation time
 World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
-Node*					g_pScene = 0;
+Node*					g_pScene = 0;               // scene node
+Node*                   g_pPlayer = 0;              // player node
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -107,7 +109,7 @@ bool InitApp()
 //--------------------------------------------------------------------------------------
 // Clean up the app
 //--------------------------------------------------------------------------------------
-void    CleanupApp()
+void CleanupApp()
 {
 	// Do any sort of app cleanup here 
 }
@@ -214,6 +216,9 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	
     // Create world node
     g_pScene = new WorldNode(g_GridData, pd3dDevice);
+
+    // Create player node
+    g_pPlayer = new PlayerNode(pd3dDevice);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -357,11 +362,13 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         V( pd3dDevice->SetTransform( D3DTS_PROJECTION, & mxProj ) );
         vEye = *g_Camera.GetEyePt();
 
-        // Render the scene graph
+        // Render the scene graph and player
         {
-        D3DXMATRIX	matIdentity;		// identity matrix
-        D3DXMatrixIdentity( &matIdentity );
-        g_pScene->Render(pd3dDevice, matIdentity);
+            D3DXMATRIX	matIdentity;		// identity matrix
+            D3DXMatrixIdentity( &matIdentity );
+
+            g_pScene->Render(pd3dDevice, matIdentity);
+            g_pPlayer->Render(pd3dDevice, matIdentity);
         }
 
         // display text on hud
@@ -520,6 +527,7 @@ void CALLBACK OnLostDevice( void* pUserContext )
 void CALLBACK OnDestroyDevice( void* pUserContext )
 {
     delete g_pScene;
+    delete g_pPlayer;
 
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();

@@ -6,7 +6,6 @@
 
 #include "DXUT.h"
 #include "WorldNode.h"
-//#include "Game.h"
 
 //------------------------------------------------------------------------------
 // Constuct world node.

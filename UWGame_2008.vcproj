@@ -538,10 +538,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\level.grd"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\resource.h"
 				>
 			</File>
@@ -714,6 +710,14 @@
 			</File>
 			<File
 				RelativePath=".\Source\Node.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\PlayerNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\PlayerNode.h"
 				>
 			</File>
 			<File
