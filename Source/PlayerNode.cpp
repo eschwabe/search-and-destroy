@@ -18,7 +18,7 @@ PlayerNode::PlayerNode(IDirect3DDevice9* pd3dDevice) :
 
     // Load the mesh from the specified file
     HRESULT result = D3DXLoadMeshFromX( 
-        L"tiger.x",              // [in] filename
+        L"tiger.x",             // [in] filename
         D3DXMESH_SYSTEMMEM,     // [in] options (D3DXMESH)
         pd3dDevice,             // [in] D3DDevice
         NULL,                   // [out] adjacency data

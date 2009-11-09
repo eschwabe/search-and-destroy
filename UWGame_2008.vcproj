@@ -705,11 +705,27 @@
 			Name="Scene Graph"
 			>
 			<File
+				RelativePath=".\Source\MeshHierarchyBuilder.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\MeshHierarchyBuilder.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\Node.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\Source\Node.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\PlayerAnimatedNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\PlayerAnimatedNode.h"
 				>
 			</File>
 			<File

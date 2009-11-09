@@ -18,6 +18,7 @@
 #include "Game.h"
 #include "TeapotNode.h"
 #include "PlayerNode.h"
+#include "PlayerAnimatedNode.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
@@ -218,7 +219,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pScene = new WorldNode(g_GridData, pd3dDevice);
 
     // Create player node
-    g_pPlayer = new PlayerNode(pd3dDevice);
+    g_pPlayer = new PlayerAnimatedNode(pd3dDevice);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -315,13 +316,16 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
-	g_pScene->Update(fTime);
     g_fLastAnimTime = fTime;
 
 	g_World.Update();
 
+    // update scene and player
+	g_pScene->Update(fElapsedTime);
+    g_pPlayer->Update(fElapsedTime);
+
     // Update the camera's position based on user input
-    g_Camera.FrameMove( fElapsedTime );
+    g_Camera.FrameMove(fElapsedTime);
 }
 
 //--------------------------------------------------------------------------------------
