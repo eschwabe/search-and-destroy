@@ -1,32 +1,53 @@
 //------------------------------------------------------------------------------
 // Project: Game Development (2009)
 // 
-// Player Node
+// Animated Player Node
 //------------------------------------------------------------------------------
 
 #pragma once
 #include "Node.h"
+#include "MeshHierarchyBuilder.h"
 
-// Displays a player object
 class PlayerNode : public Node
 {
     public:
 
         // constructor
-        PlayerNode(IDirect3DDevice9*);
+        PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale, 
+                       const float fX, const float fY, const float fZ, 
+                       const float fXRot, const float fYRot, const float fZRot);
         virtual ~PlayerNode();
-
-        // update traversal for physics, AI, etc.
-	    void Update(double fTime);
-
-        // render traversal for drawing objects
-	    void Render(IDirect3DDevice9*, D3DXMATRIX);
 
     private:
 
-        LPD3DXMESH m_pMesh;                     // mesh object
-        D3DMATERIAL9* m_pMeshMaterials;         // materials buffer
-        LPDIRECT3DTEXTURE9* m_pMeshTextures;    // textures buffer
-        DWORD m_dwNumMaterials;                 // number of mesh materials
+        // initialize world node
+        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
 
+        // update traversal for physics, AI, etc.
+	    void UpdateNode(double fTime);
+
+        // render traversal for drawing objects
+	    void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
+
+        // setup helper functions
+        void SetupBoneMatrices(EXTD3DXFRAME *pFrame);
+
+        // render helper functions
+        void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
+        void UpdateBoneMatricesBuffer(DWORD NumBones);
+        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame);
+        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer);
+
+        std::wstring m_sMeshFilename;   // mesh file to load
+        D3DXMATRIX m_matPlayer;         // player transform matrix
+
+        DWORD m_NumBoneMatrices;        // size of bone matrices buffer
+        D3DXMATRIXA16 *m_pBoneMatrices; // bone matrices for software skinned mesh rendering
+        LPD3DXFRAME m_FrameRoot;        // frame root
+
+        LPD3DXANIMATIONCONTROLLER m_AnimationController;    // animation controller
+
+        // prevent copy and assignment
+        PlayerNode(const PlayerNode&);
+        PlayerNode& operator=(const PlayerNode&);
 };

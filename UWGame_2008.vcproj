@@ -721,14 +721,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Source\PlayerAnimatedNode.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\PlayerAnimatedNode.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\PlayerNode.cpp"
 				>
 			</File>

@@ -5,15 +5,16 @@
 //------------------------------------------------------------------------------
 
 #include "DXUT.h"
+
 #include <string>
 #include "MeshHierarchyBuilder.h"
+#include "DXUT/SDKmisc.h"
 
 //------------------------------------------------------------------------------
 // Constuct player node.
 //------------------------------------------------------------------------------
 MeshHierarchyBuilder::MeshHierarchyBuilder(IDirect3DDevice9* pd3dDevice)
 {
-    assert(pd3dDevice);
     m_pd3dDevice = pd3dDevice;
 }
 
@@ -68,6 +69,10 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
     LPD3DXSKININFO pSkinInfo, 
     LPD3DXMESHCONTAINER* ppNewMeshContainer)
 {
+    assert(m_pd3dDevice);
+
+    HRESULT result = S_OK;
+
     // create and initialize a mesh container structure to fill
 	EXTD3DXMESHCONTAINER* pMeshContainer = new EXTD3DXMESHCONTAINER;
 	ZeroMemory(pMeshContainer, sizeof(EXTD3DXMESHCONTAINER));
@@ -123,23 +128,30 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
 
 		if(pMaterials[i].pTextureFilename)
 		{
-			// load texture
-            WCHAR textureFilename[MAX_PATH];
-            MultiByteToWideChar(CP_ACP, 0, pMaterials[i].pTextureFilename, -1, textureFilename, sizeof(textureFilename));
+			// convert filename and find file
+            WCHAR wsNewPath[ MAX_PATH ];
+            WCHAR wsTextureFilename[ MAX_PATH ];
 
-			if( FAILED(D3DXCreateTextureFromFile(
-                m_pd3dDevice, 
-                textureFilename,
-				&pMeshContainer->ppTextures[i])) )
-            {
-                // set null if file load fails
-                pMeshContainer->ppTextures[i] = NULL;
-            }
+            if( MultiByteToWideChar(CP_ACP, 0, pMaterials[i].pTextureFilename, -1, wsTextureFilename, sizeof(wsTextureFilename)) == 0 )
+                result = E_FAIL;
+            
+            if( SUCCEEDED(result) )
+                result = DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), wsTextureFilename);
+
+            // create texture
+            if( SUCCEEDED(result) )
+		        result = D3DXCreateTextureFromFile(
+                    m_pd3dDevice, 
+                    wsNewPath,
+			        &pMeshContainer->ppTextures[i]);
+            
+            if( FAILED(result) )
+                break;
 		}
 	}
 
     // copy skin data associated with the mesh
-	if(pSkinInfo)
+	if( SUCCEEDED(result) && pSkinInfo)
 	{
 		// save off the skininfo
 	    pMeshContainer->pSkinInfo = pSkinInfo;
@@ -169,9 +181,17 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
     }
 
 	// set the output mesh container pointer to the new one
-	*ppNewMeshContainer = pMeshContainer;    
+    if( SUCCEEDED(result) )
+    {
+	    *ppNewMeshContainer = pMeshContainer;    
+    }
+    else
+    {
+        *ppNewMeshContainer = NULL;
+        DestroyMeshContainer(pMeshContainer);
+    }
 
-	return S_OK;
+	return result;
 }
 
 //------------------------------------------------------------------------------

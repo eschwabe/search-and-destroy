@@ -39,4 +39,8 @@ class WorldFile
 
         int m_cx, m_cy;
         ECell* m_pGrid;
+
+        // prevent copy and assignment
+        WorldFile(const WorldFile&);
+        WorldFile& operator=(const WorldFile&);
 };

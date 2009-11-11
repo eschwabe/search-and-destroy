@@ -6,15 +6,43 @@
 
 #include "DXUT.h"
 #include "WorldNode.h"
+#include "WorldFile.h"
+
+// custom FVF, which describes our custom vertex structure
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
 
 //------------------------------------------------------------------------------
 // Constuct world node.
 //------------------------------------------------------------------------------
-WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
-	Node(pd3dDevice),
-	m_pVB(0),
-    m_triangle_count(0)
+WorldNode::WorldNode(const LPCWSTR sFilename) :
+	m_pVerticesBuffer(NULL),
+    m_iTriangleCount(0),
+    m_sWorldFilename(sFilename)
 {
+}
+
+//------------------------------------------------------------------------------
+// Deconstuct world node.
+//------------------------------------------------------------------------------
+WorldNode::~WorldNode()
+{
+    if(m_pVerticesBuffer)
+        m_pVerticesBuffer->Release();
+}
+
+//------------------------------------------------------------------------------
+// Initialize world node.
+//------------------------------------------------------------------------------
+HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+{
+    // load grid data
+    WorldFile grid;
+
+    if( !grid.Load(m_sWorldFilename.c_str()) )
+    {
+        return E_FAIL;
+    }
+
     // allocate triangles for size of grid
     // (3 verticies per triangle, 2 triangles per rectangle, 6 rectangles per cube)
     int max_vertices = 3 * 2 * 6 * grid.GetHeight() * grid.GetWidth();
@@ -71,30 +99,63 @@ WorldNode::WorldNode(const WorldFile& grid, IDirect3DDevice9* pd3dDevice) :
     // create the vertex buffer.
     HRESULT result = pd3dDevice->CreateVertexBuffer( 
         max_vertices*sizeof(CustomVertex),
-        0, D3DFVF_CUSTOMVERTEX,
-        D3DPOOL_DEFAULT, &m_pVB, NULL);
+        0, 
+        D3DFVF_CUSTOMVERTEX,
+        D3DPOOL_DEFAULT, 
+        &m_pVerticesBuffer, 
+        NULL);
 
     if(SUCCEEDED(result))
     {
         // fill the vertex buffer.
         VOID* pVertices;
-        result = m_pVB->Lock( 0, max_vertices*sizeof(CustomVertex), (void**)&pVertices, 0 );
+        result = m_pVerticesBuffer->Lock(0, max_vertices*sizeof(CustomVertex), (void**)&pVertices, 0);
 
         if(SUCCEEDED(result))
         {
-            memcpy( pVertices, vertices, max_vertices*sizeof(CustomVertex) );
-            m_pVB->Unlock();
+            memcpy(pVertices, vertices, max_vertices*sizeof(CustomVertex));
+            m_pVerticesBuffer->Unlock();
         }
     }
+
+    return result;
 }
 
 //------------------------------------------------------------------------------
-// Deconstuct world node.
+// Update world node.
 //------------------------------------------------------------------------------
-WorldNode::~WorldNode()
+void WorldNode::UpdateNode(double /* fTime */)
 {
-    if(m_pVB)
-        m_pVB->Release();
+}
+
+//------------------------------------------------------------------------------
+// Render world node.
+//------------------------------------------------------------------------------
+void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+{
+	// Set the world space transform
+	pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
+
+	// Set the texture
+	pd3dDevice->SetTexture(0, NULL);
+
+	// Turn off culling
+	pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+
+    // Turn off D3D lighting, since we are providing our own vertex colors
+    pd3dDevice->SetRenderState( D3DRS_LIGHTING, FALSE );
+
+    // Draw the triangles in the vertex buffer. This is broken into a few
+    // steps. We are passing the Vertices down a "stream", so first we need
+    // to specify the source of that stream, which is our vertex buffer. Then
+    // we need to let D3D know what vertex shader to use. Full, custom vertex
+    // shaders are an advanced topic, but in most cases the vertex shader is
+    // just the FVF, so that D3D knows what type of Vertices we are dealing
+    // with. Finally, we call DrawPrimitive() which does the actual rendering
+    // of our geometry (in this case, just one triangle).
+    pd3dDevice->SetStreamSource( 0, m_pVerticesBuffer, 0, sizeof(CustomVertex) );
+    pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+    pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iTriangleCount );
 }
 
 //------------------------------------------------------------------------------
@@ -233,46 +294,6 @@ void WorldNode::DrawBufferTriangle(
         vertices[(*current_vertex)++] = p1;
         vertices[(*current_vertex)++] = p2;
         vertices[(*current_vertex)++] = p3;
-        m_triangle_count++;
+        m_iTriangleCount++;
     }
-}
-
-//------------------------------------------------------------------------------
-// Update world node.
-//------------------------------------------------------------------------------
-void WorldNode::Update(double /* fTime */)
-{
-}
-
-//------------------------------------------------------------------------------
-// Render world node.
-//------------------------------------------------------------------------------
-void WorldNode::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld)
-{
-	// Set the world space transform
-	pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
-
-	// Set the texture
-	pd3dDevice->SetTexture(0, NULL);
-
-	// Turn off culling
-	pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-
-    // Turn off D3D lighting, since we are providing our own vertex colors
-    pd3dDevice->SetRenderState( D3DRS_LIGHTING, FALSE );
-
-    // Draw the triangles in the vertex buffer. This is broken into a few
-    // steps. We are passing the Vertices down a "stream", so first we need
-    // to specify the source of that stream, which is our vertex buffer. Then
-    // we need to let D3D know what vertex shader to use. Full, custom vertex
-    // shaders are an advanced topic, but in most cases the vertex shader is
-    // just the FVF, so that D3D knows what type of Vertices we are dealing
-    // with. Finally, we call DrawPrimitive() which does the actual rendering
-    // of our geometry (in this case, just one triangle).
-    pd3dDevice->SetStreamSource( 0, m_pVB, 0, sizeof(CustomVertex) );
-    pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
-    pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_triangle_count );
-
-	// Call base class
-	Node::Render(pd3dDevice, matWorld);
 }

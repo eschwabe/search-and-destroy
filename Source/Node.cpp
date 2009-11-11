@@ -1,71 +1,116 @@
+//------------------------------------------------------------------------------
+// Project: Game Development (2009)
+// 
+// Base Node
+//------------------------------------------------------------------------------
+
 #include "DXUT.h"
 #include "Node.h"
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+// Constuct base node
+//------------------------------------------------------------------------------
+Node::Node()
+{}
 
-
-Node::Node(IDirect3DDevice9* /* pd3dDevice */)
-{
-}
-
-
+//------------------------------------------------------------------------------
+// Destroy base node (and all children)
+//------------------------------------------------------------------------------
 Node::~Node()
+{}
+
+//------------------------------------------------------------------------------
+// Initialize node for updating and rendering (including children)
+//------------------------------------------------------------------------------
+HRESULT Node::Initialize(IDirect3DDevice9* pd3dDevice)
 {
-	Unload();
+    // update node
+    HRESULT result = InitializeNode(pd3dDevice);
+
+	// recurse initialize on children
+    if( SUCCEEDED(result) )
+    {
+	    std::vector<NodeRef>::const_iterator it;
+
+	    for(it = m_vChildNodes.begin(); it != m_vChildNodes.end(); ++it)
+	    {
+		    result = (*it)->Initialize(pd3dDevice);
+
+            if( FAILED(result) )
+                break;
+	    }
+    }
+    return result;
 }
 
-
-HRESULT Node::Load(IDirect3DDevice9* /* pd3dDevice */, const LPCWSTR /* szFilename */)
+//------------------------------------------------------------------------------
+// Initialize node for updating and rendering
+//
+// Derived classes should override this method to perform class specific
+// initialization.
+//------------------------------------------------------------------------------
+HRESULT Node::InitializeNode(IDirect3DDevice9* /*pd3dDevice*/)
 {
 	return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
 
-
-HRESULT Node::GetInstance(const LPCWSTR /* szFilename */)
-{
-	return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
-}
-
-
-void Node::Unload()
-{
-	// Recurse on children
-	std::vector<std::tr1::shared_ptr<Node> >::const_iterator i;
-
-	for (i = m_vecpChildren.begin(); i != m_vecpChildren.end(); ++i)
-	{
-//		delete (*i);
-	}
-}
-
-
-void Node::AddChild(std::tr1::shared_ptr<Node> pNode)
-{
-	m_vecpChildren.push_back(pNode);
-}
-
-
+//------------------------------------------------------------------------------
+// Update traversal for physics, AI, etc. (including children)
+//------------------------------------------------------------------------------
 void Node::Update(double fTime)
 {
-	// Recurse on children
-	std::vector<std::tr1::shared_ptr<Node> >::const_iterator i;
+    // update node
+    UpdateNode(fTime);
 
-	for (i = m_vecpChildren.begin(); i != m_vecpChildren.end(); ++i)
+	// recurse update on children
+	std::vector<NodeRef>::const_iterator it;
+
+	for(it = m_vChildNodes.begin(); it != m_vChildNodes.end(); ++it)
 	{
-		(*i)->Update(fTime);
+		(*it)->Update(fTime);
 	}
 }
 
+//------------------------------------------------------------------------------
+// Update node
+//
+// Derived classes should override this method to perform class specific
+// update functionality.
+//------------------------------------------------------------------------------
+void Node::UpdateNode(double fTime)
+{}
 
-void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld)
+//------------------------------------------------------------------------------
+// Render traversal for drawing objects (including children)
+//------------------------------------------------------------------------------
+void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
-	// Recurse on children
-	std::vector<std::tr1::shared_ptr<Node> >::const_iterator i;
+    // render node
+    RenderNode(pd3dDevice, rMatWorld);
 
-	for (i = m_vecpChildren.begin(); i != m_vecpChildren.end(); ++i)
+	// recurse render on children
+	std::vector<NodeRef>::const_iterator it;
+
+	for(it = m_vChildNodes.begin(); it != m_vChildNodes.end(); ++it)
 	{
-		(*i)->Render(pd3dDevice, matWorld);
+		(*it)->Render(pd3dDevice, rMatWorld);
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+// render traversal for drawing objects (including children)
+//
+// Derived classes should override this method to perform class specific
+// rendering.
+//------------------------------------------------------------------------------
+void Node::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+{}
+
+//------------------------------------------------------------------------------
+// Add a child node to this node. The node pointer will be deleted automatically
+// by this node.
+//------------------------------------------------------------------------------
+void Node::AddChild(Node* pNode)
+{
+	m_vChildNodes.push_back(NodeRef(pNode));
+}

@@ -1,36 +1,49 @@
+//------------------------------------------------------------------------------
+// Project: Game Development (2009)
+// 
+// Teapot Node
+//------------------------------------------------------------------------------
+
 #include "DXUT.h"
-//#include "Game.h"
 #include "TeapotNode.h"
 
-////////////////////////////////////////////////////////////////////////////
+//------------------------------------------------------------------------------
+// Constuct teapot node.
+//------------------------------------------------------------------------------
+TeapotNode::TeapotNode() :
+    pMesh(NULL)
+{}
 
-
-TeapotNode::TeapotNode(IDirect3DDevice9* pd3dDevice) : 
-	Node(pd3dDevice)
-{
-	pMesh = NULL;
-	D3DXCreateTeapot(pd3dDevice, &pMesh, NULL);
-}
-
-
+//------------------------------------------------------------------------------
+// Destroy teapot node.
+//------------------------------------------------------------------------------
 TeapotNode::~TeapotNode()
 {
 	pMesh->Release();
-	pMesh = 0;
 }
 
-void
-TeapotNode::Update(double /* fTime */)
+//------------------------------------------------------------------------------
+// Initialize
+//------------------------------------------------------------------------------
+HRESULT TeapotNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+{
+    return D3DXCreateTeapot(pd3dDevice, &pMesh, NULL);
+}
+
+//------------------------------------------------------------------------------
+// Update
+//------------------------------------------------------------------------------
+void TeapotNode::UpdateNode(double /* fTime */)
 {
 }
 
-
-void
-TeapotNode::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld)
+//------------------------------------------------------------------------------
+// Render
+//------------------------------------------------------------------------------
+void TeapotNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
-	pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
+    assert(pMesh);
+
+	pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
 	pMesh->DrawSubset(0);
-
-	// Call base class
-	Node::Render(pd3dDevice, matWorld);
 }

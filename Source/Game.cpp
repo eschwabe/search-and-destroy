@@ -18,7 +18,6 @@
 #include "Game.h"
 #include "TeapotNode.h"
 #include "PlayerNode.h"
-#include "PlayerAnimatedNode.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
@@ -41,8 +40,7 @@ bool                    g_bPlaySounds = true;       // play sounds if true
 double                  g_fLastAnimTime = 0.0;      // animation time
 World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
-Node*					g_pScene = 0;               // scene node
-Node*                   g_pPlayer = 0;              // player node
+Node*					g_pBaseNode = 0;            // scene node
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -212,14 +210,27 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                          L"Consolas", &g_pFont ) );
 
-	// Create the default scene (teapot)
-	//g_pScene = new TeapotNode(pd3dDevice);
 	
-    // Create world node
-    g_pScene = new WorldNode(g_GridData, pd3dDevice);
+    // create base node
+    g_pBaseNode = new Node();
 
-    // Create player node
-    g_pPlayer = new PlayerAnimatedNode(pd3dDevice);
+    // Create the default scene (teapot)
+	//g_pBaseNode->AddChild(new TeapotNode());
+  
+    // add world node
+    g_pBaseNode->AddChild(new WorldNode(L"level.grd"));
+
+    // add player node
+    g_pBaseNode->AddChild(new PlayerNode(L"tiny.x", 1.0f/100.0f, 0,0,0, -D3DX_PI/2.0f,D3DX_PI,0/*D3DX_PI/2.0f,-D3DX_PI/2.0f*/));
+    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 1.0f, 25,0,0, 0,0,0));
+    //g_pBaseNode->AddChild(L"tiger.x");
+
+    // initialize nodes
+    if( FAILED(g_pBaseNode->Initialize(pd3dDevice)) )
+    {
+        MessageBox( NULL, L"Could not load nodes", L"UWGame", MB_OK );
+        return E_FAIL;
+    }
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -320,9 +331,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
 	g_World.Update();
 
-    // update scene and player
-	g_pScene->Update(fElapsedTime);
-    g_pPlayer->Update(fElapsedTime);
+    // update nodes
+	g_pBaseNode->Update(fElapsedTime);
 
     // Update the camera's position based on user input
     g_Camera.FrameMove(fElapsedTime);
@@ -366,13 +376,11 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         V( pd3dDevice->SetTransform( D3DTS_PROJECTION, & mxProj ) );
         vEye = *g_Camera.GetEyePt();
 
-        // Render the scene graph and player
+        // render all nodes
         {
             D3DXMATRIX	matIdentity;		// identity matrix
             D3DXMatrixIdentity( &matIdentity );
-
-            g_pScene->Render(pd3dDevice, matIdentity);
-            g_pPlayer->Render(pd3dDevice, matIdentity);
+            g_pBaseNode->Render(pd3dDevice, matIdentity);
         }
 
         // display text on hud
@@ -530,8 +538,7 @@ void CALLBACK OnLostDevice( void* pUserContext )
 //--------------------------------------------------------------------------------------
 void CALLBACK OnDestroyDevice( void* pUserContext )
 {
-    delete g_pScene;
-    delete g_pPlayer;
+    delete g_pBaseNode;
 
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();

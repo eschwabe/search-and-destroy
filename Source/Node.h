@@ -1,33 +1,51 @@
+//------------------------------------------------------------------------------
+// Project: Game Development (2009)
+// 
+// Base Node
+//------------------------------------------------------------------------------
+
 #pragma once
 #include <vector>
 
-////////////////////////////////////////////////////////////////////////////
-
-
 class Node
 {
-public:
-						Node(IDirect3DDevice9* pd3dDevice);
-	virtual				~Node();
+    public:
 
-	virtual HRESULT		Load(IDirect3DDevice9* pd3dDevice, const LPCWSTR szFilename);
-	virtual HRESULT		GetInstance(const LPCWSTR szFilename);
-	virtual void		Unload();
+        // node reference
+        typedef std::tr1::shared_ptr<Node> NodeRef;
 
-	// Update traversal for physics, AI, etc.
-	virtual void		Update(double fTime);
+        // constructor
+        Node();
+	    virtual ~Node();
 
-						// Render traversal for drawing objects
-	virtual void		Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX matWorld);
+        // load and unload
+	    HRESULT Initialize(IDirect3DDevice9* pd3dDevice);
 
-						// Hierarchy management
-	int					GetNumChildren()			{return m_vecpChildren.size();}
-	std::tr1::shared_ptr<Node> GetChild(int iChild)	{return m_vecpChildren[iChild];}
-	void				AddChild(std::tr1::shared_ptr<Node> pNode);
+	    // update traversal for physics, AI, etc. (including children)
+	    void Update(double fTime);
 
-protected:
-	std::vector<std::tr1::shared_ptr<Node> >	m_vecpChildren;
+        // render traversal for drawing objects (including children)
+	    void Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
+
+        // hierarchy management
+	    void AddChild(Node* pNode);
+	    int GetNumChildren() { return m_vChildNodes.size(); }
+	    NodeRef GetChild(int iChild) { return m_vChildNodes[iChild]; }
+
+    private:
+
+        // load and unload
+	    virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
+
+        // update node
+	    virtual void UpdateNode(double fTime);
+
+        // render traversal for drawing objects (including children)
+	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
+
+	    std::vector<NodeRef> m_vChildNodes; // child nodes
+
+        // prevent copy and assignment
+        Node(const Node&);
+        Node& operator=(const Node&);
 };
-
-
-////////////////////////////////////////////////////////////////////////////
