@@ -1,8 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// World Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* WorldNode.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* World Node (i.e. Level)
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 #include "WorldNode.h"
@@ -11,9 +16,9 @@
 // custom FVF, which describes our custom vertex structure
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
 
-//------------------------------------------------------------------------------
-// Constuct world node.
-//------------------------------------------------------------------------------
+/**
+* Constuct world node.
+*/
 WorldNode::WorldNode(const LPCWSTR sFilename) :
 	m_pVerticesBuffer(NULL),
     m_iTriangleCount(0),
@@ -21,18 +26,18 @@ WorldNode::WorldNode(const LPCWSTR sFilename) :
 {
 }
 
-//------------------------------------------------------------------------------
-// Deconstuct world node.
-//------------------------------------------------------------------------------
+/**
+* Deconstuct world node.
+*/
 WorldNode::~WorldNode()
 {
     if(m_pVerticesBuffer)
         m_pVerticesBuffer->Release();
 }
 
-//------------------------------------------------------------------------------
-// Initialize world node.
-//------------------------------------------------------------------------------
+/**
+* Initialize world node.
+*/
 HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 {
     // load grid data
@@ -121,16 +126,16 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     return result;
 }
 
-//------------------------------------------------------------------------------
-// Update world node.
-//------------------------------------------------------------------------------
+/**
+* Update world node.
+*/
 void WorldNode::UpdateNode(double /* fTime */)
 {
 }
 
-//------------------------------------------------------------------------------
-// Render world node.
-//------------------------------------------------------------------------------
+/**
+* Render world node.
+*/
 void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
 	// Set the world space transform
@@ -158,20 +163,20 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
     pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iTriangleCount );
 }
 
-//------------------------------------------------------------------------------
-// Draw a cube into the verticies buffer. Draws the cube in the x-z plane at 
-// the specified row and column with a set height and color.
-//
-// @param col cube column location
-// @param row cube row location
-// @param h cube height
-// @param tbcolor top and bottom cube color
-// @param scolor side cube color
-// @param lside draw left side of cube
-// @param rside draw right side of cube
-// @param uside draw up side of cube
-// @param dside draw down side of cube
-//------------------------------------------------------------------------------
+/**
+* Draw a cube into the verticies buffer. Draws the cube in the x-z plane at 
+* the specified row and column with a set height and color.
+*
+* @param col cube column location
+* @param row cube row location
+* @param h cube height
+* @param tbcolor top and bottom cube color
+* @param scolor side cube color
+* @param lside draw left side of cube
+* @param rside draw right side of cube
+* @param uside draw up side of cube
+* @param dside draw down side of cube
+*/
 void WorldNode::DrawBufferCube(
     const float& col, const float& row, const float& h, const DWORD& tbcolor, const DWORD& scolor,
     const bool& lside, const bool& rside, const bool& uside, const bool& dside,
@@ -280,11 +285,11 @@ void WorldNode::DrawBufferCube(
     }
 }
 
-//------------------------------------------------------------------------------
-// Draw a triangle into the verticies buffer. Draws a triagle with the
-// three verticies. Updates number of triangles for rendering. Will only draw
-// the triangle if the vertices buffer has enough space.
-//------------------------------------------------------------------------------
+/**
+* Draw a triangle into the verticies buffer. Draws a triagle with the
+* three verticies. Updates number of triangles for rendering. Will only draw
+* the triangle if the vertices buffer has enough space.
+*/
 void WorldNode::DrawBufferTriangle(
     const CustomVertex& p1, const CustomVertex& p2, const CustomVertex& p3, 
     CustomVertex* vertices, int max_vertices, int* current_vertex )

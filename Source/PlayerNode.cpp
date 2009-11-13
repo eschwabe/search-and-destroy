@@ -1,17 +1,22 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Animated Player Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* PlayerNode.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Animated Player Node
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 #include "PlayerNode.h"
 #include "DXUT/SDKmisc.h"
 
-//------------------------------------------------------------------------------
-// Constuct player node
-// Specify player scale, x,y,z coordinates, and x,y,z rotations (in radians)
-//------------------------------------------------------------------------------
+/**
+* Constuct player node
+* Specify player scale, x,y,z coordinates, and x,y,z rotations (in radians)
+*/
 PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale, 
                        const float fX, const float fY, const float fZ, 
                        const float fXRot, const float fYRot, const float fZRot) :
@@ -34,9 +39,9 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
     D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
 }
 
-//------------------------------------------------------------------------------
-// Destroy player node
-//------------------------------------------------------------------------------
+/**
+* Destroy player node
+*/
 PlayerNode::~PlayerNode()
 {
     // deallocate bone matrices buffer (if allocated)
@@ -52,9 +57,9 @@ PlayerNode::~PlayerNode()
     D3DXFrameDestroy(m_FrameRoot, &hierarchyBuilder);
 }
 
-//------------------------------------------------------------------------------
-// Initialize player node
-//------------------------------------------------------------------------------
+/**
+* Initialize player node
+*/
 HRESULT PlayerNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 {
     // search for file
@@ -95,9 +100,9 @@ HRESULT PlayerNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     return result;
 }
 
-//------------------------------------------------------------------------------
-// setup mesh container bone matrices pointers
-//------------------------------------------------------------------------------
+/**
+* Setup mesh container bone matrices pointers
+*/
 void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 {
     assert(pFrame);
@@ -132,19 +137,18 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 		SetupBoneMatrices((EXTD3DXFRAME*)pFrame->pFrameFirstChild);
 }
 
-
-//------------------------------------------------------------------------------
-// update traversal for physics, AI, etc.
-//------------------------------------------------------------------------------
+/**
+* Update traversal for physics, AI, etc.
+*/
 void PlayerNode::UpdateNode(double fTime)
 {
     if(m_AnimationController)
         m_AnimationController->AdvanceTime(fTime, NULL);
 }
 
-//------------------------------------------------------------------------------
-// render traversal for drawing objects
-//------------------------------------------------------------------------------
+/**
+* Render traversal for drawing objects
+*/
 void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
     D3DXMatrixMultiply(&rMatWorld, &m_matPlayer, &rMatWorld);
@@ -156,9 +160,9 @@ void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
     DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot);
 }
 
-//------------------------------------------------------------------------------
-// recursively update frame transform matrices
-//------------------------------------------------------------------------------
+/**
+* Recursively update frame transform matrices
+*/
 void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld)
 {
     D3DXMatrixMultiply( &pFrame->CombinedTransformationMatrix, &pFrame->TransformationMatrix, &rMatWorld );
@@ -172,9 +176,9 @@ void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorl
         UpdateFrameTransforms((EXTD3DXFRAME*)pFrame->pFrameFirstChild, pFrame->CombinedTransformationMatrix);
 }
 
-//------------------------------------------------------------------------------
-// recursively draw the frame
-//------------------------------------------------------------------------------
+/**
+* Recursively draw the frame
+*/
 void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame)
 {
 	// draw all mesh containers in this frame
@@ -196,9 +200,9 @@ void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame)
         DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameFirstChild);
 }
 
-//------------------------------------------------------------------------------
-// draw mesh container (standard mesh or skinned mesh)
-//------------------------------------------------------------------------------
+/**
+* Draw mesh container (standard mesh or skinned mesh)
+*/
 void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer)
 {
     // check for skinned mesh rendering
@@ -253,10 +257,9 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
     }
 }
 
-//------------------------------------------------------------------------------
-// update bone matricies buffer
-// increases buffer size if mesh requires it
-//------------------------------------------------------------------------------
+/**
+* Update bone matricies buffer. Increases buffer size if mesh requires it.
+*/
 void PlayerNode::UpdateBoneMatricesBuffer(DWORD NumBones)
 {
     if(NumBones > m_NumBoneMatrices)

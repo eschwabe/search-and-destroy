@@ -1,15 +1,20 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// World Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* WorldNode.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* World Node (i.e. Level)
+*
+*******************************************************************************/
 
 #pragma once
 #include "Node.h"
 
-//------------------------------------------------------------------------------
-// WorldNode Class
-//------------------------------------------------------------------------------
+/**
+* World Node
+*/
 class WorldNode : public Node
 {
     public:
@@ -20,7 +25,10 @@ class WorldNode : public Node
 
     private:
 
-	    // custom vertex type
+	    /**
+        * Custom vertex type. Specifies a custom vertex that can be written
+        * to the verticies buffer for rendering.
+        */
 	    struct CustomVertex
 	    {
 		    FLOAT x, y, z;  // untransformed, 3D position for the vertex
@@ -36,6 +44,8 @@ class WorldNode : public Node
                 x(ix), y(iy), z(iz), color(icolor)
             {}
 	    };
+
+        // METHODS
 
         // initialize world node
         HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
@@ -56,7 +66,13 @@ class WorldNode : public Node
         void DrawBufferTriangle(const CustomVertex& p1, const CustomVertex& p2, const CustomVertex& p3, 
             CustomVertex* vertices, int max_vertices, int* current_vertex );
 
+        // DATA
         std::wstring m_sWorldFilename;              // world filename
         int m_iTriangleCount;                       // number of triangles
 	    LPDIRECT3DVERTEXBUFFER9 m_pVerticesBuffer;  // vertices buffer
+
+        // prevent copy and assignment
+        WorldNode(const WorldNode&);
+        void operator=(const WorldNode&);
 };
+

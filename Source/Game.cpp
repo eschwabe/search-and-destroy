@@ -87,6 +87,7 @@ bool InitApp()
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
     
     // load grid data
+    // TODO: Investigating removing level load. Done by WorldNode as well.
     g_GridData.Load(L"level.grd");
     float mid_col = g_GridData.GetWidth()/2.0f;
     float mid_row = g_GridData.GetHeight()/2.0f;

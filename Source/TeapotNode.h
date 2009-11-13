@@ -1,8 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Teapot Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* TeapotNode.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Teapot Node
+*
+*******************************************************************************/
 
 #pragma once
 #include "Node.h"
@@ -17,6 +22,8 @@ class TeapotNode : public Node
 
     private:
 
+        // METHODS
+
         // initialize world node
         HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
 
@@ -26,6 +33,11 @@ class TeapotNode : public Node
 		// render traversal for drawing objects
 	    void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
 
-
+        // DATA
 	    ID3DXMesh* pMesh;
+
+        // prevent copy and assignment
+        TeapotNode(const TeapotNode&);
+        void operator=(const TeapotNode&);
 };
+

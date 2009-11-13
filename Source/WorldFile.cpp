@@ -1,39 +1,49 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// World File
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* WorldFile.cpp
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* World File
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 #include "WorldFile.h"
+#include "DXUT/SDKmisc.h"
 
 #pragma warning(disable : 4996)
 
-//------------------------------------------------------------------------------
-// WorldFile Constructor
-//------------------------------------------------------------------------------
+/**
+* WorldFile Constructor
+*/
 WorldFile::WorldFile() : 
     m_cx(0),
     m_cy(0),
     m_pGrid(0)
 {}
 
-//------------------------------------------------------------------------------
-// WorldFile Deconstructor
-//------------------------------------------------------------------------------
+/**
+* WorldFile Deconstructor
+*/
 WorldFile::~WorldFile()
 {
     delete [] m_pGrid;
 }
 
-//------------------------------------------------------------------------------
-// Load grid data from file
-//------------------------------------------------------------------------------
+/**
+* Load grid data from file
+*/
 bool WorldFile::Load(const LPCWSTR szFilename)
 {
     SAFE_DELETE_ARRAY(m_pGrid);
 
-	FILE* fp = _wfopen(szFilename, L"rt");
+    // search for file
+    WCHAR wsNewPath[ MAX_PATH ];
+    HRESULT result = DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), szFilename);
+
+	FILE* fp = _wfopen(wsNewPath, L"rt");
     if (fp)
     {
         char sz[32768];
@@ -68,9 +78,9 @@ bool WorldFile::Load(const LPCWSTR szFilename)
     return false;
 }
 
-//------------------------------------------------------------------------------
-// Get cell type at position
-//------------------------------------------------------------------------------
+/**
+* Get cell type at position
+*/
 WorldFile::ECell WorldFile::operator () ( int row, int col ) const
 {
     if (m_pGrid)

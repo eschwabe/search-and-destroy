@@ -1,9 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Debug Camera
-// Handles keyboard input and camera movement
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* DebugCamera.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Debug Camera: Watches for input and updates camera position
+*
+*******************************************************************************/
 
 #pragma once
 #include "DXUT\DXUTcamera.h"
@@ -21,9 +25,6 @@ class CDebugCamera : public CBaseCamera
 
         // Move and update camera
         virtual void FrameMove( FLOAT fElapsedTime );
-
-        // Modify camera behavior
-        //void SetRotateButtons( bool bLeft, bool bMiddle, bool bRight, bool bRotateWithoutButtonDown = false );
 
         // Get camera state
         const D3DXMATRIX* GetWorldMatrix()          { return &m_mCameraWorld; }
@@ -48,10 +49,15 @@ class CDebugCamera : public CBaseCamera
             kUnknown = 0xFF
         };
 
-        // methods
+        // METHODS
         Movement GetCameraMovement(const UINT&);
 
+        // DATA
         bool m_CameraMovement[kMaxMovement];    // camera movements currently requested
-
         D3DXMATRIX m_mCameraWorld;              // world matrix of the camera (inverse of the view matrix)  
+
+        // prevent copy and assignment
+        CDebugCamera(const CDebugCamera&);
+        void operator=(const CDebugCamera&);
 };
+

@@ -589,14 +589,6 @@
 			Name="Common"
 			>
 			<File
-				RelativePath=".\Source\DebugCamera.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\DebugCamera.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\DXUT\DXUT.cpp"
 				>
 				<FileConfiguration
@@ -704,6 +696,14 @@
 		<Filter
 			Name="Scene Graph"
 			>
+			<File
+				RelativePath=".\Source\DebugCamera.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\DebugCamera.h"
+				>
+			</File>
 			<File
 				RelativePath=".\Source\MeshHierarchyBuilder.cpp"
 				>

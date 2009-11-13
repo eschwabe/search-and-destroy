@@ -1,27 +1,34 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Base Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* Node.cpp
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Base node
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 #include "Node.h"
 
-//------------------------------------------------------------------------------
-// Constuct base node
-//------------------------------------------------------------------------------
+/**
+* Constuct base node
+*/
 Node::Node()
 {}
 
-//------------------------------------------------------------------------------
-// Destroy base node (and all children)
-//------------------------------------------------------------------------------
+/**
+* Destroy base node (and all children)
+*/
 Node::~Node()
 {}
 
-//------------------------------------------------------------------------------
-// Initialize node for updating and rendering (including children)
-//------------------------------------------------------------------------------
+/**
+* Initialize node for updating and rendering (including children)
+*
+* @param pd3dDevice Direct 3D Device
+*/
 HRESULT Node::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     // update node
@@ -43,20 +50,20 @@ HRESULT Node::Initialize(IDirect3DDevice9* pd3dDevice)
     return result;
 }
 
-//------------------------------------------------------------------------------
-// Initialize node for updating and rendering
-//
-// Derived classes should override this method to perform class specific
-// initialization.
-//------------------------------------------------------------------------------
+/**
+* Initialize node for updating and rendering
+*
+* Derived classes should override this method to perform class specific
+* initialization.
+*/
 HRESULT Node::InitializeNode(IDirect3DDevice9* /*pd3dDevice*/)
 {
 	return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
 
-//------------------------------------------------------------------------------
-// Update traversal for physics, AI, etc. (including children)
-//------------------------------------------------------------------------------
+/**
+* Update traversal for physics, AI, etc. (including children)
+*/
 void Node::Update(double fTime)
 {
     // update node
@@ -71,18 +78,18 @@ void Node::Update(double fTime)
 	}
 }
 
-//------------------------------------------------------------------------------
-// Update node
-//
-// Derived classes should override this method to perform class specific
-// update functionality.
-//------------------------------------------------------------------------------
+/**
+* Update node
+*
+* Derived classes should override this method to perform class specific
+* update functionality.
+*/
 void Node::UpdateNode(double fTime)
 {}
 
-//------------------------------------------------------------------------------
-// Render traversal for drawing objects (including children)
-//------------------------------------------------------------------------------
+/**
+* Render traversal for drawing objects (including children)
+*/
 void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
     // render node
@@ -97,19 +104,19 @@ void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 	}
 }
 
-//------------------------------------------------------------------------------
-// render traversal for drawing objects (including children)
-//
-// Derived classes should override this method to perform class specific
-// rendering.
-//------------------------------------------------------------------------------
+/**
+* Render traversal for drawing objects (including children)
+*
+* Derived classes should override this method to perform class specific
+* rendering.
+*/
 void Node::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {}
 
-//------------------------------------------------------------------------------
-// Add a child node to this node. The node pointer will be deleted automatically
-// by this node.
-//------------------------------------------------------------------------------
+/**
+* Add a child node to this node. The node pointer will be deleted automatically
+* by this node.
+*/
 void Node::AddChild(Node* pNode)
 {
 	m_vChildNodes.push_back(NodeRef(pNode));

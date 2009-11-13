@@ -1,8 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Mesh Hierarchy Builder
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* MeshHierarchyBuilder.cpp
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Creates and destorys a mesh hierarchy
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 
@@ -10,28 +15,27 @@
 #include "MeshHierarchyBuilder.h"
 #include "DXUT/SDKmisc.h"
 
-//------------------------------------------------------------------------------
-// Constuct player node.
-//------------------------------------------------------------------------------
+/**
+* Constuct player node.
+*/
 MeshHierarchyBuilder::MeshHierarchyBuilder(IDirect3DDevice9* pd3dDevice)
 {
     m_pd3dDevice = pd3dDevice;
 }
 
-//------------------------------------------------------------------------------
-// Destroy player node.
-//------------------------------------------------------------------------------
+/**
+* Destroy player node.
+*/
 MeshHierarchyBuilder::~MeshHierarchyBuilder()
 {
 }
 
-
-//------------------------------------------------------------------------------
-// callback to create a D3DXFRAME extended object and initialize it
-// called by D3DX during the loading of a mesh hierarchy. The app can
-// customize its behavior. At a minimum, the app should allocate a
-// D3DXFRAME or a child of it and fill in the Name member.
-//------------------------------------------------------------------------------
+/**
+* Callback to create a D3DXFRAME extended object and initialize it
+* called by D3DX during the loading of a mesh hierarchy. The app can
+* customize its behavior. At a minimum, the app should allocate a
+* D3DXFRAME or a child of it and fill in the Name member.
+*/
 HRESULT MeshHierarchyBuilder::CreateFrame(const LPCSTR Name, LPD3DXFRAME* ppNewFrame )
 {
     // allocate frame
@@ -52,13 +56,13 @@ HRESULT MeshHierarchyBuilder::CreateFrame(const LPCSTR Name, LPD3DXFRAME* ppNewF
     return S_OK;
 }
 
-//------------------------------------------------------------------------------
-// callback to create a D3DXMESHCONTAINER extended object and initialize it
-// called by D3DX during the loading of a mesh hierarchy. At a minumum,
-// the app should allocate a D3DXMESHCONTAINER or a child of it and fill
-// in the members based on the parameters here. The app can further
-// customize the allocation behavior here.
-//------------------------------------------------------------------------------
+/**
+* Callback to create a D3DXMESHCONTAINER extended object and initialize it
+* called by D3DX during the loading of a mesh hierarchy. At a minumum,
+* the app should allocate a D3DXMESHCONTAINER or a child of it and fill
+* in the members based on the parameters here. The app can further
+* customize the allocation behavior here.
+*/
 HRESULT MeshHierarchyBuilder::CreateMeshContainer(
     LPCSTR Name, 
     const D3DXMESHDATA* pMeshData, 
@@ -194,11 +198,11 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
 	return result;
 }
 
-//------------------------------------------------------------------------------
-// callback to release a D3DXFRAME extended object
-// called by D3DX during the release of a mesh hierarchy. Here we should
-// free all resources allocated in CreateFrame().
-//------------------------------------------------------------------------------
+/**
+* Callback to release a D3DXFRAME extended object
+* called by D3DX during the release of a mesh hierarchy. Here we should
+* free all resources allocated in CreateFrame().
+*/
 HRESULT MeshHierarchyBuilder::DestroyFrame(LPD3DXFRAME pFrameToFree )
 {
     EXTD3DXFRAME* pFrame = (EXTD3DXFRAME*)pFrameToFree;
@@ -209,11 +213,11 @@ HRESULT MeshHierarchyBuilder::DestroyFrame(LPD3DXFRAME pFrameToFree )
     return S_OK;
 }
 
-//------------------------------------------------------------------------------
-// callback to release a D3DXMESHCONTAINER extended object
-// called by D3DX during the release of a mesh hierarchy. Here we should
-// free all resources allocated in CreateMeshContainer().
-//------------------------------------------------------------------------------
+/**
+* Callback to release a D3DXMESHCONTAINER extended object
+* called by D3DX during the release of a mesh hierarchy. Here we should
+* free all resources allocated in CreateMeshContainer().
+*/
 HRESULT MeshHierarchyBuilder::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshContainerToFree )
 {
     EXTD3DXMESHCONTAINER* pMeshContainer = (EXTD3DXMESHCONTAINER*)pMeshContainerToFree;
@@ -247,10 +251,9 @@ HRESULT MeshHierarchyBuilder::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshCont
     return S_OK;
 }
 
-//------------------------------------------------------------------------------
-// duplicate input string
-// allocates a new string that must be freed by the caller
-//------------------------------------------------------------------------------
+/**
+* Duplicate input string. Allocates a new string that must be freed by the caller.
+*/
 CHAR* MeshHierarchyBuilder::StringCopy(const CHAR* pString)
 {
     DWORD dwLen = (DWORD)strlen(pString) + 1;

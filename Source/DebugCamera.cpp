@@ -1,42 +1,45 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Debug Camera
-// Handles keyboard input and camera movement
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* DebugCamera.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Debug Camera: Watches for input and updates camera position
+*
+*******************************************************************************/
 
 #include "DXUT.h"
 #include "DebugCamera.h"
 
-//------------------------------------------------------------------------------
-// Constructor
-//------------------------------------------------------------------------------
+/**
+* Constructor
+*/
 CDebugCamera::CDebugCamera()
 {
     for(int i =0; i < sizeof(m_CameraMovement); i++)
         m_CameraMovement[i] = false;
 }
 
-//------------------------------------------------------------------------------
-// Deconstructor
-//------------------------------------------------------------------------------
+/**
+* Deconstructor
+*/
 CDebugCamera::~CDebugCamera()
 {}
 
-//------------------------------------------------------------------------------
-// Handle user input messages. 
-//
-// @param hWnd Handle to the window procedure to receive the message
-// @param uMsg Specifies the message type
-// @param wParam Specifies additional message-specific information. The contents 
-//               of this parameter depend on the value of the Msg parameter.
-// @param lParam Specifies additional message-specific information. The contents 
-//               of this parameter depend on the value of the Msg parameter.
-//------------------------------------------------------------------------------
+/**
+* Handle user input messages. 
+*
+* @param hWnd Handle to the window procedure to receive the message
+* @param uMsg Specifies the message type (i.e. key down or key up)
+* @param wParam Specifies additional message-specific information. The contents 
+*               of this parameter depend on the value of the Msg parameter.
+*               In this context, the param is the associated keyboard key with the event.
+* @param lParam Specifies additional message-specific information. The contents 
+*               of this parameter depend on the value of the Msg parameter.
+*/
 LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    // uMsg is the message type (i.e. key down or key up)
-    // wParam is the assocaited keyboard key
 
     UNREFERENCED_PARAMETER( hWnd );
     UNREFERENCED_PARAMETER( lParam );
@@ -73,11 +76,11 @@ LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
     return TRUE;
 }
 
-//------------------------------------------------------------------------------
-// Map keyboard key to camera movement
-//
-// @return camera movement 
-//------------------------------------------------------------------------------
+/**
+* Map keyboard key to camera movement
+*
+* @return camera movement 
+*/
 CDebugCamera::Movement CDebugCamera::GetCameraMovement(const UINT& key)
 {
     D3DUtil_CameraKeys cam_key = CAM_UNKNOWN;
@@ -96,11 +99,11 @@ CDebugCamera::Movement CDebugCamera::GetCameraMovement(const UINT& key)
     }
 }
 
-//------------------------------------------------------------------------------
-// Move and update camera
-//
-// @param fElapsedTime amount of time elapsed since last update
-//------------------------------------------------------------------------------
+/**
+* Move and update camera
+*
+* @param fElapsedTime amount of time elapsed since last update
+*/
 void CDebugCamera::FrameMove( FLOAT fElapsedTime )
 {
     // override elapsed time if timer stopped
@@ -188,8 +191,3 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     D3DXMatrixInverse( &m_mCameraWorld, NULL, &m_mView );
 }
 
-//------------------------------------------------------------------------------
-// Modify camera behavior
-//------------------------------------------------------------------------------
-//void CDebugCamera::SetRotateButtons( bool bLeft, bool bMiddle, bool bRight, bool bRotateWithoutButtonDown = false)
-//{}

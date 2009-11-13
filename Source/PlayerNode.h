@@ -1,8 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Animated Player Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* PlayerNode.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Animated Player Node
+*
+*******************************************************************************/
 
 #pragma once
 #include "Node.h"
@@ -49,5 +54,5 @@ class PlayerNode : public Node
 
         // prevent copy and assignment
         PlayerNode(const PlayerNode&);
-        PlayerNode& operator=(const PlayerNode&);
+        void operator=(const PlayerNode&);
 };

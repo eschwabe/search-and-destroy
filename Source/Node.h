@@ -1,8 +1,13 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Base Node
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* Node.cpp
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Base node
+*
+*******************************************************************************/
 
 #pragma once
 #include <vector>
@@ -47,5 +52,5 @@ class Node
 
         // prevent copy and assignment
         Node(const Node&);
-        Node& operator=(const Node&);
+        void operator=(const Node&);
 };

@@ -1,25 +1,30 @@
-//------------------------------------------------------------------------------
-// Project: Game Development (2009)
-// 
-// Mesh Hierarchy Builder
-//------------------------------------------------------------------------------
+/*******************************************************************************
+* Game Development Project
+* MeshHierarchyBuilder.h
+*
+* Eric Schwabe
+* 2009-11-13
+*
+* Creates and destorys a mesh hierarchy
+*
+*******************************************************************************/
 
 #pragma once
 #include <d3dx9anim.h>
 
-//-----------------------------------------------------------------------------
-// Inherits from D3DXFRAME. This represents an animation frame or bone.
-//-----------------------------------------------------------------------------
+/**
+* Inherits from D3DXFRAME. This represents an animation frame or bone.
+*/
 struct EXTD3DXFRAME : public D3DXFRAME
 {
     D3DXMATRIX CombinedTransformationMatrix; // frame transform matrix
 };
 
-//-----------------------------------------------------------------------------
-// Inherits from D3DXMESHCONTAINER. This represents a mesh object that gets 
-// its vertices blended and rendered based on the frame information in 
-// its hierarchy.
-//-----------------------------------------------------------------------------
+/**
+* Inherits from D3DXMESHCONTAINER. This represents a mesh object that gets 
+* its vertices blended and rendered based on the frame information in 
+* its hierarchy.
+*/
 struct EXTD3DXMESHCONTAINER : public D3DXMESHCONTAINER
 {
     LPDIRECT3DTEXTURE9* ppTextures; // array of texture pointers  
@@ -31,10 +36,10 @@ struct EXTD3DXMESHCONTAINER : public D3DXMESHCONTAINER
     D3DXMATRIX**        ppBoneFrameMatrixPtrs;  // array of assocaited frame matrix ptrs
 };
 
-//-----------------------------------------------------------------------------
-// Provides allocation hierarchy interface
-// Allocates and deallocates memory structures for mesh containers and frames
-//-----------------------------------------------------------------------------
+/**
+* Provides allocation hierarchy interface
+* Allocates and deallocates memory structures for mesh containers and frames
+*/
 class MeshHierarchyBuilder : public ID3DXAllocateHierarchy
 {
     public:
@@ -72,5 +77,5 @@ class MeshHierarchyBuilder : public ID3DXAllocateHierarchy
 
         // prevent copy and assignment
         MeshHierarchyBuilder(const MeshHierarchyBuilder&);
-        MeshHierarchyBuilder& operator=(const MeshHierarchyBuilder&);
+        void operator=(const MeshHierarchyBuilder&);
 };
