@@ -219,7 +219,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	//g_pBaseNode->AddChild(new TeapotNode());
   
     // add world node
-    g_pBaseNode->AddChild(new WorldNode(L"level.grd"));
+    g_pBaseNode->AddChild(new WorldNode(L"level.grd", L"dirt.jpg", L"bricks.jpg"));
 
     // add player node
     g_pBaseNode->AddChild(new PlayerNode(L"tiny.x", 1.0f/100.0f, 0,0,0, -D3DX_PI/2.0f,D3DX_PI,0/*D3DX_PI/2.0f,-D3DX_PI/2.0f*/));
