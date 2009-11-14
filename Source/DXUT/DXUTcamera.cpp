@@ -310,9 +310,6 @@ VOID CBaseCamera::SetProjParams( FLOAT fFOV, FLOAT fAspect, FLOAT fNearPlane,
 //--------------------------------------------------------------------------------------
 LRESULT CBaseCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-    UNREFERENCED_PARAMETER( hWnd );
-    UNREFERENCED_PARAMETER( lParam );
-
     switch( uMsg )
     {
         case WM_KEYDOWN:

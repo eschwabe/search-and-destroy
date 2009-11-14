@@ -17,8 +17,12 @@
 */
 CDebugCamera::CDebugCamera()
 {
+    // initialize camera movements
     for(int i =0; i < sizeof(m_CameraMovement); i++)
         m_CameraMovement[i] = false;
+
+    // initialize mouse button mask
+    m_nActiveMouseButtonMask = MOUSE_LEFT_BUTTON | MOUSE_MIDDLE_BUTTON | MOUSE_RIGHT_BUTTON;
 }
 
 /**
@@ -40,9 +44,8 @@ CDebugCamera::~CDebugCamera()
 */
 LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-
-    UNREFERENCED_PARAMETER( hWnd );
-    UNREFERENCED_PARAMETER( lParam );
+    // notify base camera also (mouse movement)
+    CBaseCamera::HandleMessages(hWnd, uMsg, wParam, lParam);
 
     switch( uMsg )
     {
@@ -67,10 +70,6 @@ LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
             }
             break; 
         }
-
-        // Unsupported message
-        default:
-            return FALSE;
     }
 
     return TRUE;
@@ -89,10 +88,19 @@ CDebugCamera::Movement CDebugCamera::GetCameraMovement(const UINT& key)
         case VK_RIGHT:  return kRotateRight;    // rotate camera right
         case VK_UP:     return kMoveForward;    // move camera forward
         case VK_DOWN:   return kMoveBackward;   // move camera backward
+
+        case 'A':       return kStrafeLeft;     // rotate camera left
+        case 'D':       return kStrafeRight;    // rotate camera right
+        case 'W':       return kMoveForward;    // move camera forward
+        case 'S':       return kMoveBackward;   // move camera backward
+
         case VK_PRIOR:  return kPitchUp;        // tilt camera up
         case VK_NEXT:   return kPitchDown;      // tilt camera down
-        case 'A':       return kMoveUp;         // raise camera (+y)
-        case 'Z':       return kMoveDown;       // lower camera (-y)
+        case 'Z':       return kMoveUp;         // raise camera (+y)
+        case 'X':       return kMoveDown;       // lower camera (-y)
+
+        case VK_SPACE:  return kMoveUp;         // raise camera (+y)
+
         default:        return kUnknown;        // unsupported
     }
 }
@@ -108,36 +116,17 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     if( DXUTGetGlobalTimer()->IsStopped() )
         fElapsedTime = 1.0f / DXUTGetFPS();
 
-    // reset position delta
-    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
-
-    // create movement rotation matrix (yaw only)
-    D3DXMATRIX mMoveRot;
-    D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fCameraYawAngle, 0, 0 );
-
-    // update z axis movement
-    if( m_CameraMovement[kMoveForward] )
-    {  
-        vPosDelta.z += 1.5f;
-    }
-    if( m_CameraMovement[kMoveBackward] )
+    // get mouse input if active and update camera angles
+    if( m_nActiveMouseButtonMask & m_nCurrentButtonMask )
     {
-        vPosDelta.z += -1.5f;
+        UpdateMouseDelta();
+
+        // note: mouse rotation velocity 2D vector
+        m_fCameraPitchAngle += m_vRotVelocity.y;
+        m_fCameraYawAngle   += m_vRotVelocity.x;
     }
 
-    // rotate position delta based on yaw
-    D3DXVec3TransformCoord( &vPosDelta, &vPosDelta, &mMoveRot );
-
-    // update y axis movement (independant of other motions)
-    if( m_CameraMovement[kMoveUp] )
-        vPosDelta.y += 1.5f;
-    if( m_CameraMovement[kMoveDown] )
-        vPosDelta.y -= 1.5f;
-
-    // scale position change by elapsed time and movement scalar
-    vPosDelta = vPosDelta * fElapsedTime * m_fMoveScaler;
-
-    // update yaw and pitch angles
+    // update yaw and pitch angles from keyboard input
     float fYawDelta = 0.0f;
     float fPitchDelta = 0.0f;
 
@@ -157,6 +146,35 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     // note: the normal to the x-z plane causes everything to disappear
     m_fCameraPitchAngle = __max( (float)-D3DX_PI/2.0f+.01f,  m_fCameraPitchAngle );
     m_fCameraPitchAngle = __min( (float)+D3DX_PI/2.0f-.01f,  m_fCameraPitchAngle );
+
+    // reset position delta
+    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
+
+    // create movement rotation matrix
+    D3DXMATRIX mMoveRot;
+    D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fCameraYawAngle, m_fCameraPitchAngle, 0 );
+
+    // update x-z plane movement
+    if( m_CameraMovement[kMoveForward] ) 
+        vPosDelta.z += 1.5f;
+    if( m_CameraMovement[kMoveBackward] )
+        vPosDelta.z += -1.5f;
+    if( m_CameraMovement[kStrafeRight] ) 
+        vPosDelta.x += 1.5f;
+    if( m_CameraMovement[kStrafeLeft] )
+        vPosDelta.x += -1.5f;
+
+    // rotate position delta
+    D3DXVec3TransformCoord( &vPosDelta, &vPosDelta, &mMoveRot );
+
+    // update y axis movement (independant of other motions)
+    if( m_CameraMovement[kMoveUp] )
+        vPosDelta.y += 1.5f;
+    if( m_CameraMovement[kMoveDown] )
+        vPosDelta.y -= 1.5f;
+
+    // scale position change by elapsed time and movement scalar
+    vPosDelta = vPosDelta * fElapsedTime * m_fMoveScaler;
 
     // create rotation matrix based on yaw and pitch
     D3DXMATRIX mLookAtRot;

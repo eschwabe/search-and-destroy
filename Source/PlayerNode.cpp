@@ -27,7 +27,11 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
     m_fPlayerYawRotation(fYaw),
     m_fPlayerPitchRotation(fPitch),
     m_fPlayerRollRotation(fRoll),
-    vPlayerPos(fX, fY, fZ)
+    m_vPlayerPos(fX, fY, fZ),
+    m_vPlayerVelocity(0.0f, 0.0f, 0.0f),
+    m_vPlayerAccel(0.0f, 0.0f, 0.0f),
+    m_ePlayerAnimation(kWait),
+    m_iPlayerAnimationTrack(0)
 {
     // initialize movement to default state
     for(int i =0; i < sizeof(m_PlayerMovement); i++)
@@ -59,11 +63,12 @@ PlayerNode::~PlayerNode()
 */
 D3DXVECTOR3 PlayerNode::GetPlayerPosition() const
 {
-    return vPlayerPos;
+    return m_vPlayerPos;
 }
 
 /**
-* Get the current height of the player.
+* Get the current height of the player. The current height implementation is fixed
+* to the size of a cube. The height should be calculated based on the model.
 *
 * @return player height
 */
@@ -95,7 +100,6 @@ float PlayerNode::GetPlayerRotation() const
 */
 LRESULT PlayerNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-
     UNREFERENCED_PARAMETER( hWnd );
     UNREFERENCED_PARAMETER( lParam );
 
@@ -132,7 +136,7 @@ LRESULT PlayerNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 /**
-* Map keyboard key to camera movement
+* Map keyboard key to player movement
 *
 * @return camera movement 
 */
@@ -144,12 +148,21 @@ PlayerNode::Movement PlayerNode::GetPlayerMovement(const UINT& key)
         case VK_RIGHT:  return kRotateRight;    // turn player right
         case VK_UP:     return kMoveForward;    // move player forward
         case VK_DOWN:   return kMoveBackward;   // move player backward
+
+        case 'A':       return kRotateLeft;     // turn player left
+        case 'D':       return kRotateRight;    // turn player right
+        case 'W':       return kMoveForward;    // move player forward
+        case 'S':       return kMoveBackward;   // move player backward
+
+        case VK_SHIFT:  return kIncreaseSpeed;  // increase player speed
+
         default:        return kUnknown;        // unsupported
     }
 }
 
 /**
-* Initialize player node
+* Initialize player node. Loads the mesh hierarchy from the file and configures
+* the node for rendering.
 */
 HRESULT PlayerNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 {
@@ -175,13 +188,13 @@ HRESULT PlayerNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     // setup matrices and animation
     if( SUCCEEDED(result) )
     {
-        // get and set animation set
         if(m_AnimationController)
         {
-	        LPD3DXANIMATIONSET set;
-	        m_AnimationController->GetAnimationSet(1, &set);	
-	        m_AnimationController->SetTrackAnimationSet( 0, set );
-            set->Release();	
+            // set new animation track
+            LPD3DXANIMATIONSET set;
+            m_AnimationController->GetAnimationSet( m_ePlayerAnimation, &set );	      
+            m_AnimationController->SetTrackAnimationSet( m_iPlayerAnimationTrack, set );
+            set->Release();
         }
 
         // setup bone frame matrix pointers
@@ -233,9 +246,47 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 */
 void PlayerNode::UpdateNode(double fTime)
 {
+    // update player acceleration
+    if( m_PlayerMovement[kIncreaseSpeed] )
+    {
+        // set acceleration
+        m_vPlayerAccel.z = 1.5f;
+    }
+
+    // update player velocity
+    if( m_PlayerMovement[kMoveForward] )
+    {
+        // set initial velocity if not moving (+tiles per second)
+        if(m_vPlayerVelocity.z == 0.0f)
+            m_vPlayerVelocity.z = 1.5f;
+
+        // check for max velocity (tiles per second)
+        if(m_vPlayerVelocity.z < 6.0f)
+            m_vPlayerVelocity += m_vPlayerAccel * (float)fTime;
+    }
+    else if( m_PlayerMovement[kMoveBackward] )
+    {
+        // set initial velocity if not moving (-tiles per second)
+        if(m_vPlayerVelocity.z == 0.0f)
+            m_vPlayerVelocity.z = -1.5f;
+
+        // check for max velocity (tiles per second)
+        if(m_vPlayerVelocity.z > -6.0f)
+            m_vPlayerVelocity -= m_vPlayerAccel * (float)fTime;
+    }
+    else
+    {
+        // reset velocity and acceleration
+        m_vPlayerAccel = D3DXVECTOR3(0,0,0);
+        m_vPlayerVelocity = D3DXVECTOR3(0,0,0);
+    }
+
+    // compute player position delta
+    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
+    vPosDelta += m_vPlayerVelocity * (float)fTime;
+
     // update animation
-    if(m_AnimationController)
-        m_AnimationController->AdvanceTime(fTime, NULL);
+    UpdateAnimation(fTime);
 
     // update player rotation (yaw) (radians)
     if( m_PlayerMovement[kRotateLeft] )
@@ -247,26 +298,17 @@ void PlayerNode::UpdateNode(double fTime)
     D3DXMATRIX mMoveRot;
     D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fPlayerYawRotation, 0, 0 );
 
-    // compute player position delta
-    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
-
-    // update z axis movement
-    if( m_PlayerMovement[kMoveForward] )
-        vPosDelta.z += 0.05f;
-    if( m_PlayerMovement[kMoveBackward] )
-        vPosDelta.z += -0.05f;
-
     // rotate position delta based on yaw
     D3DXVec3TransformCoord( &vPosDelta, &vPosDelta, &mMoveRot );
 
     // move player position
-    vPlayerPos += vPosDelta;
+    m_vPlayerPos += vPosDelta;
 
     // compute new player model transform matrix
     D3DXMATRIX mx;
 
     // translate player
-    D3DXMatrixTranslation(&m_matPlayer, vPlayerPos.x, vPlayerPos.y, vPlayerPos.z);
+    D3DXMatrixTranslation(&m_matPlayer, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
 
     // rotate
     D3DXMatrixRotationYawPitchRoll(&mx, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
@@ -275,6 +317,58 @@ void PlayerNode::UpdateNode(double fTime)
     // scale
     D3DXMatrixScaling(&mx, m_fPlayerScale, m_fPlayerScale, m_fPlayerScale);
     D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
+}
+
+/**
+* Updates the current player's animation and sets a new animation
+* depending on the player velocity.
+*/
+void PlayerNode::UpdateAnimation(double fTime)
+{
+    if(m_AnimationController)
+    {
+        // determine animation
+        Animation newAnimation;
+
+        if( abs(m_vPlayerVelocity.z) > 3.0)
+            newAnimation = kRun;
+        else if( abs(m_vPlayerVelocity.z) > 0.0)
+            newAnimation = kWalk;
+        else
+            newAnimation = kWait;
+        
+        // check if new animation
+        if(m_ePlayerAnimation != newAnimation)
+        {
+            // get animation set and track
+            LPD3DXANIMATIONSET set;
+            m_AnimationController->GetAnimationSet( newAnimation, &set );	      
+            int iNewTrack = ( m_iPlayerAnimationTrack == 0 ? 1 : 0 );
+
+            // set new animation track
+            m_AnimationController->SetTrackAnimationSet( iNewTrack, set );
+            set->Release();
+
+            // clear events
+            m_AnimationController->UnkeyAllTrackEvents( m_iPlayerAnimationTrack );
+            m_AnimationController->UnkeyAllTrackEvents( iNewTrack );
+
+            // set track events
+            m_AnimationController->KeyTrackEnable( m_iPlayerAnimationTrack, FALSE, m_AnimationController->GetTime() + 0.25f );
+            m_AnimationController->KeyTrackSpeed( m_iPlayerAnimationTrack, 0.0f, m_AnimationController->GetTime(), 0.25f, D3DXTRANSITION_LINEAR );
+            m_AnimationController->KeyTrackWeight( m_iPlayerAnimationTrack, 0.0f, m_AnimationController->GetTime(), 0.25f, D3DXTRANSITION_LINEAR );
+            m_AnimationController->SetTrackEnable( iNewTrack, TRUE );
+            m_AnimationController->KeyTrackSpeed( iNewTrack, 1.0f, m_AnimationController->GetTime(), 0.25f, D3DXTRANSITION_LINEAR );
+            m_AnimationController->KeyTrackWeight( iNewTrack, 1.0f, m_AnimationController->GetTime(), 0.25f, D3DXTRANSITION_LINEAR );
+
+            // set new player track and animation
+            m_iPlayerAnimationTrack = iNewTrack;
+            m_ePlayerAnimation = newAnimation;
+        }
+
+        // update animation
+        m_AnimationController->AdvanceTime(fTime, NULL);
+    }
 }
 
 /**

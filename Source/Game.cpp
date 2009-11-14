@@ -76,6 +76,7 @@ bool InitApp()
     g_HUD.Init( &g_DialogResourceManager );
     g_SampleUI.Init( &g_DialogResourceManager );
 
+    // Setup HUD
     int iY = 0;
     g_HUD.SetCallback( OnGUIEvent );
     g_HUD.AddButton( IDC_TOGGLEFULLSCREEN,  L"Toggle Full Screen",  35, iY += 10, 125, 22 );
@@ -92,7 +93,7 @@ bool InitApp()
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
     
     // setup the camera with view matrix
-    D3DXVECTOR3 vEye(-5.0f, 5.0f, -5.0f);
+    D3DXVECTOR3 vEye(-5.0f, 2.0f, -5.0f);
     D3DXVECTOR3 vAt(0.0f, 0.0f, 0.0f);
 
     // setup debug camera movement parameters
@@ -229,17 +230,17 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	//g_pBaseNode->AddChild(new TeapotNode());
   
     // add world node
-    g_pBaseNode->AddChild(new WorldNode(L"level.grd", L"dirt.jpg", L"bricks.jpg"));
+    g_pBaseNode->AddChild(new WorldNode(L"level-maze.grd", L"dirt.jpg", L"bricks.jpg"));
 
     // add player node
-    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/500.0f, 1,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/500.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
     g_pBaseNode->AddChild(g_pMainPlayerNode);
 
     // add dwarf model
-    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 1.0f, 25,0,24, 0,0,0));
+    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0));
     
     // add tiger model
-    g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 1.0f, 12,0,12, 0,0,0));
+    g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0));
 
     // setup player camera
     g_PlayerCamera.SetPlayerNode(g_pMainPlayerNode);
@@ -542,6 +543,7 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_RESETCAMERA:
             g_Camera = &g_PlayerCamera;
+            g_PlayerMode = true;
             break;
 
         case IDC_RESETTIME:

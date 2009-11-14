@@ -946,10 +946,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\README.txt"
-			>
-		</File>
-		<File
 			RelativePath=".\Source\WinMain.cpp"
 			>
 		</File>

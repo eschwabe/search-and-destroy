@@ -40,8 +40,18 @@ class PlayerNode : public Node
             kRotateRight,
             kMoveForward,
             kMoveBackward,
+            kIncreaseSpeed,
             kMaxMovement,
             kUnknown = 0xFF
+        };
+
+        // defines the support player animations
+        // note: animation values are specific to tiny model
+        enum Animation
+        {
+            kWait = 3,
+            kWalk = 2,
+            kRun = 1
         };
 
         // initialize world node
@@ -49,6 +59,7 @@ class PlayerNode : public Node
 
         // update traversal for physics, AI, etc.
 	    void UpdateNode(double fTime);
+        void UpdateAnimation(double fTime);
 
         // render traversal for drawing objects
 	    void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
@@ -72,7 +83,11 @@ class PlayerNode : public Node
         float m_fPlayerYawRotation;     // player rotation (y-axis)
         float m_fPlayerPitchRotation;   // player rotation (z-axis)
         float m_fPlayerRollRotation;    // player rotation (x-axis)
-        D3DXVECTOR3 vPlayerPos;         // player position
+        D3DXVECTOR3 m_vPlayerPos;       // player position
+        D3DXVECTOR3 m_vPlayerVelocity;  // player velocity
+        D3DXVECTOR3 m_vPlayerAccel;     // player acceleration
+        Animation m_ePlayerAnimation;   // player animation
+        int m_iPlayerAnimationTrack;    // player animation track
 
         D3DXMATRIX m_matPlayer;         // player transform matrix
 

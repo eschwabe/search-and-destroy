@@ -35,6 +35,8 @@ class CDebugCamera : public CBaseCamera
             kRotateRight,
             kMoveForward,
             kMoveBackward,
+            kStrafeRight,
+            kStrafeLeft,
             kPitchUp,
             kPitchDown,
             kMoveUp,
@@ -47,6 +49,7 @@ class CDebugCamera : public CBaseCamera
         Movement GetCameraMovement(const UINT&);
 
         // DATA
+        int m_nActiveMouseButtonMask;           // mask to determine which mouse buttons to enable for rotation
         bool m_CameraMovement[kMaxMovement];    // camera movements currently requested
 
         // prevent copy and assignment

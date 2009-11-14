@@ -50,7 +50,7 @@ INT WINAPI WinMain( HINSTANCE, HINSTANCE, LPSTR, int )
         DXUTInit( true, true ); // Parse the command line, handle the default hotkeys, and show msgboxes
         DXUTCreateWindow( L"UWGame" );
 
-        DXUTCreateDevice( true, 640, 480 );
+        DXUTCreateDevice( true, 1024, 768 );
 
         // Pass control to DXUT for handling the message pump and
         // dispatching render calls. DXUT will call your FrameMove
