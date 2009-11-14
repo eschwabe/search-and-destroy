@@ -32,7 +32,8 @@ ID3DXFont*              g_pFont = NULL;             // font for drawing text
 ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
 CDebugCamera            g_DebugCamera;              // debug camera
 CPlayerCamera           g_PlayerCamera;             // player camera
-CBaseCamera*            g_Camera = &g_PlayerCamera;  // current camera (default debug)
+CBaseCamera*            g_Camera = &g_PlayerCamera; // current camera (default player)
+bool                    g_PlayerMode = true;        // controlling main player
 CDXUTDialogResourceManager g_DialogResourceManager; // manager for shared resources of dialogs
 CD3DSettingsDlg         g_SettingsDlg;              // device settings dialog
 CDXUTDialog             g_HUD;                      // dialog for standard controls
@@ -66,7 +67,7 @@ HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** 
 void RenderText();
 
 //--------------------------------------------------------------------------------------
-// Initialize the app
+// Initialize Application
 //--------------------------------------------------------------------------------------
 bool InitApp()
 {
@@ -75,34 +76,28 @@ bool InitApp()
     g_HUD.Init( &g_DialogResourceManager );
     g_SampleUI.Init( &g_DialogResourceManager );
 
-    g_HUD.SetCallback( OnGUIEvent ); int iY = 10;
-    g_HUD.AddButton( IDC_TOGGLEFULLSCREEN, L"Toggle full screen", 35, iY, 125, 22 );
-    g_HUD.AddButton( IDC_TOGGLEREF, L"Toggle REF (F3)", 35, iY += 24, 125, 22 );
-    g_HUD.AddButton( IDC_CHANGEDEVICE, L"Change device (F2)", 35, iY += 24, 125, 22, VK_F2 );
+    int iY = 0;
+    g_HUD.SetCallback( OnGUIEvent );
+    g_HUD.AddButton( IDC_TOGGLEFULLSCREEN,  L"Toggle Full Screen",  35, iY += 10, 125, 22 );
+    g_HUD.AddButton( IDC_TOGGLEREF,         L"Toggle REF (F3)",     35, iY += 24, 125, 22, VK_F3 );
+    g_HUD.AddButton( IDC_CHANGEDEVICE,      L"Change Device (F2)",  35, iY += 24, 125, 22, VK_F2 );
 
-    g_SampleUI.SetCallback( OnGUIEvent ); iY = 10;
-    g_SampleUI.AddButton( IDC_NEXTVIEW, L"(N)ext View", 45, iY += 26, 120, 24, L'N' );
-    g_SampleUI.AddButton( IDC_PREVVIEW, L"(P)revious View", 45, iY += 26, 120, 24, L'P' );
-    g_SampleUI.AddButton( IDC_RESETCAMERA, L"(R)eset view", 45, iY += 26, 120, 24, L'R' );
-    //g_SampleUI.AddButton( IDC_RESETTIME, L"Reset time", 45, iY += 26, 120, 24 );
+    g_HUD.SetCallback( OnGUIEvent );
+    g_HUD.AddButton( IDC_NEXTVIEW,          L"Next View (N)",       35, iY += 72, 125, 22, L'N' );
+    g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
+    g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
+    g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
 
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
     
-    // load grid data
-    // TODO: Investigating removing level load. Done by WorldNode as well.
-    g_GridData.Load(L"level.grd");
-    float mid_col = g_GridData.GetWidth()/2.0f;
-    float mid_row = g_GridData.GetHeight()/2.0f;
-
     // setup the camera with view matrix
-    // initialize to lower middle of grid, looking at grid center
-    D3DXVECTOR3 vEye(mid_col, mid_row, -mid_row);
-    D3DXVECTOR3 vAt(mid_col, 0.0f, mid_row);
+    D3DXVECTOR3 vEye(-5.0f, 5.0f, -5.0f);
+    D3DXVECTOR3 vAt(0.0f, 0.0f, 0.0f);
 
-    // set camera movement parameters
-    g_Camera->SetViewParams( &vEye, &vAt );
-    g_Camera->SetScalers( 0.01f, 5.0f );
+    // setup debug camera movement parameters
+    g_DebugCamera.SetViewParams( &vEye, &vAt );
+    g_DebugCamera.SetScalers( 0.01f, 5.0f );
 
 	g_World.InitializeSingletons();
 
@@ -126,20 +121,32 @@ bool CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,
 {
     // Skip backbuffer formats that don't support alpha blending
     IDirect3D9* pD3D = DXUTGetD3D9Object();
-    if( FAILED( pD3D->CheckDeviceFormat( pCaps->AdapterOrdinal, pCaps->DeviceType,
-                    AdapterFormat, D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING,
-                    D3DRTYPE_TEXTURE, BackBufferFormat ) ) )
+    if( FAILED(pD3D->CheckDeviceFormat(
+        pCaps->AdapterOrdinal, 
+        pCaps->DeviceType,
+        AdapterFormat, 
+        D3DUSAGE_QUERY_POSTPIXELSHADER_BLENDING,
+        D3DRTYPE_TEXTURE, 
+        BackBufferFormat)) )
+    {
         return false;
+    }
 
     // Need to support ps 1.1
     if( pCaps->PixelShaderVersion < D3DPS_VERSION( 1, 1 ) )
         return false;
 
     // Need to support A8R8G8B8 textures
-    if( FAILED( pD3D->CheckDeviceFormat( pCaps->AdapterOrdinal, pCaps->DeviceType,
-                                         AdapterFormat, 0,
-                                         D3DRTYPE_TEXTURE, D3DFMT_A8R8G8B8 ) ) )
+    if( FAILED(pD3D->CheckDeviceFormat( 
+        pCaps->AdapterOrdinal, 
+        pCaps->DeviceType,
+        AdapterFormat, 
+        0,
+        D3DRTYPE_TEXTURE, 
+        D3DFMT_A8R8G8B8)) )
+    {
         return false;
+    }
 
     return true;
 }
@@ -470,12 +477,12 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
     if( *pbNoFurtherProcessing )
         return 0;
 
-    // Pass messages to camera class for camera movement if the
-    g_Camera->HandleMessages( hWnd, uMsg, wParam, lParam );
+    // pass messages to camera or player depending on mode
+    if(g_PlayerMode)
+        g_pMainPlayerNode->HandleMessages( hWnd, uMsg, wParam, lParam );
+    else
+        g_Camera->HandleMessages( hWnd, uMsg, wParam, lParam );
     
-    // Pass messages to main player node
-    g_pMainPlayerNode->HandleMessages( hWnd, uMsg, wParam, lParam );
-
     return 0;
 }
 
@@ -506,25 +513,41 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 {
     switch( nControlID )
     {
-        case IDC_TOGGLEFULLSCREEN: DXUTToggleFullScreen(); break;
-        case IDC_TOGGLEREF:        DXUTToggleREF(); break;
-        case IDC_CHANGEDEVICE:     g_SettingsDlg.SetActive( !g_SettingsDlg.IsActive() ); break;
-
-        case IDC_NEXTVIEW:
+        case IDC_TOGGLEFULLSCREEN: 
+            DXUTToggleFullScreen(); 
             break;
 
+        case IDC_TOGGLEREF:        
+            DXUTToggleREF(); 
+            break;
+
+        case IDC_CHANGEDEVICE:     
+            g_SettingsDlg.SetActive( !g_SettingsDlg.IsActive() ); 
+            break;
+
+        case IDC_NEXTVIEW:
         case IDC_PREVVIEW:
+            // toggle between player control mode and debug camera mode
+            if(g_PlayerMode)
+            {
+                g_Camera = &g_DebugCamera;
+                g_PlayerMode = false;
+            }
+            else
+            {
+                g_Camera = &g_PlayerCamera;
+                g_PlayerMode = true;
+            }
             break;
 
         case IDC_RESETCAMERA:
+            g_Camera = &g_PlayerCamera;
             break;
 
         case IDC_RESETTIME:
-        {
             DXUTGetGlobalTimer()->Reset();
             g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
             break;
-        }
     }
 }
 
