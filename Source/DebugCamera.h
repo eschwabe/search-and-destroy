@@ -25,12 +25,6 @@ class CDebugCamera : public CBaseCamera
 
         // Move and update camera
         virtual void FrameMove( FLOAT fElapsedTime );
-
-        // Get camera state
-        const D3DXMATRIX* GetWorldMatrix()          { return &m_mCameraWorld; }
-        const D3DXVECTOR3* GetWorldRight() const    { return (D3DXVECTOR3*)&m_mCameraWorld._11; }
-        const D3DXVECTOR3* GetWorldUp() const       { return (D3DXVECTOR3*)&m_mCameraWorld._21; }
-        const D3DXVECTOR3* GetWorldAhead() const    { return (D3DXVECTOR3*)&m_mCameraWorld._31; }
         
     private:
 
@@ -54,7 +48,6 @@ class CDebugCamera : public CBaseCamera
 
         // DATA
         bool m_CameraMovement[kMaxMovement];    // camera movements currently requested
-        D3DXMATRIX m_mCameraWorld;              // world matrix of the camera (inverse of the view matrix)  
 
         // prevent copy and assignment
         CDebugCamera(const CDebugCamera&);

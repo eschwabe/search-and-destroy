@@ -19,24 +19,19 @@
 */
 PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale, 
                        const float fX, const float fY, const float fZ, 
-                       const float fXRot, const float fYRot, const float fZRot) :
+                       const float fYaw, const float fPitch, const float fRoll) :
     m_sMeshFilename(sMeshFilename),
     m_NumBoneMatrices(0),
     m_pBoneMatrices(NULL),
-    m_matPlayer()
+    m_fPlayerScale(fScale),
+    m_fPlayerYawRotation(fYaw),
+    m_fPlayerPitchRotation(fPitch),
+    m_fPlayerRollRotation(fRoll),
+    vPlayerPos(fX, fY, fZ)
 {
-    D3DXMATRIX mx;
-
-    // translate
-    D3DXMatrixTranslation(&m_matPlayer, fX, fY, fZ);
-
-    // rotate
-    D3DXMatrixRotationYawPitchRoll(&mx, fYRot, fXRot, fZRot);
-    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
-
-    // scale
-    D3DXMatrixScaling(&mx, fScale, fScale, fScale);
-    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
+    // initialize movement to default state
+    for(int i =0; i < sizeof(m_PlayerMovement); i++)
+        m_PlayerMovement[i] = false;
 }
 
 /**
@@ -55,6 +50,102 @@ PlayerNode::~PlayerNode()
     // deallocate frame
     MeshHierarchyBuilder hierarchyBuilder(NULL);
     D3DXFrameDestroy(m_FrameRoot, &hierarchyBuilder);
+}
+
+/**
+* Get the current position of the player.
+*
+* @return vector with player position coordinates
+*/
+D3DXVECTOR3 PlayerNode::GetPlayerPosition() const
+{
+    return vPlayerPos;
+}
+
+/**
+* Get the current height of the player.
+*
+* @return player height
+*/
+float PlayerNode::GetPlayerHeight() const
+{
+    return 1.0f;
+}
+
+/**
+* Get the current rotation of the player.
+*
+* @return player rotation in radians
+*/
+float PlayerNode::GetPlayerRotation() const
+{
+    return m_fPlayerYawRotation;
+}
+
+/**
+* Handle user input messages. 
+*
+* @param hWnd Handle to the window procedure to receive the message
+* @param uMsg Specifies the message type (i.e. key down or key up)
+* @param wParam Specifies additional message-specific information. The contents 
+*               of this parameter depend on the value of the Msg parameter.
+*               In this context, the param is the associated keyboard key with the event.
+* @param lParam Specifies additional message-specific information. The contents 
+*               of this parameter depend on the value of the Msg parameter.
+*/
+LRESULT PlayerNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+
+    UNREFERENCED_PARAMETER( hWnd );
+    UNREFERENCED_PARAMETER( lParam );
+
+    switch( uMsg )
+    {
+        // Key down message
+        case WM_KEYDOWN:
+        {
+            Movement move = GetPlayerMovement( (UINT)wParam );
+            if( move != kUnknown )
+            {
+                m_PlayerMovement[move] = true;  
+            }
+            break;
+        }
+
+        // Key up message
+        case WM_KEYUP:
+        {
+            Movement move = GetPlayerMovement( (UINT)wParam );
+            if( move != kUnknown )
+            {
+                m_PlayerMovement[move] = false;  
+            }
+            break; 
+        }
+
+        // Unsupported message
+        default:
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+* Map keyboard key to camera movement
+*
+* @return camera movement 
+*/
+PlayerNode::Movement PlayerNode::GetPlayerMovement(const UINT& key)
+{
+    switch(key)
+    {
+        case VK_LEFT:   return kRotateLeft;     // turn player left
+        case VK_RIGHT:  return kRotateRight;    // turn player right
+        case VK_UP:     return kMoveForward;    // move player forward
+        case VK_DOWN:   return kMoveBackward;   // move player backward
+        default:        return kUnknown;        // unsupported
+    }
 }
 
 /**
@@ -142,8 +233,48 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 */
 void PlayerNode::UpdateNode(double fTime)
 {
+    // update animation
     if(m_AnimationController)
         m_AnimationController->AdvanceTime(fTime, NULL);
+
+    // update player rotation (yaw) (radians)
+    if( m_PlayerMovement[kRotateLeft] )
+        m_fPlayerYawRotation -= 0.03f;
+    if( m_PlayerMovement[kRotateRight] )
+        m_fPlayerYawRotation += 0.03f;
+
+    // create movement rotation matrix (yaw only)
+    D3DXMATRIX mMoveRot;
+    D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fPlayerYawRotation, 0, 0 );
+
+    // compute player position delta
+    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
+
+    // update z axis movement
+    if( m_PlayerMovement[kMoveForward] )
+        vPosDelta.z += 0.05f;
+    if( m_PlayerMovement[kMoveBackward] )
+        vPosDelta.z += -0.05f;
+
+    // rotate position delta based on yaw
+    D3DXVec3TransformCoord( &vPosDelta, &vPosDelta, &mMoveRot );
+
+    // move player position
+    vPlayerPos += vPosDelta;
+
+    // compute new player model transform matrix
+    D3DXMATRIX mx;
+
+    // translate player
+    D3DXMatrixTranslation(&m_matPlayer, vPlayerPos.x, vPlayerPos.y, vPlayerPos.z);
+
+    // rotate
+    D3DXMatrixRotationYawPitchRoll(&mx, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
+    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
+
+    // scale
+    D3DXMatrixScaling(&mx, m_fPlayerScale, m_fPlayerScale, m_fPlayerScale);
+    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
 }
 
 /**

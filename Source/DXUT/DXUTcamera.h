@@ -133,6 +133,12 @@ public:
     bool IsMouseMButtonDown() const     { return m_bMouseMButtonDown; } 
     bool IsMouseRButtonDown() const     { return m_bMouseRButtonDown; } 
 
+    // Camera world matrix
+    D3DXMATRIX*  GetWorldMatrix()            { return &m_mCameraWorld; }
+    const D3DXVECTOR3* GetWorldRight() const { return (D3DXVECTOR3*)&m_mCameraWorld._11; } 
+    const D3DXVECTOR3* GetWorldUp() const    { return (D3DXVECTOR3*)&m_mCameraWorld._21; }
+    const D3DXVECTOR3* GetWorldAhead() const { return (D3DXVECTOR3*)&m_mCameraWorld._31; }
+
 protected:
     // Functions to map a WM_KEYDOWN key to a D3DUtil_CameraKeys enum
     virtual D3DUtil_CameraKeys MapKey( UINT nKey );    
@@ -196,6 +202,8 @@ protected:
     D3DXVECTOR3           m_vMaxBoundary;         // Max point in clip boundary
 
     bool                  m_bResetCursorAfterMove;// If true, the class will reset the cursor position so that the cursor always has space to move 
+
+    D3DXMATRIX m_mCameraWorld;       // World matrix of the camera (inverse of the view matrix)
 };
 
 
@@ -216,16 +224,7 @@ public:
     // Functions to change behavior
     void SetRotateButtons( bool bLeft, bool bMiddle, bool bRight, bool bRotateWithoutButtonDown = false );
 
-    // Functions to get state
-    D3DXMATRIX*  GetWorldMatrix()            { return &m_mCameraWorld; }
-
-    const D3DXVECTOR3* GetWorldRight() const { return (D3DXVECTOR3*)&m_mCameraWorld._11; } 
-    const D3DXVECTOR3* GetWorldUp() const    { return (D3DXVECTOR3*)&m_mCameraWorld._21; }
-    const D3DXVECTOR3* GetWorldAhead() const { return (D3DXVECTOR3*)&m_mCameraWorld._31; }
-    const D3DXVECTOR3* GetEyePt() const      { return (D3DXVECTOR3*)&m_mCameraWorld._41; }
-
 protected:
-    D3DXMATRIX m_mCameraWorld;       // World matrix of the camera (inverse of the view matrix)
 
     int        m_nActiveButtonMask;  // Mask to determine which button to enable for rotation
     bool       m_bRotateWithoutButtonDown;
@@ -259,8 +258,8 @@ public:
     void SetWorldQuat( D3DXQUATERNION q ) { m_WorldArcBall.SetQuatNow( q ); m_bDragSinceLastUpdate = true; }
 
     // Functions to get state
-    const D3DXMATRIX* GetWorldMatrix() const { return &m_mWorld; }
-    void SetWorldMatrix( D3DXMATRIX &mWorld ) { m_mWorld = mWorld; m_bDragSinceLastUpdate = true; }
+    const D3DXMATRIX* GetModelWorldMatrix() const { return &m_mWorld; }
+    void SetModelWorldMatrix( D3DXMATRIX &mWorld ) { m_mWorld = mWorld; m_bDragSinceLastUpdate = true; }
 
 protected:
     CD3DArcBall  m_WorldArcBall;

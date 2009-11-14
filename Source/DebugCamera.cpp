@@ -83,8 +83,6 @@ LRESULT CDebugCamera::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 */
 CDebugCamera::Movement CDebugCamera::GetCameraMovement(const UINT& key)
 {
-    D3DUtil_CameraKeys cam_key = CAM_UNKNOWN;
-
     switch(key)
     {
         case VK_LEFT:   return kRotateLeft;     // rotate camera left
@@ -120,11 +118,11 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     // update z axis movement
     if( m_CameraMovement[kMoveForward] )
     {  
-        vPosDelta.z += 1.0f;
+        vPosDelta.z += 1.5f;
     }
     if( m_CameraMovement[kMoveBackward] )
     {
-        vPosDelta.z += -1.0f;
+        vPosDelta.z += -1.5f;
     }
 
     // rotate position delta based on yaw
@@ -132,9 +130,9 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
 
     // update y axis movement (independant of other motions)
     if( m_CameraMovement[kMoveUp] )
-        vPosDelta.y += 1.0f;
+        vPosDelta.y += 1.5f;
     if( m_CameraMovement[kMoveDown] )
-        vPosDelta.y -= 1.0f;
+        vPosDelta.y -= 1.5f;
 
     // scale position change by elapsed time and movement scalar
     vPosDelta = vPosDelta * fElapsedTime * m_fMoveScaler;
@@ -144,13 +142,13 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
     float fPitchDelta = 0.0f;
 
     if( m_CameraMovement[kRotateLeft] )
-        fYawDelta -= 0.01f;
+        fYawDelta -= 0.03f;
     if( m_CameraMovement[kRotateRight] )
-        fYawDelta += 0.01f;
+        fYawDelta += 0.03f;
     if( m_CameraMovement[kPitchUp] )
-        fPitchDelta -= 0.01f;
+        fPitchDelta -= 0.03f;
     if( m_CameraMovement[kPitchDown] )
-        fPitchDelta += 0.01f;
+        fPitchDelta += 0.03f;
 
     m_fCameraPitchAngle += fPitchDelta;
     m_fCameraYawAngle   += fYawDelta;

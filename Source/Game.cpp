@@ -15,6 +15,7 @@
 #include "DXUT\SDKmisc.h"
 #include "DXUT\SDKsound.h"
 #include "DebugCamera.h"
+#include "PlayerCamera.h"
 #include "Game.h"
 #include "TeapotNode.h"
 #include "PlayerNode.h"
@@ -29,8 +30,9 @@ using namespace std;
 //--------------------------------------------------------------------------------------
 ID3DXFont*              g_pFont = NULL;             // font for drawing text
 ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
-//CFirstPersonCamera      g_Camera;                 // first person view camera
-CDebugCamera            g_Camera;                   // debug camera
+CDebugCamera            g_DebugCamera;              // debug camera
+CPlayerCamera           g_PlayerCamera;             // player camera
+CBaseCamera*            g_Camera = &g_PlayerCamera;  // current camera (default debug)
 CDXUTDialogResourceManager g_DialogResourceManager; // manager for shared resources of dialogs
 CD3DSettingsDlg         g_SettingsDlg;              // device settings dialog
 CDXUTDialog             g_HUD;                      // dialog for standard controls
@@ -41,6 +43,7 @@ double                  g_fLastAnimTime = 0.0;      // animation time
 World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
 Node*					g_pBaseNode = 0;            // scene node
+PlayerNode*             g_pMainPlayerNode = 0;      // main player node
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -98,8 +101,8 @@ bool InitApp()
     D3DXVECTOR3 vAt(mid_col, 0.0f, mid_row);
 
     // set camera movement parameters
-    g_Camera.SetViewParams( &vEye, &vAt );
-    g_Camera.SetScalers( 0.01f, 5.0f );
+    g_Camera->SetViewParams( &vEye, &vAt );
+    g_Camera->SetScalers( 0.01f, 5.0f );
 
 	g_World.InitializeSingletons();
 
@@ -222,9 +225,17 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(new WorldNode(L"level.grd", L"dirt.jpg", L"bricks.jpg"));
 
     // add player node
-    g_pBaseNode->AddChild(new PlayerNode(L"tiny.x", 1.0f/100.0f, 0,0,0, -D3DX_PI/2.0f,D3DX_PI,0/*D3DX_PI/2.0f,-D3DX_PI/2.0f*/));
-    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 1.0f, 25,0,0, 0,0,0));
-    //g_pBaseNode->AddChild(L"tiger.x");
+    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/500.0f, 1,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pBaseNode->AddChild(g_pMainPlayerNode);
+
+    // add dwarf model
+    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 1.0f, 25,0,24, 0,0,0));
+    
+    // add tiger model
+    g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 1.0f, 12,0,12, 0,0,0));
+
+    // setup player camera
+    g_PlayerCamera.SetPlayerNode(g_pMainPlayerNode);
 
     // initialize nodes
     if( FAILED(g_pBaseNode->Initialize(pd3dDevice)) )
@@ -265,7 +276,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 
     // Setup the camera's projection parameters
     float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
-    g_Camera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
+    g_Camera->SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
 	// Material sources
 	pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
@@ -336,7 +347,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 	g_pBaseNode->Update(fElapsedTime);
 
     // Update the camera's position based on user input
-    g_Camera.FrameMove(fElapsedTime);
+    g_Camera->FrameMove(fElapsedTime);
 }
 
 //--------------------------------------------------------------------------------------
@@ -368,14 +379,14 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         D3DXVECTOR3 vLightDir;
 
         // Light direction is same as camera front (reversed)
-        vLightDir = -(*g_Camera.GetWorldAhead());
+        vLightDir = -(*(g_Camera->GetWorldAhead()));
 
         // set static transforms
-        mxView = *g_Camera.GetViewMatrix();
-        mxProj = *g_Camera.GetProjMatrix();
+        mxView = *g_Camera->GetViewMatrix();
+        mxProj = *g_Camera->GetProjMatrix();
         V( pd3dDevice->SetTransform( D3DTS_VIEW, & mxView ) );
         V( pd3dDevice->SetTransform( D3DTS_PROJECTION, & mxProj ) );
-        vEye = *g_Camera.GetEyePt();
+        vEye = *g_Camera->GetEyePt();
 
         // render all nodes
         {
@@ -423,10 +434,12 @@ void RenderText()
     // camera details
     txtHelper.SetInsertionPos( 5, 40 );
     txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"Eye:", g_Camera.GetEyePt()->x, g_Camera.GetEyePt()->y, g_Camera.GetEyePt()->z);
+        L"Eye:", g_Camera->GetEyePt()->x, g_Camera->GetEyePt()->y, g_Camera->GetEyePt()->z);
     txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"LookAt:", g_Camera.GetLookAtPt()->x, g_Camera.GetLookAtPt()->y, g_Camera.GetLookAtPt()->z);
-
+        L"LookAt:", g_Camera->GetLookAtPt()->x, g_Camera->GetLookAtPt()->y, g_Camera->GetLookAtPt()->z);
+    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
+        L"Player:", g_pMainPlayerNode->GetPlayerPosition().x, g_pMainPlayerNode->GetPlayerPosition().y, g_pMainPlayerNode->GetPlayerPosition().z);
+    
     txtHelper.End();
 }
 
@@ -458,9 +471,10 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
         return 0;
 
     // Pass messages to camera class for camera movement if the
-    // global camera if active
-    //if( -1 == g_dwFollow )
-        g_Camera.HandleMessages( hWnd, uMsg, wParam, lParam );
+    g_Camera->HandleMessages( hWnd, uMsg, wParam, lParam );
+    
+    // Pass messages to main player node
+    g_pMainPlayerNode->HandleMessages( hWnd, uMsg, wParam, lParam );
 
     return 0;
 }
