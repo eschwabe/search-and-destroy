@@ -27,6 +27,12 @@ struct EXTD3DXFRAME : public D3DXFRAME
 */
 struct EXTD3DXMESHCONTAINER : public D3DXMESHCONTAINER
 {
+    DWORD               dwNumInfl;
+    DWORD               dwNumAttributeGroups;
+    DWORD               dwNumPaletteEntries;
+    LPD3DXBUFFER        pBoneCombinationBuf;
+
+
     LPDIRECT3DTEXTURE9* ppTextures; // array of texture pointers  
 	D3DMATERIAL9*       pMaterials; // array of materials
 

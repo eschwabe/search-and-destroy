@@ -31,6 +31,9 @@ class PlayerNode : public Node
         float GetPlayerHeight() const;
         float GetPlayerRotation() const;
 
+        // set effect view projection matrix
+        void SetViewProject(D3DXMATRIX mat) { m_matViewProj = mat; };
+
     private:
 
         // defines the supported camera movements
@@ -90,10 +93,14 @@ class PlayerNode : public Node
         int m_iPlayerAnimationTrack;    // player animation track
 
         D3DXMATRIX m_matPlayer;         // player transform matrix
+        
+        D3DXMATRIX m_matViewProj;       // effect view projection matrix
 
         DWORD m_NumBoneMatrices;        // size of bone matrices buffer
-        D3DXMATRIXA16 *m_pBoneMatrices; // bone matrices for software skinned mesh rendering
+        D3DXMATRIX *m_pBoneMatrices;    // bone matrices for software skinned mesh rendering
         LPD3DXFRAME m_FrameRoot;        // frame root
+        LPD3DXEFFECT m_pEffect;         // effects
+        bool m_playerSkinInfo;          // true if model has skin info (removes white dot under tiny...)
 
         LPD3DXANIMATIONCONTROLLER m_AnimationController;    // animation controller
 

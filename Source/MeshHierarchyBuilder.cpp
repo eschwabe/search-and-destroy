@@ -99,18 +99,9 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
 
 	// create material and texture arrays
 	pMeshContainer->NumMaterials = max(NumMaterials, 1);
-    pMeshContainer->pEffects = new D3DXEFFECTINSTANCE[pMeshContainer->NumMaterials];
+    pMeshContainer->pEffects = NULL;
 	pMeshContainer->pMaterials = new D3DMATERIAL9[pMeshContainer->NumMaterials];
 	pMeshContainer->ppTextures = new LPDIRECT3DTEXTURE9[pMeshContainer->NumMaterials];
-
-    // clear effect memory
-	ZeroMemory(pMeshContainer->pEffects, sizeof(LPD3DXEFFECTINSTANCE)*pMeshContainer->NumMaterials);
-
-    // copy effects
-    for(DWORD i = 0; i < NumMaterials; ++i)
-    {
-        pMeshContainer->pEffects[i] = pEffectInstances[i];
-    }
 
     // clear texture memory
 	ZeroMemory(pMeshContainer->ppTextures, sizeof(LPDIRECT3DTEXTURE9)*pMeshContainer->NumMaterials);
@@ -166,13 +157,7 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
 	    if(FAILED(pMeshContainer->MeshData.pMesh->GetDeclaration(Declaration)))
 			return E_FAIL;
 
-		pMeshContainer->MeshData.pMesh->CloneMesh(
-            D3DXMESH_MANAGED, 
-			Declaration, 
-            m_pd3dDevice, 
-			&pMeshContainer->pSkinMesh);
-
-	    // Need an array of offset matrices to move the vertices from the figure space to the bone's space
+        // Need an array of offset matrices to move the vertices from the figure space to the bone's space
 	    UINT NumBones = pSkinInfo->GetNumBones();
 	    pMeshContainer->pBoneOffsetMatrices = new D3DXMATRIX[NumBones];
 
@@ -182,6 +167,72 @@ HRESULT MeshHierarchyBuilder::CreateMeshContainer(
 	    // get each of the bone offset matrices so that we don't need to get them later
 	    for (DWORD i = 0; i < NumBones; i++)
 	        pMeshContainer->pBoneOffsetMatrices[i] = *(pMeshContainer->pSkinInfo->GetBoneOffsetMatrix(i));
+
+        // convert to indexed blended mesh
+        pMeshContainer->dwNumPaletteEntries = NumBones;
+
+        result = pMeshContainer->pSkinInfo->ConvertToIndexedBlendedMesh( 
+            pMeshContainer->MeshData.pMesh,
+            D3DXMESH_MANAGED | D3DXMESHOPT_VERTEXCACHE,
+            pMeshContainer->dwNumPaletteEntries,
+            pMeshContainer->pAdjacency,
+            NULL,
+            NULL,
+            NULL,
+            &pMeshContainer->dwNumInfl,
+            &pMeshContainer->dwNumAttributeGroups,
+            &pMeshContainer->pBoneCombinationBuf,
+            &pMeshContainer->pSkinMesh );
+
+        // ensure the proper vertex format for the mesh
+        if( SUCCEEDED(result) )
+        {
+            DWORD dwOldFVF = pMeshContainer->pSkinMesh->GetFVF();
+            DWORD dwNewFVF = ( dwOldFVF & D3DFVF_POSITION_MASK ) | D3DFVF_NORMAL | D3DFVF_TEX1 | D3DFVF_LASTBETA_UBYTE4;
+            if( dwNewFVF != dwOldFVF )
+            {
+                LPD3DXMESH pMesh;
+                result = pMeshContainer->pSkinMesh->CloneMeshFVF( 
+                    pMeshContainer->pSkinMesh->GetOptions(),
+                    dwNewFVF,
+                    m_pd3dDevice,
+                    &pMesh );
+                
+                if( SUCCEEDED(result) )
+                {
+                    pMeshContainer->pSkinMesh->Release();
+                    pMeshContainer->pSkinMesh = pMesh;
+
+                    // if the loaded mesh didn't contain normals, compute them here
+                    if( ! ( dwOldFVF & D3DFVF_NORMAL ) )
+                    {
+                        result = D3DXComputeNormals( pMeshContainer->pSkinMesh, NULL );
+                    }
+                }
+            }
+
+            // Interpret the UBYTE4 as a D3DCOLOR.
+            // The GeForce3 doesn't support the UBYTE4 decl type.  So, we convert any
+            // blend indices to a D3DCOLOR semantic, and later in the shader convert
+            // it back using the D3DCOLORtoUBYTE4() intrinsic.  Note that we don't
+            // convert any data, just the declaration.
+            D3DVERTEXELEMENT9 pDecl[ MAX_FVF_DECL_SIZE ];
+            D3DVERTEXELEMENT9 * pDeclCur;
+            result = pMeshContainer->pSkinMesh->GetDeclaration( pDecl );
+
+            if( SUCCEEDED(result) )
+            {
+                pDeclCur = pDecl;
+                while( pDeclCur->Stream != 0xff )
+                {
+                    if( ( pDeclCur->Usage == D3DDECLUSAGE_BLENDINDICES ) && ( pDeclCur->UsageIndex == 0 ) )
+                        pDeclCur->Type = D3DDECLTYPE_D3DCOLOR;
+                    pDeclCur++;
+                }
+
+                result = pMeshContainer->pSkinMesh->UpdateSemantics( pDecl );
+            }
+        }  
     }
 
 	// set the output mesh container pointer to the new one
@@ -240,6 +291,9 @@ HRESULT MeshHierarchyBuilder::DestroyMeshContainer(LPD3DXMESHCONTAINER pMeshCont
 
     // release skin info
 	SAFE_RELEASE(pMeshContainer->pSkinInfo);
+
+    // release bone combination buffer
+    SAFE_RELEASE(pMeshContainer->pBoneCombinationBuf);
 
     // release matrices
     SAFE_DELETE_ARRAY(pMeshContainer->pBoneOffsetMatrices);

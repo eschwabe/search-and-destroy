@@ -27,7 +27,10 @@ const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZ | D3DFVF_TEX1);
 * @param sFloorFilename floor texture file
 * @param sWallFilename wall texture file
 */
-WorldNode::WorldNode(const LPCWSTR sGridFilename, const LPCWSTR sFloorFilename, const LPCWSTR sWallFilename) :
+WorldNode::WorldNode(
+        const LPCWSTR sGridFilename, 
+        const LPCWSTR sFloorFilename, 
+        const LPCWSTR sWallFilename) :
     m_sGridFilename(sGridFilename),
     m_sFloorFilename(sFloorFilename),
     m_sWallFilename(sWallFilename),
@@ -232,6 +235,7 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
         pd3dDevice->SetTexture(0, m_pFloorTexture);
         pd3dDevice->SetStreamSource( 0, m_pFloorVertexBuffer, 0, sizeof(CustomVertex) );
         pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iFloorTriangleCount );
+
     }
 
     // set wall texture and draw primitives

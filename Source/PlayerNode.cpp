@@ -31,7 +31,8 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
     m_vPlayerVelocity(0.0f, 0.0f, 0.0f),
     m_vPlayerAccel(0.0f, 0.0f, 0.0f),
     m_ePlayerAnimation(kWait),
-    m_iPlayerAnimationTrack(0)
+    m_iPlayerAnimationTrack(0),
+    m_playerSkinInfo(false)
 {
     // initialize movement to default state
     for(int i =0; i < sizeof(m_PlayerMovement); i++)
@@ -43,13 +44,14 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
 */
 PlayerNode::~PlayerNode()
 {
-    // deallocate bone matrices buffer (if allocated)
-    if(m_pBoneMatrices)
-        delete [] m_pBoneMatrices;
+    // deallocate bone matrices buffer
+    SAFE_DELETE_ARRAY(m_pBoneMatrices);
 
     // deallocate controller
-    if(m_AnimationController)
-		m_AnimationController->Release();
+	SAFE_RELEASE(m_AnimationController);
+
+    // deallocate effects
+    SAFE_RELEASE(m_pEffect);
 
     // deallocate frame
     MeshHierarchyBuilder hierarchyBuilder(NULL);
@@ -185,6 +187,24 @@ HRESULT PlayerNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
             &m_AnimationController);    // [out] animation controller
     }
 
+    // load effects
+    if( SUCCEEDED(result) )
+    {
+        // Increase the palette size if the shader allows it. We are sort
+        // of cheating here since we know tiny has 35 bones. The alternative
+        // is use the maximum number that vs_2_0 allows.
+        D3DXMACRO mac[2] =
+        {
+            { "MATRIX_PALETTE_SIZE_DEFAULT", "35" },
+            { NULL,                          NULL }
+        };
+
+        WCHAR szEffectPath[MAX_PATH];
+        DXUTFindDXSDKMediaFileCch( szEffectPath, MAX_PATH, L"MultiAnimation.fx" );
+        result = D3DXCreateEffectFromFile( pd3dDevice, szEffectPath, mac, NULL, D3DXFX_NOT_CLONEABLE, NULL, &m_pEffect, NULL );
+        m_pEffect->SetTechnique( "Skinning20" );
+    }
+
     // setup matrices and animation
     if( SUCCEEDED(result) )
     {
@@ -218,8 +238,11 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 	if(pMesh)
 	{	
 		// if there is skin info, then setup the bone matrices
-		if(pMesh->pSkinInfo && pMesh->MeshData.pMesh)
+		if(pMesh->pSkinInfo)
 		{
+            // model contains skin info
+            m_playerSkinInfo = true;
+
 			// For each bone work out its matrix
 			for(DWORD i = 0; i < pMesh->pSkinInfo->GetNumBones(); i++)
 			{   
@@ -434,51 +457,72 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
     if(pMeshContainer->pSkinInfo)
     {
         // check bone matrices buffer size
-        UpdateBoneMatricesBuffer(pMeshContainer->pSkinInfo->GetNumBones());
+        UpdateBoneMatricesBuffer(pMeshContainer->dwNumPaletteEntries);
 
-        // set up bone transforms
-        for(DWORD iBone = 0; iBone < pMeshContainer->pSkinInfo->GetNumBones(); ++iBone)
+        // get bone combinations
+        LPD3DXBONECOMBINATION pBC = ( LPD3DXBONECOMBINATION )( pMeshContainer->pBoneCombinationBuf->GetBufferPointer() );
+        DWORD dwAttrib, dwPalEntry;
+
+        // for each palette
+        for( dwAttrib = 0; dwAttrib < pMeshContainer->dwNumAttributeGroups; ++ dwAttrib )
         {
-            D3DXMatrixMultiply(
-                &m_pBoneMatrices[iBone],
-                &pMeshContainer->pBoneOffsetMatrices[iBone],
-                pMeshContainer->ppBoneFrameMatrixPtrs[iBone]);
+            // set each transform into the palette
+            for( dwPalEntry = 0; dwPalEntry < pMeshContainer->dwNumPaletteEntries; ++ dwPalEntry )
+            {
+                DWORD dwMatrixIndex = pBC[ dwAttrib ].BoneId[ dwPalEntry ];
+                if( dwMatrixIndex != UINT_MAX )
+                    D3DXMatrixMultiply( &m_pBoneMatrices[ dwPalEntry ],
+                                        &( pMeshContainer->pBoneOffsetMatrices[ dwMatrixIndex ] ),
+                                        pMeshContainer->ppBoneFrameMatrixPtrs[ dwMatrixIndex ] );
+            }
+
+            // set effect view projection matrix
+            m_pEffect->SetMatrix( "g_mViewProj", &m_matViewProj );
+
+            // set the matrix palette into the effect
+            m_pEffect->SetMatrixArray( "amPalette", m_pBoneMatrices, pMeshContainer->dwNumPaletteEntries );
+
+            // set effect material diffuse
+            m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBC[dwAttrib].AttribId].Diffuse) );
+
+            // we're pretty much ignoring the materials we got from the x-file; just set the texture here
+            m_pEffect->SetTexture( "g_txScene", pMeshContainer->ppTextures[ pBC[ dwAttrib ].AttribId ] );
+
+            // set the current number of bones; this tells the effect which shader to use
+            m_pEffect->SetInt( "CurNumBones", pMeshContainer->dwNumInfl - 1 );
+
+            // run through each pass and draw
+            UINT uiPasses, uiPass;
+
+            m_pEffect->Begin( &uiPasses, 0/*D3DXFX_DONOTSAVESTATE*/ );
+
+            for( uiPass = 0; uiPass < uiPasses; ++ uiPass )
+            {
+                m_pEffect->BeginPass( uiPass );
+                pMeshContainer->pSkinMesh->DrawSubset( dwAttrib );
+                m_pEffect->EndPass();
+            }
+
+            m_pEffect->End();
         }
-
-        // set world transform
-        D3DXMATRIX Identity;
-        D3DXMatrixIdentity(&Identity);
-        pd3dDevice->SetTransform(D3DTS_WORLD, &Identity);
-
-        // lock mesh buffer and get verticies pointers
-        PBYTE pbVerticesSrc;
-        PBYTE pbVerticesDest;
-
-        pMeshContainer->pSkinMesh->LockVertexBuffer(D3DLOCK_READONLY, (LPVOID*)&pbVerticesSrc);
-        pMeshContainer->MeshData.pMesh->LockVertexBuffer(0, (LPVOID*)&pbVerticesDest);
-
-        // update skinned mesh using bone matrices
-        pMeshContainer->pSkinInfo->UpdateSkinnedMesh(m_pBoneMatrices, NULL, pbVerticesSrc, pbVerticesDest);
-
-        // unlock mesh buffer
-        pMeshContainer->pSkinMesh->UnlockVertexBuffer();
-        pMeshContainer->MeshData.pMesh->UnlockVertexBuffer();
     }
-    else
+
+    // normal mesh rendering
+    else if(!m_playerSkinInfo)
     {
         // set standard mesh transformation matrix
         pd3dDevice->SetTransform(D3DTS_WORLD, &pFrame->CombinedTransformationMatrix);
-    }
 
-    // traverse container materials
-    for(DWORD i = 0; i < pMeshContainer->NumMaterials; i++ )
-    {
-        // set the material and texture for this subset
-        pd3dDevice->SetMaterial(&pMeshContainer->pMaterials[i]);
-        pd3dDevice->SetTexture(0, pMeshContainer->ppTextures[i]);
+        // traverse container materials
+        for(DWORD i = 0; i < pMeshContainer->NumMaterials; i++ )
+        {
+            // set the material and texture for this subset
+            pd3dDevice->SetMaterial(&pMeshContainer->pMaterials[i]);
+            pd3dDevice->SetTexture(0, pMeshContainer->ppTextures[i]);
 
-        // draw mesh
-        pMeshContainer->MeshData.pMesh->DrawSubset(i);
+            // draw mesh
+            pMeshContainer->MeshData.pMesh->DrawSubset(i);
+        }
     }
 }
 
@@ -493,6 +537,6 @@ void PlayerNode::UpdateBoneMatricesBuffer(DWORD NumBones)
             delete [] m_pBoneMatrices;
 
         m_NumBoneMatrices = NumBones;
-        m_pBoneMatrices = new D3DXMATRIXA16[m_NumBoneMatrices];
+        m_pBoneMatrices = new D3DXMATRIX[m_NumBoneMatrices];
     }
 }

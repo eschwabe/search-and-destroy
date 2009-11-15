@@ -20,7 +20,11 @@ class WorldNode : public Node
     public:
 
         // constructor
-        WorldNode::WorldNode(const LPCWSTR sGridFilename, const LPCWSTR sFloorFilename, const LPCWSTR sWallFilename);
+        WorldNode::WorldNode(
+            const LPCWSTR sGridFilename, 
+            const LPCWSTR sFloorFilename, 
+            const LPCWSTR sWallFilename);
+
 	    ~WorldNode();
 
     private:
@@ -108,9 +112,9 @@ class WorldNode : public Node
         int m_iWallTriangleCount;                    // number of triangles
 	    LPDIRECT3DVERTEXBUFFER9 m_pWallVertexBuffer; // vertices buffer
 
-        int m_iWallCVCount;                   // number of vertices in the buffer
-        int m_iWallCVBufferSize;              // size of custom vertex buffer  (in CVs)
-        CustomVertex* m_WallCVBuffer;         // custom vertex buffer
+        int m_iWallCVCount;                 // number of vertices in the buffer
+        int m_iWallCVBufferSize;            // size of custom vertex buffer  (in CVs)
+        CustomVertex* m_WallCVBuffer;       // custom vertex buffer
 
         // prevent copy and assignment
         WorldNode(const WorldNode&);

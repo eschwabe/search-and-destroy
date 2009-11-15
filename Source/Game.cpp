@@ -30,6 +30,7 @@ using namespace std;
 //--------------------------------------------------------------------------------------
 ID3DXFont*              g_pFont = NULL;             // font for drawing text
 ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
+ID3DXEffect*            g_pEffect = NULL;           // D3DX effect interface (created, but unused)
 CDebugCamera            g_DebugCamera;              // debug camera
 CPlayerCamera           g_PlayerCamera;             // player camera
 CBaseCamera*            g_Camera = &g_PlayerCamera; // current camera (default player)
@@ -217,11 +218,17 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 
     V_RETURN( g_DialogResourceManager.OnD3D9CreateDevice( pd3dDevice ) );
     V_RETURN( g_SettingsDlg.OnD3D9CreateDevice( pd3dDevice ) );
+    
     // Initialize the font
     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                          L"Consolas", &g_pFont ) );
 
+    // Load D3DX effect file
+    WCHAR szEffectPath[MAX_PATH];
+    V_RETURN( DXUTFindDXSDKMediaFileCch( szEffectPath, MAX_PATH, L"MultiAnimation.fx" ) );
+    V_RETURN( D3DXCreateEffectFromFile( pd3dDevice, szEffectPath, NULL, NULL, D3DXFX_NOT_CLONEABLE, NULL, &g_pEffect, NULL ) );
+    g_pEffect->SetTechnique( "RenderScene" );
 	
     // create base node
     g_pBaseNode = new Node();
@@ -276,8 +283,13 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     D3DCAPS9 caps;
     pd3dDevice->GetDeviceCaps( & caps );
 
+    // font
     if( g_pFont )
         V_RETURN( g_pFont->OnResetDevice() );
+
+    // effect
+    if( g_pEffect )
+        V_RETURN( g_pEffect->OnResetDevice() );
 
 	// Create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
@@ -396,12 +408,15 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         V( pd3dDevice->SetTransform( D3DTS_PROJECTION, & mxProj ) );
         vEye = *g_Camera->GetEyePt();
 
+        // set effect view projection matrix
+        D3DXMatrixMultiply( &mx, &mxView, &mxProj );
+        g_pEffect->SetMatrix( "g_mViewProj", &mx );
+        g_pMainPlayerNode->SetViewProject(mx);
+
         // render all nodes
-        {
-            D3DXMATRIX	matIdentity;		// identity matrix
-            D3DXMatrixIdentity( &matIdentity );
-            g_pBaseNode->Render(pd3dDevice, matIdentity);
-        }
+        D3DXMATRIX	matIdentity;
+        D3DXMatrixIdentity( &matIdentity );
+        g_pBaseNode->Render(pd3dDevice, matIdentity);
 
         // display text on hud
         RenderText();
@@ -583,4 +598,5 @@ void CALLBACK OnDestroyDevice( void* pUserContext )
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();
     SAFE_RELEASE(g_pFont);
+    SAFE_RELEASE(g_pEffect);
 }
