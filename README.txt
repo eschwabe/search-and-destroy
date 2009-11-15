@@ -7,7 +7,8 @@ The source, executables, and media in this package were created as a part
 of the University of Washington Game Development Certificates Course. The
 game uses example code, models, and textures provided in the Direct3D SDK.
 The game was built on the Windows platform with the Direct3D SDK installed
-and Visual Studio 2008.
+and Visual Studio 2008. Some additional textures were obtained from
+cgtextures.com and cannot be sold.
 
 
 GAME
