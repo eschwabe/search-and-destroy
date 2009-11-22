@@ -32,7 +32,8 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
     m_vPlayerAccel(0.0f, 0.0f, 0.0f),
     m_ePlayerAnimation(kWait),
     m_iPlayerAnimationTrack(0),
-    m_playerSkinInfo(false)
+    m_playerSkinInfo(false),
+    m_NPCMode(false)
 {
     // initialize movement to default state
     for(int i =0; i < sizeof(m_PlayerMovement); i++)
@@ -87,6 +88,15 @@ float PlayerNode::GetPlayerHeight() const
 float PlayerNode::GetPlayerRotation() const
 {
     return m_fPlayerYawRotation;
+}
+
+/**
+* Modifies the player position by the specified delta.
+*/
+void PlayerNode::MovePlayerPosition(const D3DXVECTOR3& vPosDelta)
+{
+    // move player position
+    m_vPlayerPos += vPosDelta;
 }
 
 /**
@@ -265,10 +275,60 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 }
 
 /**
+* Automatically changes the player movements. Should be called in NPC mode only.
+*/
+void PlayerNode::AutoPlayerMove(double fTime)
+{
+    static double dNextUpdateTime = 0.0;
+    static double dCurrentTime = 0.0;
+
+    // update time
+    dCurrentTime += fTime;
+
+    // check if enough time has passed
+    if(dCurrentTime >= dNextUpdateTime)
+    {
+        // reset actions
+        for(int i =0; i < sizeof(m_PlayerMovement); i++)
+            m_PlayerMovement[i] = false;
+
+        // choose new action
+        switch(rand() % 5)
+        {
+        case 0:
+            m_PlayerMovement[kRotateLeft] = true;
+            break;
+        case 1:
+            m_PlayerMovement[kRotateRight] = true;
+            break;
+        case 2:
+            m_PlayerMovement[kMoveForward] = true;
+            break;
+        case 3:
+            m_PlayerMovement[kMoveForward] = true;
+            break;
+        case 4:
+            m_PlayerMovement[kIncreaseSpeed] = true;
+            m_PlayerMovement[kMoveForward] = true;
+            break;
+        default:
+            break;
+        }
+
+        // set next update time
+        dNextUpdateTime += 1.0;
+    }
+}
+
+/**
 * Update traversal for physics, AI, etc.
 */
 void PlayerNode::UpdateNode(double fTime)
 {
+    // check for NPC mode
+    if(m_NPCMode)
+        AutoPlayerMove(fTime);
+
     // update player acceleration
     if( m_PlayerMovement[kIncreaseSpeed] )
     {
@@ -326,8 +386,13 @@ void PlayerNode::UpdateNode(double fTime)
 
     // move player position
     m_vPlayerPos += vPosDelta;
+}
 
-    // compute new player model transform matrix
+/**
+* Recomputes the player's transform matrix based on the current player position, rotation, and scale.
+*/
+void PlayerNode::ComputeTransform()
+{
     D3DXMATRIX mx;
 
     // translate player
@@ -400,6 +465,9 @@ void PlayerNode::UpdateAnimation(double fTime)
 void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
     D3DXMatrixMultiply(&rMatWorld, &m_matPlayer, &rMatWorld);
+
+    // compute new player model transform matrix
+    ComputeTransform();
 
     // update frame transform matrices
     UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, rMatWorld);

@@ -697,6 +697,14 @@
 			Name="Scene Graph"
 			>
 			<File
+				RelativePath=".\Source\Collision.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\Collision.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\DebugCamera.cpp"
 				>
 			</File>

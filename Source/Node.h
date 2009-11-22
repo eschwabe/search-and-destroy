@@ -29,6 +29,9 @@ class Node
 	    // update traversal for physics, AI, etc. (including children)
 	    void Update(double fTime);
 
+        // set effect view projection matrix
+        void SetViewProjection(D3DXMATRIX mat);
+
         // render traversal for drawing objects (including children)
 	    void Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
 
@@ -37,6 +40,14 @@ class Node
 	    int GetNumChildren() { return m_vChildNodes.size(); }
 	    NodeRef GetChild(int iChild) { return m_vChildNodes[iChild]; }
 
+    protected:
+
+        /* 
+        *  view projection matrix used for effects; only derived nodes that
+        *  require this information should use it 
+        */
+        D3DXMATRIX m_matViewProj;
+
     private:
 
         // load and unload
@@ -44,6 +55,10 @@ class Node
 
         // update node
 	    virtual void UpdateNode(double fTime);
+
+        // set the node view prjoection matrix
+        // derived classes should override this method for alternate functionality
+        virtual void SetViewProjectionNode(D3DXMATRIX mat) { m_matViewProj = mat; }
 
         // render traversal for drawing objects (including children)
 	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);

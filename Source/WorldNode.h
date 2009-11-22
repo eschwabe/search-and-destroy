@@ -11,6 +11,7 @@
 
 #pragma once
 #include "Node.h"
+#include "Collision.h"
 
 /**
 * World Node
@@ -27,6 +28,9 @@ class WorldNode : public Node
 
 	    ~WorldNode();
 
+        // returns a list of all quads (walls only)
+        VecCollQuad GetCollisionQuadList();
+
     private:
 
 	    /**
@@ -35,22 +39,32 @@ class WorldNode : public Node
         */
 	    struct CustomVertex
 	    {
-		    FLOAT x, y, z;  // untransformed, 3D position for the vertex
-            FLOAT u1,v1;    // texture coordinates
+            D3DXVECTOR3 vPos;   // untransformed, 3D position for the vertex
+            float u1,v1;        // texture coordinates
 
             // default constructor
             CustomVertex() :
-                x(0.0f), y(0.0f), z(0.0f), u1(0.0f), v1(0.0f)
+                vPos(0.0f, 0.0f, 0.0f), u1(0.0f), v1(0.0f)
             {}
 
             // initialization constructor
-            CustomVertex(float ix, float iy, float iz, float iu1, float iv1) :
-                x(ix), y(iy), z(iz), u1(iu1), v1(iv1)
+            CustomVertex(D3DXVECTOR3 ivPos, float iu1, float iv1) :
+                vPos(ivPos), u1(iu1), v1(iv1)
             {}
 	    };
 
         /**
         * Defines the wall sides for a give coordinate location. 
+        *
+        *  uv=0,0  uv=1,0
+        *  --------------
+        *  |      U     |
+        *  |            |
+        *  | L        R |
+        *  |            |
+        *  |      D     |
+        *  --------------
+        *  uv=0,1  uv=1,1
         */
         enum CubeSide
         {
@@ -115,6 +129,8 @@ class WorldNode : public Node
         int m_iWallCVCount;                 // number of vertices in the buffer
         int m_iWallCVBufferSize;            // size of custom vertex buffer  (in CVs)
         CustomVertex* m_WallCVBuffer;       // custom vertex buffer
+
+        VecCollQuad m_vCollQuads;           // list of quads (walls only)
 
         // prevent copy and assignment
         WorldNode(const WorldNode&);

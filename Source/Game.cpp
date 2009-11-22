@@ -46,6 +46,8 @@ World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
 Node*					g_pBaseNode = 0;            // scene node
 PlayerNode*             g_pMainPlayerNode = 0;      // main player node
+PlayerNode*             g_pNPCNode = 0;             // NPC player node
+VecCollQuad             g_vQuadList;                // collision quad list
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -237,11 +239,17 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	//g_pBaseNode->AddChild(new TeapotNode());
   
     // add world node
-    g_pBaseNode->AddChild(new WorldNode(L"level-maze.grd", L"asphalt-damaged.jpg", L"planks-new.jpg"));
+    WorldNode* p_WorldNode = new WorldNode(L"level-maze.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
+    g_pBaseNode->AddChild(p_WorldNode);
 
     // add player node
     g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/500.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
     g_pBaseNode->AddChild(g_pMainPlayerNode);
+
+    // add NPC
+    g_pNPCNode = new PlayerNode(L"tiny.x", 1.0f/250.0f, 1,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pNPCNode->SetNPCMode();
+    g_pBaseNode->AddChild(g_pNPCNode);
 
     // add dwarf model
     g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0));
@@ -258,6 +266,9 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
         MessageBox( NULL, L"Could not load nodes", L"UWGame", MB_OK );
         return E_FAIL;
     }
+
+    // get collision quad list
+    g_vQuadList = p_WorldNode->GetCollisionQuadList();
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -368,6 +379,11 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // Update the camera's position based on user input
     g_Camera->FrameMove(fElapsedTime);
+
+    // check for player collisions with environment
+    CollPlayer coll;
+    coll.RunCollisionCheck(g_pMainPlayerNode, g_vQuadList);
+    coll.RunCollisionCheck(g_pNPCNode, g_vQuadList);
 }
 
 //--------------------------------------------------------------------------------------
@@ -411,7 +427,7 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         // set effect view projection matrix
         D3DXMatrixMultiply( &mx, &mxView, &mxProj );
         g_pEffect->SetMatrix( "g_mViewProj", &mx );
-        g_pMainPlayerNode->SetViewProject(mx);
+        g_pBaseNode->SetViewProjection(mx);
 
         // render all nodes
         D3DXMATRIX	matIdentity;

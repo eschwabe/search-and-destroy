@@ -23,16 +23,19 @@ class PlayerNode : public Node
                        const float fXRot, const float fYRot, const float fZRot);
         virtual ~PlayerNode();
 
+        // enable NPC mode
+        void SetNPCMode() { m_NPCMode = true; }
+
         // handle user controls
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+        // modify player position by delta
+        void MovePlayerPosition(const D3DXVECTOR3& vPosDelta);
 
         // get player information
         D3DXVECTOR3 GetPlayerPosition() const;
         float GetPlayerHeight() const;
         float GetPlayerRotation() const;
-
-        // set effect view projection matrix
-        void SetViewProject(D3DXMATRIX mat) { m_matViewProj = mat; };
 
     private:
 
@@ -71,6 +74,7 @@ class PlayerNode : public Node
         void SetupBoneMatrices(EXTD3DXFRAME *pFrame);
 
         // render helpers
+        void ComputeTransform();
         void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
         void UpdateBoneMatricesBuffer(DWORD NumBones);
         void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame);
@@ -78,6 +82,11 @@ class PlayerNode : public Node
 
         // user input helper
         Movement GetPlayerMovement(const UINT&);
+
+        // automatically change player movement
+        void AutoPlayerMove(double fTime);
+
+        bool m_NPCMode; // enables automatic player movement
 
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
         
@@ -93,8 +102,6 @@ class PlayerNode : public Node
         int m_iPlayerAnimationTrack;    // player animation track
 
         D3DXMATRIX m_matPlayer;         // player transform matrix
-        
-        D3DXMATRIX m_matViewProj;       // effect view projection matrix
 
         DWORD m_NumBoneMatrices;        // size of bone matrices buffer
         D3DXMATRIX *m_pBoneMatrices;    // bone matrices for software skinned mesh rendering

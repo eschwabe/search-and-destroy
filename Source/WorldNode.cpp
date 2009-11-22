@@ -67,6 +67,15 @@ WorldNode::~WorldNode()
     SAFE_DELETE_ARRAY(m_WallCVBuffer);
 }
 
+/*
+* Returns a list of all quads (walls). The list will be empty if the world node
+* has not been initialized yet.
+*/
+VecCollQuad WorldNode::GetCollisionQuadList()
+{
+    return m_vCollQuads;
+}
+
 /**
 * Initialize world node.
 */
@@ -221,7 +230,7 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 	pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
 
 	// Turn off culling
-	pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	//pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
     // Turn off D3D lighting, since we are providing our own vertex colors
     pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
@@ -264,99 +273,125 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 */
 void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, TileType type)
 {
-    // (0,0,1) (1,0,1)
-    // --------------
-    // |      U     |
-    // |            |
-    // | L        R |
-    // |            |
-    // |      D     |
-    // --------------
-    // (0,0,0) (1,0,0)
 
-    // NOTE: In most cases
 
     switch(side)
     {
 
     case kTop:
+    {
+        D3DXVECTOR3 p1( x,   y+s, z   );
+        D3DXVECTOR3 p2( x,   y+s, z+s );
+        D3DXVECTOR3 p3( x+s, y+s, z+s );
+        D3DXVECTOR3 p4( x+s, y+s, z   );
         AddPlane(
-            CustomVertex( x,      y+s,  z,    0.0f, 0.0f ), // u=x, v=z
-            CustomVertex( x,      y+s,  z+s,  0.0f, 1.0f ),
-            CustomVertex( x+s,    y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 0.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x,      y+s,  z,    0.0f, 0.0f ),
-            CustomVertex( x+s,    y+s,  z,    1.0f, 0.0f ),
-            CustomVertex( x+s,    y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 1.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
-    case kBottom:    
+    }
+    case kBottom:
+    {
+        D3DXVECTOR3 p1( x,   y,   z   );
+        D3DXVECTOR3 p2( x,   y,   z+s );
+        D3DXVECTOR3 p3( x+s, y,   z+s );
+        D3DXVECTOR3 p4( x+s, y,   z   );
         AddPlane(
-            CustomVertex( x,      y,    z,    0.0f, 0.0f ), // u=x, v=z
-            CustomVertex( x,      y,    z+s,  0.0f, 1.0f ),
-            CustomVertex( x+s,    y,    z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 0.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x,      y,    z,    0.0f, 0.0f ),
-            CustomVertex( x+s,    y,    z,    1.0f, 0.0f ),
-            CustomVertex( x+s,    y,    z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 1.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
+    }
     case kLeft:        
+    {
+        D3DXVECTOR3 p1( x,   y,   z   );
+        D3DXVECTOR3 p2( x,   y,   z+s );
+        D3DXVECTOR3 p3( x,   y+s, z+s );
+        D3DXVECTOR3 p4( x,   y+s, z   );
         AddPlane(
-            CustomVertex( x,      y,    z,    0.0f, 0.0f ), // u=y, v=z (except mid vertex)
-            CustomVertex( x,      y,    z+s,  1.0f, 0.0f ), 
-            CustomVertex( x,      y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 1.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 1.0f ), 
+            CustomVertex( p3, 0.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x,      y,    z,    0.0f, 0.0f ),
-            CustomVertex( x,      y+s,  z,    0.0f, 1.0f ),
-            CustomVertex( x,      y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 1.0f, 1.0f ),
+            CustomVertex( p3, 0.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 0.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
+    }
     case kRight:
+    {
+        D3DXVECTOR3 p1( x+s, y,    z   );
+        D3DXVECTOR3 p2( x+s, y+s,  z   );
+        D3DXVECTOR3 p3( x+s, y+s,  z+s );
+        D3DXVECTOR3 p4( x+s, y,    z+s );
         AddPlane(
-            CustomVertex( x+s,    y,    z,    0.0f, 0.0f ), // u=y, v=z (except mid vertex)
-            CustomVertex( x+s,    y,    z+s,  1.0f, 0.0f ),
-            CustomVertex( x+s,    y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 0.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x+s,    y,    z,    0.0f, 0.0f ),
-            CustomVertex( x+s,    y+s,  z,    0.0f, 1.0f ),
-            CustomVertex( x+s,    y+s,  z+s,  1.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 1.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
+    }
     case kUpper:
+    {
+        D3DXVECTOR3 p1( x,   y,   z+s );
+        D3DXVECTOR3 p2( x+s, y,   z+s );
+        D3DXVECTOR3 p3( x+s, y+s, z+s );
+        D3DXVECTOR3 p4( x,   y+s, z+s );
         AddPlane(
-            CustomVertex( x,      y,    z+s,  0.0f, 0.0f ), // u=x, v=y
-            CustomVertex( x,      y+s,  z+s,  0.0f, 1.0f ),
-            CustomVertex( x+s,    y,    z+s,  1.0f, 0.0f ),
+            CustomVertex( p1, 1.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 1.0f ),
+            CustomVertex( p3, 0.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x+s,    y,    z+s,  1.0f, 0.0f ),
-            CustomVertex( x+s,    y+s,  z+s,  1.0f, 1.0f ),
-            CustomVertex( x,      y+s,  z+s,  0.0f, 1.0f ),
+            CustomVertex( p1, 1.0f, 1.0f ),
+            CustomVertex( p3, 0.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 0.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
+    }
     case kLower:
+    {
+        D3DXVECTOR3 p1( x,   y,   z   );
+        D3DXVECTOR3 p2( x,   y+s, z   );
+        D3DXVECTOR3 p3( x+s, y+s, z   );
+        D3DXVECTOR3 p4( x+s, y,   z   );
         AddPlane(
-            CustomVertex( x,      y,    z,    0.0f, 0.0f ), // u=x, v=y
-            CustomVertex( x,      y+s,  z,    0.0f, 1.0f ),
-            CustomVertex( x+s,    y,    z,    1.0f, 0.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p2, 0.0f, 0.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
             type);
         AddPlane(
-            CustomVertex( x+s,    y,    z,    1.0f, 0.0f ), // u=x, v=y
-            CustomVertex( x+s,    y+s,  z,    1.0f, 1.0f ),
-            CustomVertex( x,      y+s,  z,    0.0f, 1.0f ),
+            CustomVertex( p1, 0.0f, 1.0f ),
+            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p4, 1.0f, 1.0f ),
             type);
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
-
+    }
     default:
         break;
     }
