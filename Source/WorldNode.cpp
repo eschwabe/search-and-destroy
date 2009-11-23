@@ -167,6 +167,9 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     if(m_iWallCVCount)
         result = CreateRenderBuffer(pd3dDevice, m_WallCVBuffer, m_iWallCVCount, &m_pWallVertexBuffer);
 
+    // setup world collision walls
+    SetupWorldCollWalls(grid);
+
     return result;
 }
 
@@ -273,8 +276,6 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 */
 void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, TileType type)
 {
-
-
     switch(side)
     {
 
@@ -454,5 +455,58 @@ void WorldNode::CheckBufferSize(int iCVCount, int* iCVBufferSize, CustomVertex**
         // set new buffer and size
         *buffer = tmpBuffer;
         *iCVBufferSize = tmpBufferSize;
+    }
+}
+
+/**
+* Adds collision quads for the world boundary walls. Prevents player from leaving
+* the world node area.
+*/
+void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
+{
+    // add boundary walls to quad list
+
+    // world left side
+    for(int row = 0; row < grid.GetHeight(); row++)
+    {
+        D3DXVECTOR3 p1( 0.0f, 0.0f,   (float)row );
+        D3DXVECTOR3 p2( 0.0f, kScale, (float)row );
+        D3DXVECTOR3 p3( 0.0f, kScale, (float)row+kScale );
+        D3DXVECTOR3 p4( 0.0f, 0.0f,   (float)row+kScale );
+
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+    }
+
+    // world right side
+    for(int row = 0; row < grid.GetHeight(); row++)
+    {
+        D3DXVECTOR3 p1( (float)grid.GetWidth(), 0.0f,   (float)row );
+        D3DXVECTOR3 p2( (float)grid.GetWidth(), 0.0f,   (float)row+kScale );
+        D3DXVECTOR3 p3( (float)grid.GetWidth(), kScale, (float)row+kScale );
+        D3DXVECTOR3 p4( (float)grid.GetWidth(), kScale, (float)row );
+
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+    }
+
+    // world lower side
+    for(int col = 0; col < grid.GetWidth(); col++)
+    {
+        D3DXVECTOR3 p1( (float)col,        0.0f, 0.0f );
+        D3DXVECTOR3 p2( (float)col+kScale, 0.0f, 0.0f );
+        D3DXVECTOR3 p3( (float)col+kScale, kScale, 0.0f );
+        D3DXVECTOR3 p4( (float)col,        kScale, 0.0f );
+
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+    }
+
+    // world upper side
+    for(int col = 0; col < grid.GetWidth(); col++)
+    {
+        D3DXVECTOR3 p1( (float)col,        0.0f,   (float)grid.GetHeight() );
+        D3DXVECTOR3 p2( (float)col,        kScale, (float)grid.GetHeight() );
+        D3DXVECTOR3 p3( (float)col+kScale, kScale, (float)grid.GetHeight() );
+        D3DXVECTOR3 p4( (float)col+kScale, 0.0f,   (float)grid.GetHeight() );
+
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
     }
 }

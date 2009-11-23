@@ -13,6 +13,8 @@
 #include "Node.h"
 #include "Collision.h"
 
+class WorldFile;
+
 /**
 * World Node
 */
@@ -96,6 +98,9 @@ class WorldNode : public Node
 
         // add plane to the appropriate buffer
         void AddPlane(const CustomVertex& v1, const CustomVertex& v2, const CustomVertex& v3, const TileType& type);
+        
+        // setup world collision walls
+        void SetupWorldCollWalls(const WorldFile& grid);
 
         // creates D3D vertex buffers for rendering
         HRESULT WorldNode::CreateRenderBuffer(
