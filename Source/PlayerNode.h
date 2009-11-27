@@ -29,8 +29,8 @@ class PlayerNode : public Node
         // handle user controls
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-        // modify player position by delta
-        void MovePlayerPosition(const D3DXVECTOR3& vPosDelta);
+        // player collision event
+        void PlayerCollisionEvent(const D3DXVECTOR3& vPosDelta);
 
         // get player information
         D3DXVECTOR3 GetPlayerPosition() const;
@@ -87,6 +87,7 @@ class PlayerNode : public Node
         void AutoPlayerMove(double fTime);
 
         bool m_NPCMode; // enables automatic player movement
+        bool m_PlayerCollision; // indicates the player collided with an object
 
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
         

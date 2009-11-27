@@ -239,7 +239,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 	//g_pBaseNode->AddChild(new TeapotNode());
   
     // add world node
-    WorldNode* p_WorldNode = new WorldNode(L"level-maze.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
+    WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_pBaseNode->AddChild(p_WorldNode);
 
     // add player node
@@ -247,7 +247,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(g_pMainPlayerNode);
 
     // add NPC
-    g_pNPCNode = new PlayerNode(L"tiny.x", 1.0f/250.0f, 1,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pNPCNode = new PlayerNode(L"tiny.x", 1.0f/250.0f, 12.5,0,12.5, 0,-D3DX_PI/2.0f,0);
     g_pNPCNode->SetNPCMode();
     g_pBaseNode->AddChild(g_pNPCNode);
 

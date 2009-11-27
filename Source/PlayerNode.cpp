@@ -71,13 +71,13 @@ D3DXVECTOR3 PlayerNode::GetPlayerPosition() const
 
 /**
 * Get the current height of the player. The current height implementation is fixed
-* to the size of a cube. The height should be calculated based on the model.
+* to the size of the tiny model. The height should be calculated based on the model.
 *
 * @return player height
 */
 float PlayerNode::GetPlayerHeight() const
 {
-    return 1.0f;
+    return m_fPlayerScale * 500.0f;
 }
 
 /**
@@ -91,10 +91,15 @@ float PlayerNode::GetPlayerRotation() const
 }
 
 /**
-* Modifies the player position by the specified delta.
+* Notifies the player that it has collided with an object. The event provides
+* the position delta required to resolve the collision. Modifies the player 
+* position by the specified delta.
 */
-void PlayerNode::MovePlayerPosition(const D3DXVECTOR3& vPosDelta)
+void PlayerNode::PlayerCollisionEvent(const D3DXVECTOR3& vPosDelta)
 {
+    // set collision flag
+    m_PlayerCollision = true;
+
     // move player position
     m_vPlayerPos += vPosDelta;
 }
@@ -292,27 +297,44 @@ void PlayerNode::AutoPlayerMove(double fTime)
         for(int i =0; i < sizeof(m_PlayerMovement); i++)
             m_PlayerMovement[i] = false;
 
-        // choose new action
-        switch(rand() % 5)
+        // if collision, rotate player
+        if(m_PlayerCollision)
         {
-        case 0:
-            m_PlayerMovement[kRotateLeft] = true;
-            break;
-        case 1:
-            m_PlayerMovement[kRotateRight] = true;
-            break;
-        case 2:
-            m_PlayerMovement[kMoveForward] = true;
-            break;
-        case 3:
-            m_PlayerMovement[kMoveForward] = true;
-            break;
-        case 4:
-            m_PlayerMovement[kIncreaseSpeed] = true;
-            m_PlayerMovement[kMoveForward] = true;
-            break;
-        default:
-            break;
+            // reset collision flag
+            m_PlayerCollision = false;
+
+            // choose rotate action
+            switch(rand() % 2)
+            {
+            case 0:
+                m_PlayerMovement[kRotateLeft] = true;
+                break;
+            case 1:
+                m_PlayerMovement[kRotateRight] = true;
+                break;
+            
+            default:
+                break;
+            }
+        }
+        else
+        {
+            // choose new move action
+            switch(rand() % 3)
+            {
+            case 0:
+                m_PlayerMovement[kMoveForward] = true;
+                break;
+            case 1:
+                m_PlayerMovement[kMoveForward] = true;
+                break;
+            case 2:
+                m_PlayerMovement[kIncreaseSpeed] = true;
+                m_PlayerMovement[kMoveForward] = true;
+                break;
+            default:
+                break;
+            }
         }
 
         // set next update time
@@ -325,9 +347,14 @@ void PlayerNode::AutoPlayerMove(double fTime)
 */
 void PlayerNode::UpdateNode(double fTime)
 {
+    const float kMaxSpeed = 3.0f;
+
     // check for NPC mode
     if(m_NPCMode)
         AutoPlayerMove(fTime);
+
+    // reset collision flag
+            m_PlayerCollision = false;
 
     // update player acceleration
     if( m_PlayerMovement[kIncreaseSpeed] )
@@ -344,7 +371,7 @@ void PlayerNode::UpdateNode(double fTime)
             m_vPlayerVelocity.z = 1.5f;
 
         // check for max velocity (tiles per second)
-        if(m_vPlayerVelocity.z < 6.0f)
+        if(m_vPlayerVelocity.z < kMaxSpeed)
             m_vPlayerVelocity += m_vPlayerAccel * (float)fTime;
     }
     else if( m_PlayerMovement[kMoveBackward] )
@@ -354,7 +381,7 @@ void PlayerNode::UpdateNode(double fTime)
             m_vPlayerVelocity.z = -1.5f;
 
         // check for max velocity (tiles per second)
-        if(m_vPlayerVelocity.z > -6.0f)
+        if(m_vPlayerVelocity.z > -kMaxSpeed)
             m_vPlayerVelocity -= m_vPlayerAccel * (float)fTime;
     }
     else

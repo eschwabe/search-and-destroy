@@ -294,7 +294,7 @@ void CollPlayer::RunCollisionCheck(PlayerNode* player, const VecCollQuad& quads)
 
     // generate sphere from player position and height
     CollSphere sphere;
-    sphere.Set(&vPlayerPos, player->GetPlayerHeight()/10.0f);
+    sphere.Set(&vPlayerPos, player->GetPlayerHeight()/6.0f);
 
     // run sphere vs quad checks on entire list
     for(size_t i = 0; i < quads.size(); i++)
@@ -302,8 +302,8 @@ void CollPlayer::RunCollisionCheck(PlayerNode* player, const VecCollQuad& quads)
         // check for collision
         if(sphere.VsQuad(quads[i]))
         {
-            // if collision, move player according to collision output
-            player->MovePlayerPosition(gCollOutput.push);
+            // if collision, send player collision event
+            player->PlayerCollisionEvent(gCollOutput.push);
             gCollOutput.Reset();
         }
     }  
