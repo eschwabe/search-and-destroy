@@ -20,9 +20,7 @@ class TeapotNode : public Node
 	    TeapotNode();
 	    ~TeapotNode();
 
-    private:
-
-        // METHODS
+    protected:
 
         // initialize world node
         HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
@@ -32,6 +30,8 @@ class TeapotNode : public Node
 
 		// render traversal for drawing objects
 	    void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
+
+    private:
 
         // DATA
 	    ID3DXMesh* pMesh;

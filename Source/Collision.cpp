@@ -130,7 +130,7 @@ bool CollSphere::VsQuad(const CollQuad& quad) const
 } // CollSphere::VsQuad
 
 
-char CollSphere::VsSphere(CollSphere *sphere)
+bool CollSphere::VsSphere(CollSphere *sphere)
 /************************************************************************/
 /* Collision test between sphere and another sphere.                    */
 /* Returns TRUE if the 2 spheres collide and FALSE if not.              */
@@ -286,7 +286,7 @@ CollPlayer::CollPlayer()
 * Player is queried for current position (sphere) data and notified
 * if the player needs to be moved.
 */
-void CollPlayer::RunCollisionCheck(PlayerNode* player, const VecCollQuad& quads)
+void CollPlayer::RunWorldCollision(PlayerNode* player, const VecCollQuad& quads)
 {
     assert(player);
 
@@ -303,8 +303,70 @@ void CollPlayer::RunCollisionCheck(PlayerNode* player, const VecCollQuad& quads)
         if(sphere.VsQuad(quads[i]))
         {
             // if collision, send player collision event
-            player->PlayerCollisionEvent(gCollOutput.push);
+            player->EnvironmentCollisionEvent(gCollOutput.push);
             gCollOutput.Reset();
         }
     }  
+}
+
+/**
+* Run collision checks between two players. Returns true if a collision occured.
+*/
+bool CollPlayer::RunPlayerCollision(PlayerNode* player1, PlayerNode* player2)
+{
+    // generate sphere from player1 position and height
+    CollSphere p1Sphere;
+    D3DXVECTOR3 vPlayer1Pos = player1->GetPlayerPosition();
+    p1Sphere.Set(&vPlayer1Pos, player1->GetPlayerHeight()/6.0f);
+
+    // generate sphere from player position and height
+    CollSphere p2Sphere;
+    D3DXVECTOR3 vPlayer2Pos = player2->GetPlayerPosition();
+    p2Sphere.Set(&vPlayer2Pos, player2->GetPlayerHeight()/6.0f);
+
+    bool coll = p1Sphere.VsSphere(&p2Sphere);
+
+    // notify players of collision result
+    if(coll)
+    {        
+        player1->PlayerCollisionEvent();
+        player2->PlayerCollisionEvent();
+        gCollOutput.Reset();
+    }
+
+    return coll;
+}
+
+/************************************************************************/
+/* Collision Line Of Sight                                              */
+/************************************************************************/
+
+/**
+* Run line of sight collision check between line and environment. Line
+* end point is modified to collision point if a collision occurs. Returns
+* true if a collision occured.
+*/
+bool CollLineOfSight::RunLineOfSightCollision(
+    const VecCollQuad& quads, const D3DXVECTOR3& p1, D3DXVECTOR3& p2)
+{
+    bool coll_occured = false;
+
+    // run sphere vs quad checks on entire list
+    for(size_t i = 0; i < quads.size(); i++)
+    {
+        // generate collision line
+        CollLine line;
+        line.Set(&p1, &p2);
+
+        // check for collision
+        if(line.VsQuad(quads[i]))
+        {
+            // if collision, modify line end point
+            p2 += gCollOutput.push;
+            gCollOutput.Reset();
+            coll_occured = true;
+        }
+    }
+
+    return coll_occured;
 }

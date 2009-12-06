@@ -19,6 +19,7 @@
 #include "Game.h"
 #include "TeapotNode.h"
 #include "PlayerNode.h"
+#include "NPCNode.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
@@ -46,7 +47,7 @@ World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
 Node*					g_pBaseNode = 0;            // scene node
 PlayerNode*             g_pMainPlayerNode = 0;      // main player node
-PlayerNode*             g_pNPCNode = 0;             // NPC player node
+NPCNode*                g_pNPCNode = 0;             // NPC player node
 VecCollQuad             g_vQuadList;                // collision quad list
 
 //--------------------------------------------------------------------------------------
@@ -231,24 +232,21 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     V_RETURN( DXUTFindDXSDKMediaFileCch( szEffectPath, MAX_PATH, L"MultiAnimation.fx" ) );
     V_RETURN( D3DXCreateEffectFromFile( pd3dDevice, szEffectPath, NULL, NULL, D3DXFX_NOT_CLONEABLE, NULL, &g_pEffect, NULL ) );
     g_pEffect->SetTechnique( "RenderScene" );
-	
+
     // create base node
     g_pBaseNode = new Node();
-
-    // Create the default scene (teapot)
-	//g_pBaseNode->AddChild(new TeapotNode());
   
     // add world node
     WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_pBaseNode->AddChild(p_WorldNode);
 
     // add player node
-    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/500.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/800.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
     g_pBaseNode->AddChild(g_pMainPlayerNode);
 
     // add NPC
-    g_pNPCNode = new PlayerNode(L"tiny.x", 1.0f/250.0f, 12.5,0,12.5, 0,-D3DX_PI/2.0f,0);
-    g_pNPCNode->SetNPCMode();
+    g_pNPCNode = new NPCNode(L"tiny.x", 1.0f/250.0f, 12.5,0,12.5, 0,-D3DX_PI/2.0f,0);
+    g_pNPCNode->SetEnemyPlayer(g_pMainPlayerNode);
     g_pBaseNode->AddChild(g_pNPCNode);
 
     // add dwarf model
@@ -269,6 +267,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 
     // get collision quad list
     g_vQuadList = p_WorldNode->GetCollisionQuadList();
+    g_pNPCNode->SetWorldQuadList(&g_vQuadList);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -307,7 +306,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 
     // Setup the camera's projection parameters
     float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
-    g_Camera->SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
+    g_DebugCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
+    g_PlayerCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
 	// Material sources
 	pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
@@ -382,8 +382,12 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // check for player collisions with environment
     CollPlayer coll;
-    coll.RunCollisionCheck(g_pMainPlayerNode, g_vQuadList);
-    coll.RunCollisionCheck(g_pNPCNode, g_vQuadList);
+    coll.RunWorldCollision(g_pMainPlayerNode, g_vQuadList);
+    coll.RunWorldCollision(g_pNPCNode, g_vQuadList);
+    if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
+    {
+        // play sound
+    }
 }
 
 //--------------------------------------------------------------------------------------

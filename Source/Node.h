@@ -48,7 +48,10 @@ class Node
         */
         D3DXMATRIX m_matViewProj;
 
-    private:
+        // set the node view prjoection matrix
+        // derived classes should override this method for alternate functionality
+        virtual void SetViewProjectionNode(D3DXMATRIX mat) { m_matViewProj = mat; }
+
 
         // load and unload
 	    virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
@@ -56,12 +59,10 @@ class Node
         // update node
 	    virtual void UpdateNode(double fTime);
 
-        // set the node view prjoection matrix
-        // derived classes should override this method for alternate functionality
-        virtual void SetViewProjectionNode(D3DXMATRIX mat) { m_matViewProj = mat; }
-
         // render traversal for drawing objects (including children)
 	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
+
+    private:
 
 	    std::vector<NodeRef> m_vChildNodes; // child nodes
 

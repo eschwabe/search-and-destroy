@@ -23,21 +23,28 @@ class PlayerNode : public Node
                        const float fXRot, const float fYRot, const float fZRot);
         virtual ~PlayerNode();
 
-        // enable NPC mode
-        void SetNPCMode() { m_NPCMode = true; }
-
         // handle user controls
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-        // player collision event
-        void PlayerCollisionEvent(const D3DXVECTOR3& vPosDelta);
+        // collision events
+        void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta);
+        void PlayerCollisionEvent() { m_bPlayerCollision = true; }
 
         // get player information
         D3DXVECTOR3 GetPlayerPosition() const;
         float GetPlayerHeight() const;
         float GetPlayerRotation() const;
 
-    private:
+protected:
+
+        // initialize world node
+        virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
+
+        // update traversal for physics, AI, etc.
+	    virtual void UpdateNode(double fTime);
+
+        // render traversal for drawing objects
+	    virtual void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
 
         // defines the supported camera movements
         enum Movement
@@ -51,6 +58,16 @@ class PlayerNode : public Node
             kUnknown = 0xFF
         };
 
+        bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
+        bool m_bEnvironemntCollision;           // indicates the player collided with the environment
+        bool m_bPlayerCollision;                // indicates the player collided with another player
+
+        float m_fPlayerYawRotation;     // player rotation (y-axis)
+        float m_fPlayerPitchRotation;   // player rotation (z-axis)
+        float m_fPlayerRollRotation;    // player rotation (x-axis)
+
+    private:
+
         // defines the support player animations
         // note: animation values are specific to tiny model
         enum Animation
@@ -60,20 +77,11 @@ class PlayerNode : public Node
             kRun = 1
         };
 
-        // initialize world node
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
-
-        // update traversal for physics, AI, etc.
-	    void UpdateNode(double fTime);
-        void UpdateAnimation(double fTime);
-
-        // render traversal for drawing objects
-	    void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
-
         // setup helpers
         void SetupBoneMatrices(EXTD3DXFRAME *pFrame);
 
-        // render helpers
+        // render helpers        
+        void UpdateAnimation(double fTime);
         void ComputeTransform();
         void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
         void UpdateBoneMatricesBuffer(DWORD NumBones);
@@ -82,20 +90,9 @@ class PlayerNode : public Node
 
         // user input helper
         Movement GetPlayerMovement(const UINT&);
-
-        // automatically change player movement
-        void AutoPlayerMove(double fTime);
-
-        bool m_NPCMode; // enables automatic player movement
-        bool m_PlayerCollision; // indicates the player collided with an object
-
-        bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
-        
+ 
         std::wstring m_sMeshFilename;   // mesh file to load
         float m_fPlayerScale;           // player scaling
-        float m_fPlayerYawRotation;     // player rotation (y-axis)
-        float m_fPlayerPitchRotation;   // player rotation (z-axis)
-        float m_fPlayerRollRotation;    // player rotation (x-axis)
         D3DXVECTOR3 m_vPlayerPos;       // player position
         D3DXVECTOR3 m_vPlayerVelocity;  // player velocity
         D3DXVECTOR3 m_vPlayerAccel;     // player acceleration

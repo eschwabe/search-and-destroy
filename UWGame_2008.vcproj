@@ -729,6 +729,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\NPCNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\NPCNode.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\PlayerCamera.cpp"
 				>
 			</File>

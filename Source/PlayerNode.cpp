@@ -32,8 +32,7 @@ PlayerNode::PlayerNode(const std::wstring& sMeshFilename, const float fScale,
     m_vPlayerAccel(0.0f, 0.0f, 0.0f),
     m_ePlayerAnimation(kWait),
     m_iPlayerAnimationTrack(0),
-    m_playerSkinInfo(false),
-    m_NPCMode(false)
+    m_playerSkinInfo(false)
 {
     // initialize movement to default state
     for(int i =0; i < sizeof(m_PlayerMovement); i++)
@@ -91,14 +90,14 @@ float PlayerNode::GetPlayerRotation() const
 }
 
 /**
-* Notifies the player that it has collided with an object. The event provides
+* Notifies the player that it has collided with the environment. The event provides
 * the position delta required to resolve the collision. Modifies the player 
 * position by the specified delta.
 */
-void PlayerNode::PlayerCollisionEvent(const D3DXVECTOR3& vPosDelta)
+void PlayerNode::EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta)
 {
     // set collision flag
-    m_PlayerCollision = true;
+    m_bEnvironemntCollision = true;
 
     // move player position
     m_vPlayerPos += vPosDelta;
@@ -280,81 +279,11 @@ void PlayerNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 }
 
 /**
-* Automatically changes the player movements. Should be called in NPC mode only.
-*/
-void PlayerNode::AutoPlayerMove(double fTime)
-{
-    static double dNextUpdateTime = 0.0;
-    static double dCurrentTime = 0.0;
-
-    // update time
-    dCurrentTime += fTime;
-
-    // check if enough time has passed
-    if(dCurrentTime >= dNextUpdateTime)
-    {
-        // reset actions
-        for(int i =0; i < sizeof(m_PlayerMovement); i++)
-            m_PlayerMovement[i] = false;
-
-        // if collision, rotate player
-        if(m_PlayerCollision)
-        {
-            // reset collision flag
-            m_PlayerCollision = false;
-
-            // choose rotate action
-            switch(rand() % 2)
-            {
-            case 0:
-                m_PlayerMovement[kRotateLeft] = true;
-                break;
-            case 1:
-                m_PlayerMovement[kRotateRight] = true;
-                break;
-            
-            default:
-                break;
-            }
-        }
-        else
-        {
-            // choose new move action
-            switch(rand() % 3)
-            {
-            case 0:
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            case 1:
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            case 2:
-                m_PlayerMovement[kIncreaseSpeed] = true;
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            default:
-                break;
-            }
-        }
-
-        // set next update time
-        dNextUpdateTime += 1.0;
-    }
-}
-
-/**
 * Update traversal for physics, AI, etc.
 */
 void PlayerNode::UpdateNode(double fTime)
 {
     const float kMaxSpeed = 3.0f;
-
-    // check for NPC mode
-    if(m_NPCMode)
-        AutoPlayerMove(fTime);
-
-    // reset collision flag
-            m_PlayerCollision = false;
 
     // update player acceleration
     if( m_PlayerMovement[kIncreaseSpeed] )

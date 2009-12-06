@@ -95,7 +95,7 @@ class CollSphere
         bool  VsMobys();
 
         bool  VsQuad(const class CollQuad& quad) const;
-        char  VsSphere(CollSphere *sphere);
+        bool  VsSphere(CollSphere *sphere);
         bool  VsTri(const class CollTri& tri) const;
 };
 
@@ -164,7 +164,8 @@ typedef std::vector<CollQuad> VecCollQuad;
 
 /**
 * Checks for collisions between a list of quads (environment) and the player.
-* When collisions are detected, the player is notified to move.
+* When collisions are detected, the player is notified to move. Also, can check
+* for collisions between two players and move them.
 */
 class CollPlayer
 {
@@ -174,13 +175,37 @@ class CollPlayer
         CollPlayer();
 
         // run collision checks between player and environment
-        void RunCollisionCheck(PlayerNode* player, const VecCollQuad& quads);
+        void RunWorldCollision(PlayerNode* player, const VecCollQuad& quads);
+
+        // run collision checks between two players
+        bool RunPlayerCollision(PlayerNode* player1, PlayerNode* player2);
     
     private:
 
         // prevent copy and assignment
         CollPlayer(const CollPlayer&);
         void operator=(const CollPlayer&);
+};
+
+/**
+* Checks for line collisions against a list of quads. Modifies the
+* end of the line to the nearest collision point.
+*/
+class CollLineOfSight
+{
+    public:
+
+        // constructor
+        CollLineOfSight() {}
+
+        // run line of sight collision check
+        bool RunLineOfSightCollision(const VecCollQuad& quads, const D3DXVECTOR3& p1, D3DXVECTOR3& p2);
+
+    private:
+
+        // prevent copy and assignment
+        CollLineOfSight(const CollLineOfSight&);
+        void operator=(const CollLineOfSight&);
 };
 
 /************************************************************************/

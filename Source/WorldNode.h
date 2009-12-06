@@ -33,6 +33,12 @@ class WorldNode : public Node
         // returns a list of all quads (walls only)
         VecCollQuad GetCollisionQuadList();
 
+    protected:
+
+        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
+	    void UpdateNode(double fTime);                                          // update traversal for physics, AI, etc.
+	    void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);    // render traversal for drawing objects
+
     private:
 
 	    /**
@@ -89,9 +95,6 @@ class WorldNode : public Node
         };
 
         // METHODS
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
-	    void UpdateNode(double fTime);                                          // update traversal for physics, AI, etc.
-	    void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);    // render traversal for drawing objects
 
         // draw cube tile
         void DrawTile(float x, float y, float z, float size, CubeSide side, TileType type);
