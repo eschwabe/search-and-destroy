@@ -49,6 +49,8 @@ Node*					g_pBaseNode = 0;            // scene node
 PlayerNode*             g_pMainPlayerNode = 0;      // main player node
 NPCNode*                g_pNPCNode = 0;             // NPC player node
 VecCollQuad             g_vQuadList;                // collision quad list
+CSoundManager*          g_pSoundManager = NULL;     // sound manager
+CSound*                 g_pSoundCollision = NULL;   // collision sound
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -105,6 +107,7 @@ bool InitApp()
     g_DebugCamera.SetScalers( 0.01f, 5.0f );
 
 	g_World.InitializeSingletons();
+
 
 	return true;
 }
@@ -226,6 +229,16 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
                          L"Consolas", &g_pFont ) );
+
+    // initialize sound manager
+    g_pSoundManager = new CSoundManager();
+    g_pSoundManager->Initialize(DXUTGetHWND(), DSSCL_PRIORITY);
+    g_pSoundManager->SetPrimaryBufferFormat(2, 22050, 16);
+
+    // initialize collision sound
+    WCHAR szSoundPath[MAX_PATH];
+    DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"alarm.wav" );
+    g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
 
     // Load D3DX effect file
     WCHAR szEffectPath[MAX_PATH];
@@ -370,6 +383,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
+    static bool bPlayerCollision = false;
+
     g_fLastAnimTime = fTime;
 
 	g_World.Update();
@@ -384,9 +399,20 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     CollPlayer coll;
     coll.RunWorldCollision(g_pMainPlayerNode, g_vQuadList);
     coll.RunWorldCollision(g_pNPCNode, g_vQuadList);
+
+    // check for collisions between players
     if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
     {
-        // play sound
+        if( !bPlayerCollision )
+        {
+            // play sound
+            g_pSoundCollision->Play(0, 0);
+            bPlayerCollision = true;
+        }
+    }
+    else
+    {
+        bPlayerCollision = false;
     }
 }
 
