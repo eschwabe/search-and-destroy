@@ -20,7 +20,6 @@ NPCNode::NPCNode(const std::wstring& sMeshFilename, const float fScale,
                  const float fX, const float fY, const float fZ, 
                  const float fXRot, const float fYRot, const float fZRot) :
     PlayerNode(sMeshFilename, fScale, fX, fY, fZ, fXRot, fYRot, fZRot),
-    m_pDebugLine(NULL),
     m_pEnemyPlayer(NULL),
     m_bEnemyVisible(false),
     m_bEnemyCollision(false),
@@ -34,22 +33,26 @@ NPCNode::NPCNode(const std::wstring& sMeshFilename, const float fScale,
 */
 NPCNode::~NPCNode()
 {
-    SAFE_RELEASE(m_pDebugLine);
+    SAFE_RELEASE(m_lineVertexBuffer);
 }
 
 /**
-* Initialize NPC node. Sets up data and debug info.
+* Initialize NPC node. Sets up data and debug line vertex.
 */
 HRESULT NPCNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 {
-    HRESULT result = D3DXCreateLine(pd3dDevice, &m_pDebugLine);
+    // create the vertex buffer
+    HRESULT result = pd3dDevice->CreateVertexBuffer( 
+        kNumLineVertices*sizeof(CustomVertex),
+        0, 
+        D3DFVF_CUSTOMVERTEX,
+        D3DPOOL_DEFAULT, 
+        &m_lineVertexBuffer, 
+        NULL);
 
-    // create debug line
+    // call base player initialize
     if( SUCCEEDED(result) )
     {
-        m_pDebugLine->SetWidth(1.0f);
-
-        // call base player initialize
         result = PlayerNode::InitializeNode(pd3dDevice);
     }
 
@@ -65,16 +68,16 @@ void NPCNode::UpdateNode(double fTime)
     assert(m_pWorldQuadList);
 
     // set npc location
-    m_vList[0] = GetPlayerPosition();
-    m_vList[0].y = GetPlayerHeight();
+    m_vList[0].vPos = GetPlayerPosition();
+    m_vList[0].vPos.y = GetPlayerHeight();
 
     // set enemy player location
-    m_vList[1] = m_pEnemyPlayer->GetPlayerPosition();
-    m_vList[1].y = m_pEnemyPlayer->GetPlayerHeight();
+    m_vList[1].vPos = m_pEnemyPlayer->GetPlayerPosition();
+    m_vList[1].vPos.y = m_pEnemyPlayer->GetPlayerHeight();
 
     // check if npc can see player
     CollLineOfSight collLOS;
-    bool bEnemyVisibleUpdate = !(collLOS.RunLineOfSightCollision(*m_pWorldQuadList, m_vList[0], m_vList[1]));
+    bool bEnemyVisibleUpdate = !(collLOS.RunLineOfSightCollision(*m_pWorldQuadList, m_vList[0].vPos, m_vList[1].vPos));
     
     if( bEnemyVisibleUpdate )
     {
@@ -189,8 +192,38 @@ void NPCNode::AutoPlayerMove(double fTime)
 */
 void NPCNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
-    // render debug line
-    m_pDebugLine->DrawTransform(m_vList, 2, &m_matViewProj, m_DebugLineColor);
+    // update color
+    for(int i = 0; i < kNumLineVertices; i++)
+    {
+        m_vList[i].color = m_DebugLineColor;
+    }
+
+    // lock the vertex buffer
+    VOID* pVertices;
+    HRESULT result = m_lineVertexBuffer->Lock(0, kNumLineVertices*sizeof(CustomVertex), (void**)&pVertices, 0);
+
+    if(SUCCEEDED(result))
+    {
+        // fill and unlock the buffer
+        memcpy(pVertices, m_vList, kNumLineVertices*sizeof(CustomVertex));
+        m_lineVertexBuffer->Unlock();
+
+        // set the texture (or unset)
+	    pd3dDevice->SetTexture(0, NULL);
+
+        // set the world space transform
+	    pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
+
+        // turn off D3D lighting, since we are providing our own vertex colors
+        pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+        // set vertex type
+        pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+
+        // set stream source and draw
+        pd3dDevice->SetStreamSource( 0, m_lineVertexBuffer, 0, sizeof(CustomVertex) );
+        pd3dDevice->DrawPrimitive( D3DPT_LINELIST, 0, kNumLineVertices/2 );
+    }
 
     // call base player render
     PlayerNode::RenderNode(pd3dDevice, rMatWorld);

@@ -645,4 +645,6 @@ void CALLBACK OnDestroyDevice( void* pUserContext )
     g_SettingsDlg.OnD3D9DestroyDevice();
     SAFE_RELEASE(g_pFont);
     SAFE_RELEASE(g_pEffect);
+
+    SAFE_DELETE(g_pSoundManager);
 }

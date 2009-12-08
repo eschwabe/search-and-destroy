@@ -39,12 +39,26 @@ class NPCNode : public PlayerNode
 
     private:
 
+        // custom FVF, which describes the custom vertex structure
+        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZ|D3DFVF_DIFFUSE);
+
+        /**
+        * Custom vertex type. Specifies a custom vertex that can be written
+        * to the verticies buffer for rendering.
+        */
+	    struct CustomVertex
+	    {
+            D3DXVECTOR3 vPos;   // untransformed, 3D position for the vertex
+            DWORD color;        // vertex color
+        };
+
         // automatically change player movement
         void AutoPlayerMove(double fTime);
 
-        ID3DXLine*  m_pDebugLine;               // debug line
-        D3DXVECTOR3 m_vList[2];                 // debug line vertices
-        DWORD m_DebugLineColor;                 // debug line color
+        static const int kNumLineVertices = 2;
+        CustomVertex m_vList[kNumLineVertices];     // debug line vertices
+        LPDIRECT3DVERTEXBUFFER9 m_lineVertexBuffer; // debug line vertex buffer
+        DWORD m_DebugLineColor;                     // debug line color
 
         const PlayerNode* m_pEnemyPlayer;       // enemy player
         const VecCollQuad* m_pWorldQuadList;    // world quad list

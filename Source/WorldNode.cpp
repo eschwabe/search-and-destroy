@@ -247,7 +247,6 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
         pd3dDevice->SetTexture(0, m_pFloorTexture);
         pd3dDevice->SetStreamSource( 0, m_pFloorVertexBuffer, 0, sizeof(CustomVertex) );
         pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iFloorTriangleCount );
-
     }
 
     // set wall texture and draw primitives
