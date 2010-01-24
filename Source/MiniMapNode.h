@@ -12,22 +12,35 @@
 #pragma once
 #include "Node.h"
 #include "PlayerNode.h"
+#include "WorldNode.h"
 
 class MiniMapNode : public Node
 {
     public:
 
+        /**
+        * Player type for minimap tracking
+        */
         enum PlayerType
         {
-            PC,     // human
+            PLAYER, // human
             NPC     // computer
         };
 
         // constructor
-        MiniMapNode(const LPCWSTR sMapTexture, const LPCWSTR sMapMaskTexture);
+        MiniMapNode(const LPCWSTR sMapTexture, 
+                    const LPCWSTR sMapMaskTexture, 
+                    const LPCWSTR sMapBorderTexture, 
+                    const LPCWSTR sPlayerLocTexture, 
+                    const LPCWSTR sNPCLocTexture, 
+                    const int iMapsize);
         virtual ~MiniMapNode();
 
-        void AddPlayer(const PlayerNode* pPlayer) { m_pPlayer =  pPlayer; }
+        // add player tracking
+        void AddPlayerTracking(const PlayerNode* pPlayer, const PlayerType type);
+
+        // set world node
+        void SetWorldNode(const WorldNode* world) { m_WorldNode = world; }
 
     protected:
 
@@ -43,7 +56,7 @@ class MiniMapNode : public Node
     private:
 
         // custom FVF, which describes the custom vertex structure
-        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZRHW | D3DFVF_TEX2 );
+        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZRHW | D3DFVF_TEX3 );
 
         /**
         * Custom vertex type. Specifies a custom vertex that can be written
@@ -67,19 +80,59 @@ class MiniMapNode : public Node
             {}
 	    };
 
-        IDirect3DStateBlock9* m_pStateBlock;        // state block
+        /**
+        * Minimap player tracking data
+        */
+        struct PlayerMapInfo
+        {
+            CustomVertex* cvPlayerLocVertices;      // player location vertices
+            int iTriangleCount;                     // number of triangles
+            int iVertexCount;                       // number of vertices
 
-        CustomVertex* m_cvVertices;                 // minimap vertices
+            const PlayerNode* pPlayer;              // player object
+            PlayerType type;                        // player object type
+
+            // default constructor
+            PlayerMapInfo() :
+                cvPlayerLocVertices(NULL), iTriangleCount(0), iVertexCount(0), pPlayer(NULL), type(PLAYER)
+            {}
+        };
+
+
+        // transform texture coordinates from world coordinates
+        void TransformTextureCoords(const D3DXVECTOR3& vWorldLoc, const float& fRotation, const int& iVertexCount, CustomVertex* cvVertices);
+
+        // initialize reference vertices
+        void InitializeReferenceVertices();
+
+
+        CustomVertex* m_cvRefVertices;              // screen location vertices
+        CustomVertex* m_cvMapVertices;              // minimap vertices
         int m_iVertexCount;                         // number of vertices
         int m_iTriangleCount;                       // number of minimap triangles
+        int m_iMapSize;                             // minimap size
 
-        std::wstring m_sMapTexture;                 // texture file
+        int m_iWinHeight;                           // window height
+        int m_iWinWidth;                            // window width
+
+        std::vector<PlayerMapInfo> m_vPlayerMapInfo;// player map info
+        const WorldNode* m_WorldNode;               // world node info
+
+        std::wstring m_sMapTexture;                 // minimap texture file
         LPDIRECT3DTEXTURE9 m_pMiniMapTexture;       // minimap texture object
 
-        std::wstring m_sMapMaskTexture;             // texture file
-        LPDIRECT3DTEXTURE9 m_pMiniMapMaskTexture;   // minimap texture object
+        std::wstring m_sMapMaskTexture;             // minimap mask texture file
+        LPDIRECT3DTEXTURE9 m_pMiniMapMaskTexture;   // minimap mask texture object
 
-        const PlayerNode* m_pPlayer;                // player object
+        std::wstring m_sMapBorderTexture;           // minimap border texture file
+        LPDIRECT3DTEXTURE9 m_pMiniMapBorderTexture; // minimap border texture object
+
+        std::wstring m_sPlayerLocTexture;           // player location texture file
+        LPDIRECT3DTEXTURE9 m_pPlayerLocTexture;     // player location texture object
+
+        std::wstring m_sNPCLocTexture;              // npc location texture file
+        LPDIRECT3DTEXTURE9 m_pNPCLocTexture;        // npc location texture object
+
 
         // prevent copy and assignment
         MiniMapNode(const MiniMapNode&);

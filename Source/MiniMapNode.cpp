@@ -16,16 +16,27 @@
 /**
 * Constuct minimap node
 */
-MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture, const LPCWSTR sMapMaskTexture) :
+MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture, 
+                         const LPCWSTR sMapMaskTexture, 
+                         const LPCWSTR sMapBorderTexture, 
+                         const LPCWSTR sPlayerLocTexture, 
+                         const LPCWSTR sNPCLocTexture, 
+                         const int iMapsize) :
     m_sMapTexture(sMapTexture),
     m_sMapMaskTexture(sMapMaskTexture),
-    m_pStateBlock(NULL),
-    m_pPlayer(NULL)
+    m_sMapBorderTexture(sMapBorderTexture),
+    m_sPlayerLocTexture(sPlayerLocTexture),
+    m_sNPCLocTexture(sNPCLocTexture),
+    m_WorldNode(NULL),
+    m_iMapSize(iMapsize),
+    m_iWinHeight(0),
+    m_iWinWidth(0)
 {
     // create vertices
     m_iTriangleCount = 2;
     m_iVertexCount = 4;
-    m_cvVertices = new CustomVertex[m_iVertexCount];
+    m_cvMapVertices = new CustomVertex[m_iVertexCount];
+    m_cvRefVertices = new CustomVertex[m_iVertexCount];
 }
 
 /**
@@ -33,11 +44,37 @@ MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture, const LPCWSTR sMapMaskTextur
 */
 MiniMapNode::~MiniMapNode()
 {
-    delete m_cvVertices;
+    // cleanup vertices
+    delete m_cvMapVertices;
+    delete m_cvRefVertices;
+
+    for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
+    {
+        delete m_vPlayerMapInfo[i].cvPlayerLocVertices;
+    }
 
     SAFE_RELEASE(m_pMiniMapTexture);
     SAFE_RELEASE(m_pMiniMapMaskTexture);
-    SAFE_RELEASE(m_pStateBlock);
+    SAFE_RELEASE(m_pMiniMapBorderTexture);
+    SAFE_RELEASE(m_pPlayerLocTexture);
+    SAFE_RELEASE(m_pNPCLocTexture);
+}
+
+/**
+* Add player tracking. Displays player location on minimap.
+*/
+void MiniMapNode::AddPlayerTracking(const PlayerNode* pPlayer, const PlayerType type) 
+{ 
+    PlayerMapInfo info;
+    
+    info.iTriangleCount = 2;
+    info.iVertexCount = 4;
+    info.cvPlayerLocVertices = new CustomVertex[info.iVertexCount];
+
+    info.pPlayer = pPlayer;
+    info.type = type;
+
+    m_vPlayerMapInfo.push_back(info);
 }
 
 /**
@@ -67,8 +104,32 @@ HRESULT MiniMapNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
         return E_FAIL;
     }
 
-    // setup state block
-    if( FAILED(pd3dDevice->CreateStateBlock(D3DSBT_ALL, &m_pStateBlock)) )
+    // search and load minimap border texture
+    DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), m_sMapBorderTexture.c_str());
+    if( FAILED(D3DXCreateTextureFromFile(
+        pd3dDevice,
+        wsNewPath,
+        &m_pMiniMapBorderTexture)) )
+    {
+        return E_FAIL;
+    }
+
+    // search and load player location texture
+    DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), m_sPlayerLocTexture.c_str());
+    if( FAILED(D3DXCreateTextureFromFile(
+        pd3dDevice,
+        wsNewPath,
+        &m_pPlayerLocTexture)) )
+    {
+        return E_FAIL;
+    }
+
+    // search and load npc location texture
+    DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), m_sNPCLocTexture.c_str());
+    if( FAILED(D3DXCreateTextureFromFile(
+        pd3dDevice,
+        wsNewPath,
+        &m_pNPCLocTexture)) )
     {
         return E_FAIL;
     }
@@ -77,57 +138,127 @@ HRESULT MiniMapNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 }
 
 /**
+* Initializes the reference vertices based on screen size. Screen size not accurate during
+* object initialization.
+*/
+void MiniMapNode::InitializeReferenceVertices()
+{
+    // determine window size
+    RECT rWinSize = DXUTGetWindowClientRect();
+    m_iWinHeight = rWinSize.bottom;
+    m_iWinWidth = rWinSize.right;
+
+    // distance from side of screen
+    int offset = 30;
+    
+    // compute reference vertices
+    m_cvRefVertices[0] = CustomVertex( D3DXVECTOR3((float)m_iWinWidth-offset-m_iMapSize,  (float)m_iWinHeight-offset-m_iMapSize,  1),   0, 0,  0, 0);
+    m_cvRefVertices[1] = CustomVertex( D3DXVECTOR3((float)m_iWinWidth-offset-m_iMapSize,  (float)m_iWinHeight-offset,             1),   0, 1,  0, 1);
+    m_cvRefVertices[2] = CustomVertex( D3DXVECTOR3((float)m_iWinWidth-offset,             (float)m_iWinHeight-offset-m_iMapSize,  1),   1, 0,  1, 0);
+    m_cvRefVertices[3] = CustomVertex( D3DXVECTOR3((float)m_iWinWidth-offset,             (float)m_iWinHeight-offset,             1),   1, 1,  1, 1);
+}
+
+/**
 * Update minimap
 */
 void MiniMapNode::UpdateNode(double fTime)
 {
-    // set minimap vertices
-    m_cvVertices[0] = CustomVertex( D3DXVECTOR3(800,  500, 1),  0, 0,  0, 0);
-    m_cvVertices[1] = CustomVertex( D3DXVECTOR3(800,  700, 1),  0, 1,  0, 1);
-    m_cvVertices[2] = CustomVertex( D3DXVECTOR3(1000, 500, 1),  1, 0,  1, 0);
-    m_cvVertices[3] = CustomVertex( D3DXVECTOR3(1000, 700, 1),  1, 1,  1, 1);
+    // initialize reference vertices if needed   
+    if(m_iWinHeight == 0 || m_iWinWidth == 0)
+        InitializeReferenceVertices();
 
-    // move minimap texture based on current position of player
-    D3DXMATRIX mxMapTransform;
-    D3DXVECTOR2 vMapTranslation;
+    // default player location
+    D3DXVECTOR3 vPlayerLoc = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+    float fPlayerRot = 0.0f;
+
+    // update player vertices
+    for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
+    {
+        // reset player vertices
+        m_vPlayerMapInfo[i].cvPlayerLocVertices[0] = m_cvRefVertices[0];
+        m_vPlayerMapInfo[i].cvPlayerLocVertices[1] = m_cvRefVertices[1];
+        m_vPlayerMapInfo[i].cvPlayerLocVertices[2] = m_cvRefVertices[2];
+        m_vPlayerMapInfo[i].cvPlayerLocVertices[3] = m_cvRefVertices[3];
+
+        if( m_vPlayerMapInfo[i].type == PLAYER )
+        {
+            // PLAYER: save location and rotation, no transform required
+            vPlayerLoc = m_vPlayerMapInfo[i].pPlayer->GetPlayerPosition();
+            fPlayerRot = m_vPlayerMapInfo[i].pPlayer->GetPlayerRotation();
+        }
+        else
+        {
+            //D3DXVECTOR3 vNPCMapLoc = vPlayerLoc +
+
+            // NPC: transform coordinates
+            TransformTextureCoords(
+                m_vPlayerMapInfo[i].pPlayer->GetPlayerPosition() - vPlayerLoc, 
+                fPlayerRot, //0.0f,//m_vPlayerMapInfo[i].pPlayer->GetPlayerRotation(),
+                m_vPlayerMapInfo[i].iVertexCount,
+                m_vPlayerMapInfo[i].cvPlayerLocVertices);
+        }
+    }
+
+    // reset minimap vertices
+    m_cvMapVertices[0] = m_cvRefVertices[0];
+    m_cvMapVertices[1] = m_cvRefVertices[1];
+    m_cvMapVertices[2] = m_cvRefVertices[2];
+    m_cvMapVertices[3] = m_cvRefVertices[3];
+
+    // transform minimap vertices
+    TransformTextureCoords(
+        vPlayerLoc, 
+        fPlayerRot,
+        m_iVertexCount,
+        m_cvMapVertices);
+}
+
+/**
+* Transform texture coordinates based on the specified world location and rotation. 
+* Converts world coordinates to texture coordinates. World coords are located in
+* the x-z plane.
+*/
+void MiniMapNode::TransformTextureCoords(const D3DXVECTOR3& vWorldLoc, const float& fRotation, const int& iVertexCount, CustomVertex* cvVertices)
+{
+    D3DXVECTOR2 vTextureCoords;
 
     // translate map based on player position (x-z plane)
-    // convert player position into minimap uv coordinates
-    // TODO: divide by map size
-    vMapTranslation.x = m_pPlayer->GetPlayerPosition().x/25;
-    vMapTranslation.y = 1.0f-(m_pPlayer->GetPlayerPosition().z/25);
+    // convert player position into minimap uv coordinates (normalize and reverse z axis)
+    vTextureCoords.x = vWorldLoc.x/m_WorldNode->GetWorldWidth();
+    vTextureCoords.y = 1.0f-(vWorldLoc.z/m_WorldNode->GetWorldHeight());
 
-    // set player position to middle of minimap
-    vMapTranslation.x -= 0.5f;
-    vMapTranslation.y -= 0.5f;
+    // determine texture upper left corner uv coordinate (0,0)
+    vTextureCoords.x -= 0.5f;
+    vTextureCoords.y -= 0.5f;
 
     // set rotation center to texture mid-point 
     D3DXVECTOR2 vRotationCenter = D3DXVECTOR2(0.5f, 0.5f);
 
+    D3DXMATRIX mxMapTransform;
     D3DXMatrixTransformation2D( 
-        &mxMapTransform,                    // output matrix
-        NULL,                               // scaling center (Vec2)
-        1.0f,                               // scaling rotation
-        NULL,                               // scaling (Vec2)
-        &vRotationCenter,                   // rotation center (Vec2)
-        m_pPlayer->GetPlayerRotation(),     // rotation
-        &vMapTranslation);                  // translation
+        &mxMapTransform,            // output matrix
+        NULL,                       // scaling center (Vec2)
+        1.0f,                       // scaling rotation
+        NULL,                       // scaling (Vec2)
+        &vRotationCenter,           // rotation center (Vec2)
+        fRotation,                  // rotation
+        &vTextureCoords);           // translation
     
     // transform vertices
-    for(int i = 0; i < m_iVertexCount; i++)
+    for(int i = 0; i < iVertexCount; i++)
     {
         // copy current uv
         D3DXVECTOR2 vTextureCoords;
-        vTextureCoords.x = m_cvVertices[i].u1;
-        vTextureCoords.y = m_cvVertices[i].v1;
+        vTextureCoords.x = cvVertices[i].u1;
+        vTextureCoords.y = cvVertices[i].v1;
 
         // transform uv
         D3DXVECTOR4 vOutput; 
         D3DXVec2Transform(&vOutput, &vTextureCoords, &mxMapTransform);
 
         // update vertex
-        m_cvVertices[i].u1 = vOutput.x;
-        m_cvVertices[i].v1 = vOutput.y;
+        cvVertices[i].u1 = vOutput.x;
+        cvVertices[i].v1 = vOutput.y;
     }
 }
 
@@ -136,9 +267,6 @@ void MiniMapNode::UpdateNode(double fTime)
 */
 void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
-    // capture state
-    m_pStateBlock->Capture();
-
     // disable z-buffering
     pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
 
@@ -153,6 +281,11 @@ void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
     // disable culling
     pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
 
+    // set texture wrapping to use the border color
+    pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
+    pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
+    pd3dDevice->SetSamplerState(0, D3DSAMP_ADDRESSW, D3DTADDRESS_BORDER);
+
     // Set vertex type
     pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
 
@@ -160,21 +293,42 @@ void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
     pd3dDevice->SetTexture(0, m_pMiniMapTexture);
     pd3dDevice->SetTexture(1, m_pMiniMapMaskTexture);
 
-    // setup first texture stage state
+    // setup first texture stage state (select texture 0 alpha and color)
     pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1); // use first alpha argument without modification (output = arg1)
     pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
     pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1); // use first color argument without modification (output = arg1)
     pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);   // set first color argument as texture
 
-    // setup second texture stage state
+    // setup second texture stage state (replace alpha with texture 1 alpha)
     pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1); // use first alpha argument without modification (output = arg1)
     pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
     pd3dDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_SELECTARG1); // use first color argument without modification (output = arg1)
     pd3dDevice->SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_CURRENT);   // set first color argument as previous stage
 
-    // draw primitive
-    pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, m_iTriangleCount, m_cvVertices, sizeof(m_cvVertices[0]) );
+    // draw minimap primitive
+    pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, m_iTriangleCount, m_cvMapVertices, sizeof(m_cvMapVertices[0]) );
 
-    // restore state
-    m_pStateBlock->Apply();
+    // draw minimap border
+    pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_DISABLE); // disable alpha overwriting
+    pd3dDevice->SetTexture(0, m_pMiniMapBorderTexture);
+    pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, m_iTriangleCount, m_cvRefVertices, sizeof(m_cvRefVertices[0]) );
+
+    // draw player locations
+    for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
+    {
+        if(m_vPlayerMapInfo[i].type == PLAYER)
+        {
+            // set player location texture
+            pd3dDevice->SetTexture(0, m_pPlayerLocTexture);
+        }
+        else
+        {
+            // set npc location texture
+            pd3dDevice->SetTexture(0, m_pNPCLocTexture);
+        }
+
+        // draw location
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLESTRIP, m_iTriangleCount, 
+            m_vPlayerMapInfo[i].cvPlayerLocVertices, sizeof(m_vPlayerMapInfo[i].cvPlayerLocVertices[0]) );
+    }
 }

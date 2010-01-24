@@ -45,7 +45,9 @@ WorldNode::WorldNode(
     m_pWallVertexBuffer(NULL),
     m_iWallCVCount(0),
     m_iWallCVBufferSize(0),
-    m_WallCVBuffer(NULL)
+    m_WallCVBuffer(NULL),
+    iWorldHeight(0),
+    iWorldWidth(0)
 {
 }
 
@@ -110,6 +112,10 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     {
         return E_FAIL;
     }
+
+    // save grid size
+    iWorldHeight = grid.GetHeight();
+    iWorldWidth = grid.GetWidth();
 
     // draw tiles for each row and column entry
     for(int col = 0; col < grid.GetWidth(); col++)

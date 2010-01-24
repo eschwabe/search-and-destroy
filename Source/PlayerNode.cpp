@@ -477,6 +477,9 @@ void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame)
 */
 void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer)
 {
+    // turn off D3D lighting
+    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
     // check for skinned mesh rendering
     if(pMeshContainer->pSkinInfo)
     {

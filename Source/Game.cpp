@@ -270,8 +270,17 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0));
 
     // add minimap node (note: draw 2D elements after rendering 3D)
-    MiniMapNode* p_MiniMap = new MiniMapNode(L"level-collision-map.png", L"level-collision-map-alpha.png");
-    p_MiniMap->AddPlayer(g_pMainPlayerNode);
+    MiniMapNode* p_MiniMap = new MiniMapNode(
+        L"level-collision-map.png", 
+        L"level-collision-map-alpha.png", 
+        L"minimap-border.png", 
+        L"minimap-player.png", 
+        L"minimap-npc.png", 
+        200);
+
+    p_MiniMap->SetWorldNode(p_WorldNode);
+    p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
+    //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
     g_pBaseNode->AddChild(p_MiniMap);
 
     // setup player camera

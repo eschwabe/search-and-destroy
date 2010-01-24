@@ -15,14 +15,17 @@
 /**
 * Constuct base node
 */
-Node::Node()
+Node::Node() :
+    m_pStateBlock(NULL)
 {}
 
 /**
 * Destroy base node (and all children)
 */
 Node::~Node()
-{}
+{
+    SAFE_RELEASE(m_pStateBlock);
+}
 
 /**
 * Initialize node for updating and rendering (including children)
@@ -31,8 +34,14 @@ Node::~Node()
 */
 HRESULT Node::Initialize(IDirect3DDevice9* pd3dDevice)
 {
-    // update node
-    HRESULT result = InitializeNode(pd3dDevice);
+    // setup state block
+    HRESULT result = pd3dDevice->CreateStateBlock(D3DSBT_ALL, &m_pStateBlock);
+
+    // initialize node
+    if( SUCCEEDED(result) )
+    {
+        result = InitializeNode(pd3dDevice);
+    }
 
 	// recurse initialize on children
     if( SUCCEEDED(result) )
@@ -47,6 +56,7 @@ HRESULT Node::Initialize(IDirect3DDevice9* pd3dDevice)
                 break;
 	    }
     }
+
     return result;
 }
 
@@ -109,8 +119,14 @@ void Node::SetViewProjection(D3DXMATRIX mat)
 */
 void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
+    // capture state
+    m_pStateBlock->Capture();
+
     // render node
     RenderNode(pd3dDevice, rMatWorld);
+
+    // restore state
+    m_pStateBlock->Apply();
 
 	// recurse render on children
 	std::vector<NodeRef>::const_iterator it;

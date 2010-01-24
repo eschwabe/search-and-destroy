@@ -33,6 +33,10 @@ class WorldNode : public Node
         // returns a list of all quads (walls only)
         VecCollQuad GetCollisionQuadList();
 
+        // return world size
+        int GetWorldHeight() const { return iWorldHeight; }
+        int GetWorldWidth() const { return iWorldWidth; }
+
     protected:
 
         HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
@@ -119,6 +123,9 @@ class WorldNode : public Node
         std::wstring m_sGridFilename;               // world filename
         std::wstring m_sFloorFilename;              // floor texture filename
         std::wstring m_sWallFilename;               // wall texture filename
+
+        int iWorldHeight;                           // world height (grid size)
+        int iWorldWidth;                            // world width (grid size)
 
         // FLOOR
         LPDIRECT3DTEXTURE9 m_pFloorTexture;

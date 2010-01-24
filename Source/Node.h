@@ -64,7 +64,9 @@ class Node
 
     private:
 
-	    std::vector<NodeRef> m_vChildNodes; // child nodes
+        IDirect3DStateBlock9* m_pStateBlock;    // state block
+
+	    std::vector<NodeRef> m_vChildNodes;     // child nodes
 
         // prevent copy and assignment
         Node(const Node&);
