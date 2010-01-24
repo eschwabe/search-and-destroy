@@ -721,6 +721,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\MiniMapNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\MiniMapNode.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\Node.cpp"
 				>
 			</File>

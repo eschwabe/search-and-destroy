@@ -23,6 +23,7 @@
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
+#include "MiniMapNode.h"
 
 using namespace std;
 
@@ -267,6 +268,11 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     
     // add tiger model
     g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0));
+
+    // add minimap node (note: draw 2D elements after rendering 3D)
+    MiniMapNode* p_MiniMap = new MiniMapNode(L"level-collision-map.png", L"level-collision-map-alpha.png");
+    p_MiniMap->AddPlayer(g_pMainPlayerNode);
+    g_pBaseNode->AddChild(p_MiniMap);
 
     // setup player camera
     g_PlayerCamera.SetPlayerNode(g_pMainPlayerNode);
