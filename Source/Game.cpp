@@ -264,10 +264,12 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(g_pNPCNode);
 
     // add dwarf model
-    g_pBaseNode->AddChild(new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0));
+    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0);
+    g_pBaseNode->AddChild(pDwarf);
     
     // add tiger model
-    g_pBaseNode->AddChild(new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0));
+    PlayerNode* pTiger = new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0);
+    g_pBaseNode->AddChild(pTiger);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     MiniMapNode* p_MiniMap = new MiniMapNode(
@@ -280,7 +282,9 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
 
     p_MiniMap->SetWorldNode(p_WorldNode);
     p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
-    //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
+    p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
+    p_MiniMap->AddPlayerTracking(pDwarf, MiniMapNode::NPC);
+    p_MiniMap->AddPlayerTracking(pTiger, MiniMapNode::NPC);
     g_pBaseNode->AddChild(p_MiniMap);
 
     // setup player camera

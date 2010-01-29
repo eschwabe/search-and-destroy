@@ -100,7 +100,8 @@ class MiniMapNode : public Node
 
 
         // transform texture coordinates from world coordinates
-        void TransformTextureCoords(const D3DXVECTOR3& vWorldLoc, const float& fRotation, const int& iVertexCount, CustomVertex* cvVertices);
+        D3DXVECTOR2 ComputeTextureCoordsFromWorld(const D3DXVECTOR3& vWorldLoc);
+        void TransformTextureCoords(const D3DXVECTOR2& vTranslate, const float& fRotation, const int& iVertexCount, CustomVertex* cvVertices);
 
         // initialize reference vertices
         void InitializeReferenceVertices();
