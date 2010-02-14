@@ -17,6 +17,9 @@
 		/>
 	</Platforms>
 	<ToolFiles>
+		<ToolFile
+			RelativePath=".\D3DShaders.rules"
+		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
@@ -31,7 +34,13 @@
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
+				Name="Vertex shader compiler"
+			/>
+			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="Pixel shader compiler"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -45,7 +54,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=""
+				AdditionalIncludeDirectories="&quot;$(IntDir)&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG;PROFILE;_WINDOWS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="0"
@@ -115,7 +124,13 @@
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
+				Name="Vertex shader compiler"
+			/>
+			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="Pixel shader compiler"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -204,7 +219,13 @@
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
+				Name="Vertex shader compiler"
+			/>
+			<Tool
 				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="Pixel shader compiler"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -960,6 +981,18 @@
 					</File>
 				</Filter>
 			</Filter>
+		</Filter>
+		<Filter
+			Name="Shaders"
+			>
+			<File
+				RelativePath=".\Source\PixelShader.pfx"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\VertexShader.vfx"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\Source\Game.cpp"

@@ -13,12 +13,19 @@
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "DXUT\SDKmisc.h"
+#include "VertexShader.vfxobj"
+#include "PixelShader.pfxobj"
 
 // world scale
 const float kScale = 1.0f;
 
-// custom FVF, which describes the custom vertex structure
-const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZ | D3DFVF_TEX1);
+// custom vertex structure definition
+const D3DVERTEXELEMENT9 WorldNode::m_sCustomVertexDeclaration[] =
+{
+    { 0, offsetof(CustomVertex, vPos     ), D3DDECLTYPE_FLOAT3  , 0, D3DDECLUSAGE_POSITION, 0 },
+    { 0, offsetof(CustomVertex, vTexCoord), D3DDECLTYPE_FLOAT2  , 0, D3DDECLUSAGE_TEXCOORD, 0 },
+    D3DDECL_END(),
+}; 
 
 /**
 * Constuct world node.
@@ -36,13 +43,11 @@ WorldNode::WorldNode(
     m_sWallFilename(sWallFilename),
     m_pFloorTexture(NULL),
     m_iFloorTriangleCount(0),
-    m_pFloorVertexBuffer(NULL),
     m_iFloorCVCount(0),
     m_iFloorCVBufferSize(0),
     m_FloorCVBuffer(NULL),
     m_pWallTexture(NULL),
     m_iWallTriangleCount(0),
-    m_pWallVertexBuffer(NULL),
     m_iWallCVCount(0),
     m_iWallCVBufferSize(0),
     m_WallCVBuffer(NULL),
@@ -56,9 +61,12 @@ WorldNode::WorldNode(
 */
 WorldNode::~WorldNode()
 {
-    // cleanup D3D vertex buffers
-    SAFE_RELEASE(m_pFloorVertexBuffer);
-    SAFE_RELEASE(m_pWallVertexBuffer);
+    // cleanup vertex declaration
+    SAFE_RELEASE(m_pCVDeclaration);
+
+    // cleanup shaders
+    SAFE_RELEASE(m_pVertexShader);
+    SAFE_RELEASE(m_pPixelShader);
 
     // cleanup textures
     SAFE_RELEASE(m_pFloorTexture);
@@ -164,52 +172,18 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
             }
         }
     }
-
-    // setup rendering buffers
-    HRESULT result = S_OK;
     
-    if(m_iFloorCVCount)
-        result = CreateRenderBuffer(pd3dDevice, m_FloorCVBuffer, m_iFloorCVCount, &m_pFloorVertexBuffer);
-    if(m_iWallCVCount)
-        result = CreateRenderBuffer(pd3dDevice, m_WallCVBuffer, m_iWallCVCount, &m_pWallVertexBuffer);
-
     // setup world collision walls
     SetupWorldCollWalls(grid);
 
-    return result;
-}
+    // create vertex declaration
+    HRESULT result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
 
-/**
-* Setup D3D vertex buffers for rendering. Uses verticies in floor and wall buffers for
-* creating the vertex buffer.
-*/
-HRESULT WorldNode::CreateRenderBuffer(
-    IDirect3DDevice9* pd3dDevice, 
-    CustomVertex* pCustomVertices,
-    int iVertexCount,
-    LPDIRECT3DVERTEXBUFFER9* ppVertexBuffer)
-{
-    // create the vertex buffer.
-    HRESULT result = pd3dDevice->CreateVertexBuffer( 
-        iVertexCount*sizeof(CustomVertex),
-        0, 
-        D3DFVF_CUSTOMVERTEX,
-        D3DPOOL_DEFAULT, 
-        ppVertexBuffer, 
-        NULL);
-
-    if(SUCCEEDED(result))
-    {
-        // fill the vertex buffer.
-        VOID* pVertices;
-        result = (*ppVertexBuffer)->Lock(0, iVertexCount*sizeof(CustomVertex), (void**)&pVertices, 0);
-
-        if(SUCCEEDED(result))
-        {
-            memcpy(pVertices, pCustomVertices, iVertexCount*sizeof(CustomVertex));
-            (*ppVertexBuffer)->Unlock();
-        }
-    }
+    // create shaders
+    if( SUCCEEDED(result) )
+        result = pd3dDevice->CreateVertexShader((DWORD const*)VFX_VertexShader, &m_pVertexShader);
+    if( SUCCEEDED(result) )
+        result = pd3dDevice->CreatePixelShader((DWORD const*)PFX_PixelShader, &m_pPixelShader);
 
     return result;
 }
@@ -235,32 +209,37 @@ void WorldNode::UpdateNode(double /* fTime */)
 */
 void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
-	// Set the world space transform
-	pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
-
-	// Turn off culling
-	//pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
+	// compute world, view, projection matrix (must be transposed for vertex shader)
+    D3DXMATRIX matWorldViewProj; 
+    D3DXMatrixTranspose(&matWorldViewProj, &(rMatWorld * m_matViewProj));
 
     // Turn off D3D lighting, since we are providing our own vertex colors
-    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+    //pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
-    // Set vertex type
-    pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+    // enable z buffer
+    //pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
+    //pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+    // set shaders and vertex declaration
+    pd3dDevice->SetVertexShader(m_pVertexShader);
+    //pd3dDevice->SetPixelShader(m_pPixelShader);
+    pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+    
+    // set shader constants
+    pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProj), 4);
 
     // set floor texture and draw primitives
     if(m_iFloorTriangleCount)
     {
         pd3dDevice->SetTexture(0, m_pFloorTexture);
-        pd3dDevice->SetStreamSource( 0, m_pFloorVertexBuffer, 0, sizeof(CustomVertex) );
-        pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iFloorTriangleCount );
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iFloorTriangleCount, m_FloorCVBuffer, sizeof(m_FloorCVBuffer[0]) );
     }
 
     // set wall texture and draw primitives
     if(m_iWallTriangleCount)
     {
         pd3dDevice->SetTexture(0, m_pWallTexture);
-        pd3dDevice->SetStreamSource( 0, m_pWallVertexBuffer, 0, sizeof(CustomVertex) );
-        pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, m_iWallTriangleCount );
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
     }
 }
 
@@ -291,14 +270,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x+s, y+s, z+s );
         D3DXVECTOR3 p4( x+s, y+s, z   );
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 0.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 1.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
@@ -310,14 +289,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x+s, y,   z+s );
         D3DXVECTOR3 p4( x+s, y,   z   );
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 0.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 1.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
@@ -329,14 +308,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x,   y+s, z+s );
         D3DXVECTOR3 p4( x,   y+s, z   );
         AddPlane(
-            CustomVertex( p1, 1.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 1.0f ), 
-            CustomVertex( p3, 0.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 1.0f) ), 
+            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 1.0f, 1.0f ),
-            CustomVertex( p3, 0.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
@@ -348,14 +327,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x+s, y+s,  z+s );
         D3DXVECTOR3 p4( x+s, y,    z+s );
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 0.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 1.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
@@ -367,14 +346,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x+s, y+s, z+s );
         D3DXVECTOR3 p4( x,   y+s, z+s );
         AddPlane(
-            CustomVertex( p1, 1.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 1.0f ),
-            CustomVertex( p3, 0.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 1.0f, 1.0f ),
-            CustomVertex( p3, 0.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
@@ -386,14 +365,14 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p3( x+s, y+s, z   );
         D3DXVECTOR3 p4( x+s, y,   z   );
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p2, 0.0f, 0.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, 0.0f, 1.0f ),
-            CustomVertex( p3, 1.0f, 0.0f ),
-            CustomVertex( p4, 1.0f, 1.0f ),
+            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
         m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
         break;
