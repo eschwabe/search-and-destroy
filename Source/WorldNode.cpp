@@ -22,8 +22,11 @@ const float kScale = 1.0f;
 // custom vertex structure definition
 const D3DVERTEXELEMENT9 WorldNode::m_sCustomVertexDeclaration[] =
 {
-    { 0, offsetof(CustomVertex, vPos     ), D3DDECLTYPE_FLOAT3  , 0, D3DDECLUSAGE_POSITION, 0 },
-    { 0, offsetof(CustomVertex, vTexCoord), D3DDECLTYPE_FLOAT2  , 0, D3DDECLUSAGE_TEXCOORD, 0 },
+    { 0, offsetof(CustomVertex, vPos        ), D3DDECLTYPE_FLOAT3  , 0, D3DDECLUSAGE_POSITION, 0 },
+    { 0, offsetof(CustomVertex, vNormal     ), D3DDECLTYPE_FLOAT3  , 0, D3DDECLUSAGE_NORMAL  , 0 },
+    { 0, offsetof(CustomVertex, vTexCoord   ), D3DDECLTYPE_FLOAT2  , 0, D3DDECLUSAGE_TEXCOORD, 0 },
+    { 0, offsetof(CustomVertex, cDiffuse    ), D3DDECLTYPE_D3DCOLOR, 0, D3DDECLUSAGE_COLOR   , 0 },
+    { 0, offsetof(CustomVertex, cSpecular   ), D3DDECLTYPE_D3DCOLOR, 0, D3DDECLUSAGE_COLOR   , 1 },
     D3DDECL_END(),
 }; 
 
@@ -210,11 +213,14 @@ void WorldNode::UpdateNode(double /* fTime */)
 void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 {
 	// compute world, view, projection matrix (must be transposed for vertex shader)
-    D3DXMATRIX matWorldViewProj; 
+    D3DXMATRIX matWorldViewProj;
     D3DXMatrixTranspose(&matWorldViewProj, &(rMatWorld * m_matViewProj));
-
+    
+    D3DXMATRIX matWorld;
+    D3DXMatrixTranspose(&matWorld, &rMatWorld);
+    
     // Turn off D3D lighting, since we are providing our own vertex colors
-    //pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
 
     // enable z buffer
     //pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
@@ -222,11 +228,15 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 
     // set shaders and vertex declaration
     pd3dDevice->SetVertexShader(m_pVertexShader);
-    //pd3dDevice->SetPixelShader(m_pPixelShader);
+    pd3dDevice->SetPixelShader(m_pPixelShader);
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
     
     // set shader constants
     pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProj), 4);
+    pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorld), 3);
+
+    D3DXVECTOR3 vLight(12.5f, 10.0f, 0.0f);
+    pd3dDevice->SetVertexShaderConstantF(7, (const float*)(&vLight), 1);
 
     // set floor texture and draw primitives
     if(m_iFloorTriangleCount)
@@ -260,6 +270,8 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 */
 void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, TileType type)
 {
+    D3DXVECTOR3 n; // normal
+
     switch(side)
     {
 
@@ -269,17 +281,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x,   y+s, z+s );
         D3DXVECTOR3 p3( x+s, y+s, z+s );
         D3DXVECTOR3 p4( x+s, y+s, z   );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     case kBottom:
@@ -288,17 +301,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x,   y,   z+s );
         D3DXVECTOR3 p3( x+s, y,   z+s );
         D3DXVECTOR3 p4( x+s, y,   z   );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     case kLeft:        
@@ -307,17 +321,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x,   y,   z+s );
         D3DXVECTOR3 p3( x,   y+s, z+s );
         D3DXVECTOR3 p4( x,   y+s, z   );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 1.0f) ), 
-            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 1.0f) ), 
+            CustomVertex( p3, n, D3DXVECTOR2(0.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     case kRight:
@@ -326,17 +341,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x+s, y+s,  z   );
         D3DXVECTOR3 p3( x+s, y+s,  z+s );
         D3DXVECTOR3 p4( x+s, y,    z+s );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     case kUpper:
@@ -345,17 +361,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x+s, y,   z+s );
         D3DXVECTOR3 p3( x+s, y+s, z+s );
         D3DXVECTOR3 p4( x,   y+s, z+s );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(0.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(1.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     case kLower:
@@ -364,17 +381,18 @@ void WorldNode::DrawTile(float x, float y, float z, float s, CubeSide side, Tile
         D3DXVECTOR3 p2( x,   y+s, z   );
         D3DXVECTOR3 p3( x+s, y+s, z   );
         D3DXVECTOR3 p4( x+s, y,   z   );
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p2, D3DXVECTOR2(0.0f, 0.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p2, n, D3DXVECTOR2(0.0f, 0.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
             type);
         AddPlane(
-            CustomVertex( p1, D3DXVECTOR2(0.0f, 1.0f) ),
-            CustomVertex( p3, D3DXVECTOR2(1.0f, 0.0f) ),
-            CustomVertex( p4, D3DXVECTOR2(1.0f, 1.0f) ),
+            CustomVertex( p1, n, D3DXVECTOR2(0.0f, 1.0f) ),
+            CustomVertex( p3, n, D3DXVECTOR2(1.0f, 0.0f) ),
+            CustomVertex( p4, n, D3DXVECTOR2(1.0f, 1.0f) ),
             type);
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) ); 
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) ); 
         break;
     }
     default:
@@ -457,8 +475,11 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
         D3DXVECTOR3 p2( 0.0f, kScale, (float)row );
         D3DXVECTOR3 p3( 0.0f, kScale, (float)row+kScale );
         D3DXVECTOR3 p4( 0.0f, 0.0f,   (float)row+kScale );
+        
+        D3DXVECTOR3 n;
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
 
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) );
     }
 
     // world right side
@@ -468,8 +489,11 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
         D3DXVECTOR3 p2( (float)grid.GetWidth(), 0.0f,   (float)row+kScale );
         D3DXVECTOR3 p3( (float)grid.GetWidth(), kScale, (float)row+kScale );
         D3DXVECTOR3 p4( (float)grid.GetWidth(), kScale, (float)row );
+        
+        D3DXVECTOR3 n;
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
 
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) );
     }
 
     // world lower side
@@ -479,8 +503,11 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
         D3DXVECTOR3 p2( (float)col+kScale, 0.0f, 0.0f );
         D3DXVECTOR3 p3( (float)col+kScale, kScale, 0.0f );
         D3DXVECTOR3 p4( (float)col,        kScale, 0.0f );
+        
+        D3DXVECTOR3 n;
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
 
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) );
     }
 
     // world upper side
@@ -490,7 +517,10 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
         D3DXVECTOR3 p2( (float)col,        kScale, (float)grid.GetHeight() );
         D3DXVECTOR3 p3( (float)col+kScale, kScale, (float)grid.GetHeight() );
         D3DXVECTOR3 p4( (float)col+kScale, 0.0f,   (float)grid.GetHeight() );
+        
+        D3DXVECTOR3 n;
+        D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
 
-        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4) );
+        m_vCollQuads.push_back( CollQuad(p1, p2, p3, p4, n) );
     }
 }

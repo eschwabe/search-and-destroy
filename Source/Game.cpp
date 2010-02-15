@@ -321,10 +321,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 
 	g_World.Initialize(pd3dDevice);
 
-	// get device caps
-    D3DCAPS9 caps;
-    pd3dDevice->GetDeviceCaps( & caps );
-
     // font
     if( g_pFont )
         V_RETURN( g_pFont->OnResetDevice() );
@@ -333,19 +329,19 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     if( g_pEffect )
         V_RETURN( g_pEffect->OnResetDevice() );
 
-	// Create a sprite to help batch calls when drawing many lines of text
+	// create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
-    // Setup the camera's projection parameters
+    // setup the camera's projection parameters
     float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
     g_DebugCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
     g_PlayerCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
 	// Material sources
-	pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
-	pd3dDevice->SetRenderState(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_MATERIAL);
-	pd3dDevice->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
-	pd3dDevice->SetRenderState(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL);
+	//pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
+	//pd3dDevice->SetRenderState(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_MATERIAL);
+	//pd3dDevice->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
+	//pd3dDevice->SetRenderState(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL);
 
 	// Initialize default material
 	D3DMATERIAL9		materialDefault;
@@ -354,11 +350,11 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	materialDefault.Emissive = D3DXCOLOR(0, 0, 0, 1.0);		// No emissive
 	materialDefault.Power = 0;
 	materialDefault.Specular = D3DXCOLOR(0, 0, 0, 1.0);		// No specular
-	pd3dDevice->SetMaterial(&materialDefault);
+	//pd3dDevice->SetMaterial(&materialDefault);
 
 	// Set a default light
 	// White, directional, pointing downward
-	D3DLIGHT9 light;
+	/*D3DLIGHT9 light;
 	memset(&light, 0, sizeof(light));
 	light.Type			= D3DLIGHT_DIRECTIONAL;
 	light.Diffuse.r		= 1.0f;
@@ -380,12 +376,12 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     pd3dDevice->SetRenderState(D3DRS_SPECULARENABLE, false);
     pd3dDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
 
-    pd3dDevice->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
-
+    pd3dDevice->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );*/
+pd3dDevice->LightEnable(0, FALSE);
     // reset the timer
     g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
 
-    // Adjust the dialog parameters.
+    // adjust the dialog parameters
     g_HUD.SetLocation( pBackBufferSurfaceDesc->Width-170, 0 );
     g_HUD.SetSize( 170, 170 );
     g_SampleUI.SetLocation( pBackBufferSurfaceDesc->Width-170, pBackBufferSurfaceDesc->Height-270 );

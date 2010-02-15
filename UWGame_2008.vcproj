@@ -35,12 +35,14 @@
 			/>
 			<Tool
 				Name="Vertex shader compiler"
+				debugging="Enable"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
 				Name="Pixel shader compiler"
+				debugging="Enable"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -565,27 +567,6 @@
 			<File
 				RelativePath="UWGame.manifest"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Profile|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|x64"
 					>

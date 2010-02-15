@@ -7,21 +7,36 @@
 *
 *******************************************************************************/
 
-// constants
+/**
+* CONSTANTS
+*/
 float4x4 matWorldViewProj;	// transposed by game
+float4x4 matWorld; 			// transposed by game
+float3 vLightDirection;		// diffuse light direction
 
-// vertex shader input
+/**
+* INPUT
+*/
 struct VS_INPUT
 {
-    float3 position  : POSITION;
-    float2 texCoords : TEXCOORD0;
+    float3 position		: POSITION;
+    float3 normal		: NORMAL;
+    float2 texCoords	: TEXCOORD0;
+    float4 diffuse		: COLOR0;
+    float4 specular		: COLOR1;
 };
 
-// vertex shader output
+/**
+* OUTPUT
+*/
 struct VS_OUTPUT
 {
-    float4 position  : POSITION;
-    float2 texCoords : TEXCOORD0;
+    float4 position		: POSITION;		// vertex position
+    float2 texCoords	: TEXCOORD0;	// texture coordinates
+	float3 worldNormal	: TEXCOORD1;	// world normal
+	float3 lightVec		: TEXCOORD2; 	// light vector
+    float4 diffuse		: COLOR0;		// diffuse color
+    float4 specular		: COLOR1;		// specular color
 };
 
 /**
@@ -29,6 +44,24 @@ struct VS_OUTPUT
 */
 void main(VS_INPUT input, out VS_OUTPUT output)
 {
-		output.position = mul(float4(input.position.xyz, 1), matWorldViewProj);	
-		output.texCoords = input.texCoords;
+	// zero output
+	output = (VS_OUTPUT)0;
+
+	// transform position
+	float4 pos = float4(input.position.xyz, 1);
+	output.position = mul(pos, matWorldViewProj);	
+	
+	// pass through texture coords
+	output.texCoords = input.texCoords;
+	
+	// compute world normal
+	float4 norm = float4(input.normal.xyz, 1);
+	output.worldNormal = mul(norm, matWorld).xyz;
+	
+	// compute light vector
+	output.lightVec = vLightDirection - output.position;
+	
+	// pass through colors
+	output.diffuse = input.diffuse;
+	output.specular = input.specular;
 }

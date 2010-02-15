@@ -18,6 +18,7 @@
 					DisplayName="Debugging"
 					Description="Debugging switches"
 					Switch="/Od /Zi"
+					DefaultValue=" "
 					Delimited="true"
 					Inheritable="true"
 				/>

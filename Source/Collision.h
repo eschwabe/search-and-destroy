@@ -140,20 +140,15 @@ class CollQuad
         // constructor
         CollQuad() {}
             
-        CollQuad(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3, const D3DXVECTOR3& p4)
+        CollQuad(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3, const D3DXVECTOR3& p4,const D3DXVECTOR3& n)
         {
-            Set(p1, p2, p3, p4);
+            Set(p1, p2, p3, p4, n);
         }
 
         // set quad points and normal
-        // normal is computed using first three points (N = UxV, U=p2-p1 V=p3-p1)
-        void Set(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3, const D3DXVECTOR3& p4)
+        void Set(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, const D3DXVECTOR3& p3, const D3DXVECTOR3& p4, const D3DXVECTOR3& n)
         {
-            point[0] = p1;  point[1] = p2;  point[2] = p3;  point[3] = p4;
-
-            D3DXVECTOR3 u = p2-p1;
-            D3DXVECTOR3 v = p3-p1;
-            D3DXVec3Cross(&normal, &u, &v);
+            point[0] = p1;  point[1] = p2;  point[2] = p3;  point[3] = p4; normal = n;
         };
 };
 
