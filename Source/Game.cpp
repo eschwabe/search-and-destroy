@@ -24,6 +24,7 @@
 #include "WorldFile.h"
 #include "World.h"
 #include "MiniMapNode.h"
+#include "RenderData.h"
 
 using namespace std;
 
@@ -52,6 +53,7 @@ NPCNode*                g_pNPCNode = 0;             // NPC player node
 VecCollQuad             g_vQuadList;                // collision quad list
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
+RenderData*             g_pRenderData = NULL;       // render data
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -200,6 +202,7 @@ bool CALLBACK ModifyDeviceSettings( DXUTDeviceSettings* pDeviceSettings, const D
 #ifdef DEBUG_PS
     pDeviceSettings->d3d9.DeviceType = D3DDEVTYPE_REF;
 #endif
+
     // For the first device created if its a REF device, optionally display a warning dialog box
     static bool s_bFirstTime = true;
     if( s_bFirstTime )
@@ -266,10 +269,6 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     // add dwarf model
     PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0);
     g_pBaseNode->AddChild(pDwarf);
-    
-    // add tiger model
-    PlayerNode* pTiger = new PlayerNode(L"tiger.x", 2.0f, 4,1.5,21.5, 0,0,0);
-    g_pBaseNode->AddChild(pTiger);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     MiniMapNode* p_MiniMap = new MiniMapNode(
@@ -284,7 +283,6 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
     p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
     p_MiniMap->AddPlayerTracking(pDwarf, MiniMapNode::NPC);
-    p_MiniMap->AddPlayerTracking(pTiger, MiniMapNode::NPC);
     g_pBaseNode->AddChild(p_MiniMap);
 
     // setup player camera
@@ -296,6 +294,11 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
         MessageBox( NULL, L"Could not load nodes", L"UWGame", MB_OK );
         return E_FAIL;
     }
+
+    // initialize render data
+    g_pRenderData = new RenderData();
+    if( FAILED(g_pRenderData->Initialize(pd3dDevice)) )
+        return E_FAIL;
 
     // get collision quad list
     g_vQuadList = p_WorldNode->GetCollisionQuadList();
@@ -337,47 +340,11 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_DebugCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
     g_PlayerCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
-	// Material sources
-	//pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_MATERIAL);
-	//pd3dDevice->SetRenderState(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_MATERIAL);
-	//pd3dDevice->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_MATERIAL);
-	//pd3dDevice->SetRenderState(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_MATERIAL);
+    // configure lights
+    g_pRenderData->vDirectionalLight = D3DXVECTOR4(-0.5f, 0.0f, -0.25f, 1.0f);
+    g_pRenderData->vDirectionalLightColor = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
+    g_pRenderData->vAmbientColor = D3DXCOLOR(0.3f, 0.3f, 0.3f, 0.3f);
 
-	// Initialize default material
-	D3DMATERIAL9		materialDefault;
-	materialDefault.Ambient = D3DXCOLOR(1, 1, 1, 1.0f);		// White to ambient lighting
-	materialDefault.Diffuse = D3DXCOLOR(1, 1, 1, 1.0f);		// White to diffuse lighting
-	materialDefault.Emissive = D3DXCOLOR(0, 0, 0, 1.0);		// No emissive
-	materialDefault.Power = 0;
-	materialDefault.Specular = D3DXCOLOR(0, 0, 0, 1.0);		// No specular
-	//pd3dDevice->SetMaterial(&materialDefault);
-
-	// Set a default light
-	// White, directional, pointing downward
-	/*D3DLIGHT9 light;
-	memset(&light, 0, sizeof(light));
-	light.Type			= D3DLIGHT_DIRECTIONAL;
-	light.Diffuse.r		= 1.0f;
-	light.Diffuse.g		= 1.0f;
-	light.Diffuse.b		= 1.0f;
-	light.Ambient.r		= 0.15f;
-	light.Ambient.g		= 0.15f;
-	light.Ambient.b		= 0.15f;
-	light.Direction.x	= 0.0f;
-	light.Direction.y	= -1.0f;
-	light.Direction.z	= 0.0f;
-	light.Attenuation0	= 1.0f;
-	light.Range			= 10000.f;
-	pd3dDevice->SetLight(0, &light);
-	pd3dDevice->LightEnable(0, TRUE);
-    pd3dDevice->SetRenderState( D3DRS_LIGHTING, TRUE );
-	pd3dDevice->SetRenderState(D3DRS_LIGHTING, true);
-	pd3dDevice->SetRenderState(D3DRS_COLORVERTEX, false);
-    pd3dDevice->SetRenderState(D3DRS_SPECULARENABLE, false);
-    pd3dDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-
-    pd3dDevice->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );*/
-pd3dDevice->LightEnable(0, FALSE);
     // reset the timer
     g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
 
@@ -450,12 +417,12 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
     HRESULT hr;
 
     pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
-                       D3DCOLOR_ARGB( 0, 0x3F, 0xAF, 0xFF ), 1.0f, 0L );
+                       D3DCOLOR_ARGB( 0, 0x44, 0xAA, 0xDD ), 1.0f, 0L );
 
     if( SUCCEEDED( pd3dDevice->BeginScene() ) )
     {
         // set up the camera
-        D3DXMATRIXA16 mx, mxView, mxProj;
+        D3DXMATRIX mx, mxView, mxProj;
         D3DXVECTOR3 vEye;
         D3DXVECTOR3 vLightDir;
 
@@ -472,12 +439,18 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         // set effect view projection matrix
         D3DXMatrixMultiply( &mx, &mxView, &mxProj );
         g_pEffect->SetMatrix( "g_mViewProj", &mx );
-        g_pBaseNode->SetViewProjection(mx);
+
+        // set rendering view and project matrix
+        g_pRenderData->matProjection = *g_Camera->GetProjMatrix();
+        g_pRenderData->matView = mxView = *g_Camera->GetViewMatrix();
+
+        // set world matrix
+        D3DXMATRIX matIdentity;
+        D3DXMatrixIdentity( &matIdentity );
+        g_pRenderData->matWorld = matIdentity;
 
         // render all nodes
-        D3DXMATRIX	matIdentity;
-        D3DXMatrixIdentity( &matIdentity );
-        g_pBaseNode->Render(pd3dDevice, matIdentity);
+        g_pBaseNode->Render(pd3dDevice, *g_pRenderData);
 
         // display text on hud
         RenderText();
@@ -655,6 +628,7 @@ void CALLBACK OnLostDevice( void* pUserContext )
 void CALLBACK OnDestroyDevice( void* pUserContext )
 {
     delete g_pBaseNode;
+    delete g_pRenderData;
 
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();

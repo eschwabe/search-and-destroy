@@ -763,6 +763,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\RenderData.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\RenderData.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\TeapotNode.cpp"
 				>
 			</File>

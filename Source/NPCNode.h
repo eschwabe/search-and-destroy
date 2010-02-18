@@ -35,7 +35,7 @@ class NPCNode : public PlayerNode
         void UpdateNode(double fTime);
 
         // render traversal for drawing objects
-	    void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
+	    void RenderNode(IDirect3DDevice9*, const RenderData& rData);
 
     private:
 

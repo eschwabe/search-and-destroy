@@ -41,7 +41,7 @@ class WorldNode : public Node
 
         HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
 	    void UpdateNode(double fTime);                                          // update traversal for physics, AI, etc.
-	    void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);    // render traversal for drawing objects
+	    void RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData); // render traversal for drawing objects
 
     private:
         
@@ -62,8 +62,8 @@ class WorldNode : public Node
                 vPos(0.0f, 0.0f, 0.0f), 
                 vNormal(0.0f, 0.0f, 0.0f), 
                 vTexCoord(0.0f, 0.0f),
-                cDiffuse(0.4f, 0.5f, 0.6f, 1),
-                cSpecular(0.4f, 0.5f, 0.6f, 1)
+                cDiffuse(0.0f, 0.0f, 0.0f, 1),
+                cSpecular(0.0f, 0.0f, 0.0f, 1)
             {}
 
             // initialization constructor
@@ -71,16 +71,13 @@ class WorldNode : public Node
                 vPos(ivPos), 
                 vNormal(ivNormal), 
                 vTexCoord(ivTexCoord), 
-                cDiffuse(0.4f, 0.5f, 0.6f, 1),
-                cSpecular(0.4f, 0.5f, 0.6f, 1)
+                cDiffuse(0.0f, 0.0f, 0.0f, 1),
+                cSpecular(0.0f, 0.0f, 0.0f, 1)
             {}
 	    };
 
         static const D3DVERTEXELEMENT9 m_sCustomVertexDeclaration[];    // custom vertex structure definition
         LPDIRECT3DVERTEXDECLARATION9 m_pCVDeclaration;                  // custom vertex declaration
-
-        LPDIRECT3DVERTEXSHADER9 m_pVertexShader;    // vertex shader
-        LPDIRECT3DPIXELSHADER9 m_pPixelShader;      // pixel shader
 
         /**
         * Defines the wall sides for a give coordinate location. 
@@ -157,4 +154,3 @@ class WorldNode : public Node
         WorldNode(const WorldNode&);
         void operator=(const WorldNode&);
 };
-

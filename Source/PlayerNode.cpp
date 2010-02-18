@@ -418,30 +418,31 @@ void PlayerNode::UpdateAnimation(double fTime)
 /**
 * Render traversal for drawing objects
 */
-void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
-    D3DXMatrixMultiply(&rMatWorld, &m_matPlayer, &rMatWorld);
+    D3DXMATRIX matWorld;
+    D3DXMatrixMultiply(&matWorld, &m_matPlayer, &rData.matWorld);
 
     // compute new player model transform matrix
     ComputeTransform();
 
     // update frame transform matrices
-    UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, rMatWorld);
+    UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
 
     // recursively draw the root frame
-    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot);
+    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData);
 }
 
 /**
 * Recursively update frame transform matrices
 */
-void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld)
+void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX matWorld)
 {
-    D3DXMatrixMultiply( &pFrame->CombinedTransformationMatrix, &pFrame->TransformationMatrix, &rMatWorld );
+    D3DXMatrixMultiply( &pFrame->CombinedTransformationMatrix, &pFrame->TransformationMatrix, &matWorld );
 
     // recurse for frame sibblings
     if(pFrame->pFrameSibling)
-        UpdateFrameTransforms((EXTD3DXFRAME*)pFrame->pFrameSibling, rMatWorld);
+        UpdateFrameTransforms((EXTD3DXFRAME*)pFrame->pFrameSibling, matWorld);
 
     // recurse for frame children
     if(pFrame->pFrameFirstChild)
@@ -451,7 +452,7 @@ void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorl
 /**
 * Recursively draw the frame
 */
-void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame)
+void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData)
 {
 	// draw all mesh containers in this frame
     EXTD3DXMESHCONTAINER* pMeshContainer = (EXTD3DXMESHCONTAINER*)pFrame->pMeshContainer;
@@ -459,27 +460,24 @@ void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame)
     // draw mesh containers
     while(pMeshContainer)
     {
-        DrawMeshContainer(pd3dDevice, pFrame, pMeshContainer);
+        DrawMeshContainer(pd3dDevice, pFrame, pMeshContainer, rData);
         pMeshContainer = (EXTD3DXMESHCONTAINER*)pMeshContainer->pNextMeshContainer;
     }
 
 	// recurse for frame sibblings
     if (pFrame->pFrameSibling)
-        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameSibling);
+        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameSibling, rData);
 
     // recurse for frame children
 	if (pFrame->pFrameFirstChild)
-        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameFirstChild);
+        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameFirstChild, rData);
 }
 
 /**
 * Draw mesh container (standard mesh or skinned mesh)
 */
-void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer)
+void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData)
 {
-    // turn off D3D lighting
-    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-
     // check for skinned mesh rendering
     if(pMeshContainer->pSkinInfo)
     {
@@ -503,8 +501,15 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
                                         pMeshContainer->ppBoneFrameMatrixPtrs[ dwMatrixIndex ] );
             }
 
+            // set light attributes in shader
+            m_pEffect->SetVector( "lhtDir", &rData.vDirectionalLight);
+            m_pEffect->SetVector( "lightDiffuse", (const D3DXVECTOR4*)&rData.vDirectionalLightColor );
+            m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&rData.vAmbientColor );
+
             // set effect view projection matrix
-            m_pEffect->SetMatrix( "g_mViewProj", &m_matViewProj );
+            D3DXMATRIX matViewProj;
+            D3DXMatrixMultiply(&matViewProj, &rData.matView, &rData.matProjection);
+            m_pEffect->SetMatrix( "g_mViewProj", &matViewProj );
 
             // set the matrix palette into the effect
             m_pEffect->SetMatrixArray( "amPalette", m_pBoneMatrices, pMeshContainer->dwNumPaletteEntries );
@@ -540,11 +545,18 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
         // set standard mesh transformation matrix
         pd3dDevice->SetTransform(D3DTS_WORLD, &pFrame->CombinedTransformationMatrix);
 
+        // setup D3D lighting
+        rData.EnableD3DLighting(pd3dDevice);
+
         // traverse container materials
         for(DWORD i = 0; i < pMeshContainer->NumMaterials; i++ )
         {
-            // set the material and texture for this subset
-            pd3dDevice->SetMaterial(&pMeshContainer->pMaterials[i]);
+            // copy material and override ambient
+            D3DMATERIAL9 materialDefault = pMeshContainer->pMaterials[i];
+            materialDefault.Ambient = rData.vAmbientColor;
+            pd3dDevice->SetMaterial(&materialDefault);
+
+            // set texture for this subset
             pd3dDevice->SetTexture(0, pMeshContainer->ppTextures[i]);
 
             // draw mesh

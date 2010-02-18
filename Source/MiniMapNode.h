@@ -51,7 +51,7 @@ class MiniMapNode : public Node
 	    virtual void UpdateNode(double fTime);
 
         // render traversal for drawing objects (including children)
-	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld);
+	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData);
 
     private:
 

@@ -190,7 +190,7 @@ void NPCNode::AutoPlayerMove(double fTime)
 /**
 * Render traversal for drawing objects
 */
-void NPCNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void NPCNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     // update color
     for(int i = 0; i < kNumLineVertices; i++)
@@ -212,7 +212,7 @@ void NPCNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 	    pd3dDevice->SetTexture(0, NULL);
 
         // set the world space transform
-	    pd3dDevice->SetTransform(D3DTS_WORLD, &rMatWorld);
+        pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
 
         // turn off D3D lighting, since we are providing our own vertex colors
         pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
@@ -226,5 +226,5 @@ void NPCNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
     }
 
     // call base player render
-    PlayerNode::RenderNode(pd3dDevice, rMatWorld);
+    PlayerNode::RenderNode(pd3dDevice, rData);
 }

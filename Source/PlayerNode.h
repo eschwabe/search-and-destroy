@@ -44,7 +44,7 @@ protected:
 	    virtual void UpdateNode(double fTime);
 
         // render traversal for drawing objects
-	    virtual void RenderNode(IDirect3DDevice9*, D3DXMATRIX rMatWorld);
+	    virtual void RenderNode(IDirect3DDevice9*, const RenderData& rData);
 
         // defines the supported camera movements
         enum Movement
@@ -85,8 +85,8 @@ protected:
         void ComputeTransform();
         void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
         void UpdateBoneMatricesBuffer(DWORD NumBones);
-        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame);
-        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer);
+        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData);
+        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData);
 
         // user input helper
         Movement GetPlayerMovement(const UINT&);

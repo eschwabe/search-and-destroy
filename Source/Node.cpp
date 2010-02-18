@@ -98,32 +98,15 @@ void Node::UpdateNode(double fTime)
 {}
 
 /**
-* Set effect view projection matrix for all children
-*/
-void Node::SetViewProjection(D3DXMATRIX mat)
-{
-    // render node
-    SetViewProjectionNode(mat);
-
-	// recurse render on children
-	std::vector<NodeRef>::const_iterator it;
-
-	for(it = m_vChildNodes.begin(); it != m_vChildNodes.end(); ++it)
-	{
-		(*it)->SetViewProjection(mat);
-	}
-}
-
-/**
 * Render traversal for drawing objects (including children)
 */
-void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void Node::Render(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     // capture state
     m_pStateBlock->Capture();
 
     // render node
-    RenderNode(pd3dDevice, rMatWorld);
+    RenderNode(pd3dDevice, rData);
 
     // restore state
     m_pStateBlock->Apply();
@@ -133,7 +116,7 @@ void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 
 	for(it = m_vChildNodes.begin(); it != m_vChildNodes.end(); ++it)
 	{
-		(*it)->Render(pd3dDevice, rMatWorld);
+		(*it)->Render(pd3dDevice, rData);
 	}
 }
 
@@ -143,7 +126,7 @@ void Node::Render(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
 * Derived classes should override this method to perform class specific
 * rendering.
 */
-void Node::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void Node::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {}
 
 /**

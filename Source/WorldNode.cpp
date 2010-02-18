@@ -13,8 +13,6 @@
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "DXUT\SDKmisc.h"
-#include "VertexShader.vfxobj"
-#include "PixelShader.pfxobj"
 
 // world scale
 const float kScale = 1.0f;
@@ -28,7 +26,7 @@ const D3DVERTEXELEMENT9 WorldNode::m_sCustomVertexDeclaration[] =
     { 0, offsetof(CustomVertex, cDiffuse    ), D3DDECLTYPE_D3DCOLOR, 0, D3DDECLUSAGE_COLOR   , 0 },
     { 0, offsetof(CustomVertex, cSpecular   ), D3DDECLTYPE_D3DCOLOR, 0, D3DDECLUSAGE_COLOR   , 1 },
     D3DDECL_END(),
-}; 
+};
 
 /**
 * Constuct world node.
@@ -66,10 +64,6 @@ WorldNode::~WorldNode()
 {
     // cleanup vertex declaration
     SAFE_RELEASE(m_pCVDeclaration);
-
-    // cleanup shaders
-    SAFE_RELEASE(m_pVertexShader);
-    SAFE_RELEASE(m_pPixelShader);
 
     // cleanup textures
     SAFE_RELEASE(m_pFloorTexture);
@@ -182,12 +176,6 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
     // create vertex declaration
     HRESULT result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
 
-    // create shaders
-    if( SUCCEEDED(result) )
-        result = pd3dDevice->CreateVertexShader((DWORD const*)VFX_VertexShader, &m_pVertexShader);
-    if( SUCCEEDED(result) )
-        result = pd3dDevice->CreatePixelShader((DWORD const*)PFX_PixelShader, &m_pPixelShader);
-
     return result;
 }
 
@@ -210,34 +198,14 @@ void WorldNode::UpdateNode(double /* fTime */)
 * with. Finally, we call DrawPrimitive() which does the actual rendering
 * of our geometry.
 */
-void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
-	// compute world, view, projection matrix (must be transposed for vertex shader)
-    D3DXMATRIX matWorldViewProj;
-    D3DXMatrixTranspose(&matWorldViewProj, &(rMatWorld * m_matViewProj));
-    
-    D3DXMATRIX matWorld;
-    D3DXMatrixTranspose(&matWorld, &rMatWorld);
-    
-    // Turn off D3D lighting, since we are providing our own vertex colors
-    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+    // setup shaders
+    rData.EnableShaders(pd3dDevice);
 
-    // enable z buffer
-    //pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
-    //pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-
-    // set shaders and vertex declaration
-    pd3dDevice->SetVertexShader(m_pVertexShader);
-    pd3dDevice->SetPixelShader(m_pPixelShader);
+    // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
     
-    // set shader constants
-    pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProj), 4);
-    pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorld), 3);
-
-    D3DXVECTOR3 vLight(12.5f, 10.0f, 0.0f);
-    pd3dDevice->SetVertexShaderConstantF(7, (const float*)(&vLight), 1);
-
     // set floor texture and draw primitives
     if(m_iFloorTriangleCount)
     {

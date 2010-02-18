@@ -12,7 +12,7 @@
 */
 float4x4 matWorldViewProj;	// transposed by game
 float4x4 matWorld; 			// transposed by game
-float3 vLightDirection;		// diffuse light direction
+float4 vLightDirection;		// diffuse light direction
 
 /**
 * INPUT
@@ -59,7 +59,7 @@ void main(VS_INPUT input, out VS_OUTPUT output)
 	output.worldNormal = mul(norm, matWorld).xyz;
 	
 	// compute light vector
-	output.lightVec = vLightDirection - output.position;
+	output.lightVec = vLightDirection.xyz;// - pos.xyz;
 	
 	// pass through colors
 	output.diffuse = input.diffuse;

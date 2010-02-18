@@ -294,7 +294,7 @@ void MiniMapNode::TransformTextureCoords(const D3DXVECTOR2& vTranslate, const fl
 /**
 * Render minimap
 */
-void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, D3DXMATRIX rMatWorld)
+void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     // disable z-buffering
     pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);
