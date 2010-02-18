@@ -33,7 +33,6 @@ using namespace std;
 //--------------------------------------------------------------------------------------
 ID3DXFont*              g_pFont = NULL;             // font for drawing text
 ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
-ID3DXEffect*            g_pEffect = NULL;           // D3DX effect interface (created, but unused)
 CDebugCamera            g_DebugCamera;              // debug camera
 CPlayerCamera           g_PlayerCamera;             // player camera
 CBaseCamera*            g_Camera = &g_PlayerCamera; // current camera (default player)
@@ -244,12 +243,6 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"alarm.wav" );
     g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
 
-    // Load D3DX effect file
-    WCHAR szEffectPath[MAX_PATH];
-    V_RETURN( DXUTFindDXSDKMediaFileCch( szEffectPath, MAX_PATH, L"MultiAnimation.fx" ) );
-    V_RETURN( D3DXCreateEffectFromFile( pd3dDevice, szEffectPath, NULL, NULL, D3DXFX_NOT_CLONEABLE, NULL, &g_pEffect, NULL ) );
-    g_pEffect->SetTechnique( "RenderScene" );
-
     // create base node
     g_pBaseNode = new Node();
   
@@ -262,12 +255,12 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(g_pMainPlayerNode);
 
     // add NPC
-    g_pNPCNode = new NPCNode(L"tiny.x", 1.0f/250.0f, 12.5,0,12.5, 0,-D3DX_PI/2.0f,0);
+    g_pNPCNode = new NPCNode(L"tiny.x", 1.0f/250.0f, 12.5,0,16, 0,-D3DX_PI/2.0f,0);
     g_pNPCNode->SetEnemyPlayer(g_pMainPlayerNode);
     g_pBaseNode->AddChild(g_pNPCNode);
 
     // add dwarf model
-    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 21,0,21, 0,0,0);
+    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 12.5,0,21, 0,0,0);
     g_pBaseNode->AddChild(pDwarf);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
@@ -327,10 +320,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     // font
     if( g_pFont )
         V_RETURN( g_pFont->OnResetDevice() );
-
-    // effect
-    if( g_pEffect )
-        V_RETURN( g_pEffect->OnResetDevice() );
 
 	// create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
@@ -414,35 +403,21 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         return;
     }
 
-    HRESULT hr;
-
+    // clear screen
     pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
                        D3DCOLOR_ARGB( 0, 0x44, 0xAA, 0xDD ), 1.0f, 0L );
 
     if( SUCCEEDED( pd3dDevice->BeginScene() ) )
     {
-        // set up the camera
-        D3DXMATRIX mx, mxView, mxProj;
-        D3DXVECTOR3 vEye;
-        D3DXVECTOR3 vLightDir;
-
-        // Light direction is same as camera front (reversed)
-        vLightDir = -(*(g_Camera->GetWorldAhead()));
+        HRESULT hr;
 
         // set static transforms
-        mxView = *g_Camera->GetViewMatrix();
-        mxProj = *g_Camera->GetProjMatrix();
-        V( pd3dDevice->SetTransform( D3DTS_VIEW, & mxView ) );
-        V( pd3dDevice->SetTransform( D3DTS_PROJECTION, & mxProj ) );
-        vEye = *g_Camera->GetEyePt();
+        V( pd3dDevice->SetTransform( D3DTS_VIEW, g_Camera->GetViewMatrix()) );
+        V( pd3dDevice->SetTransform( D3DTS_PROJECTION, g_Camera->GetProjMatrix()) );
 
-        // set effect view projection matrix
-        D3DXMatrixMultiply( &mx, &mxView, &mxProj );
-        g_pEffect->SetMatrix( "g_mViewProj", &mx );
-
-        // set rendering view and project matrix
+        // set rendering view and projection matrix
         g_pRenderData->matProjection = *g_Camera->GetProjMatrix();
-        g_pRenderData->matView = mxView = *g_Camera->GetViewMatrix();
+        g_pRenderData->matView = *g_Camera->GetViewMatrix();
 
         // set world matrix
         D3DXMATRIX matIdentity;
@@ -484,7 +459,6 @@ void RenderText()
     //txtHelper.DrawTextLine( DXUTGetDeviceStats() );
 
     // statistics
-    //txtHelper.DrawFormattedTextLine( L"  Number of models: %d", g_v_pCharacters.size() );
     txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"Time:", DXUTGetGlobalTimer()->GetTime() );
     txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"FPS:", DXUTGetFPS() );
 
@@ -633,7 +607,6 @@ void CALLBACK OnDestroyDevice( void* pUserContext )
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();
     SAFE_RELEASE(g_pFont);
-    SAFE_RELEASE(g_pEffect);
 
     SAFE_DELETE(g_pSoundManager);
 }

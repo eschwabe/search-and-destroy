@@ -14,7 +14,6 @@
 #include "VertexShader.vfxobj"
 #include "PixelShader.pfxobj"
 
-
 /**
 * Constructor
 */
