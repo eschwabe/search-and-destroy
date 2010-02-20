@@ -992,6 +992,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Source\SlinkyNode.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Source\SlinkyNode.h"
+			>
+		</File>
+		<File
 			RelativePath=".\Source\WinMain.cpp"
 			>
 		</File>

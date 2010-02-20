@@ -40,10 +40,10 @@ class Node
 
     protected:
 
-        // load and unload
+        // initialize node and sub-nodes
 	    virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
 
-        // update node
+        // update node and sub-nodes
 	    virtual void UpdateNode(double fTime);
 
         // render traversal for drawing objects (including children)
