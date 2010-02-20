@@ -56,7 +56,7 @@ class MiniMapNode : public Node
     private:
 
         // custom FVF, which describes the custom vertex structure
-        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZRHW | D3DFVF_TEX3 );
+        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZRHW | D3DFVF_TEX2 );
 
         /**
         * Custom vertex type. Specifies a custom vertex that can be written

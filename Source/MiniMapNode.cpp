@@ -323,14 +323,14 @@ void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rDa
     pd3dDevice->SetTexture(1, m_pMiniMapMaskTexture);
 
     // setup first texture stage state (select texture 0 alpha and color)
-    pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1); // use first alpha argument without modification (output = arg1)
-    pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
+    //pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1); // use first alpha argument without modification (output = arg1)
+    //pd3dDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
     pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_SELECTARG1); // use first color argument without modification (output = arg1)
-    pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);   // set first color argument as texture
+    //pd3dDevice->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);   // set first color argument as texture
 
     // setup second texture stage state (replace alpha with texture 1 alpha)
     pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1); // use first alpha argument without modification (output = arg1)
-    pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
+    //pd3dDevice->SetTextureStageState(1, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);   // set first alpha argument as texture
     pd3dDevice->SetTextureStageState(1, D3DTSS_COLOROP, D3DTOP_SELECTARG1); // use first color argument without modification (output = arg1)
     pd3dDevice->SetTextureStageState(1, D3DTSS_COLORARG1, D3DTA_CURRENT);   // set first color argument as previous stage
 

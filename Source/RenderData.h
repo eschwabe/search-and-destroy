@@ -23,7 +23,7 @@ class RenderData
         HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice);
 
         // compute a world, view, projection transform matrix
-        D3DXMATRIX ComputeWorldViewProjection() const
+        D3DXMATRIXA16 ComputeWorldViewProjection() const
         {
             return matWorld * matView * matProjection;
         }
@@ -35,9 +35,9 @@ class RenderData
         HRESULT EnableD3DLighting(IDirect3DDevice9* pd3dDevice) const;
 
         // transform data
-        D3DXMATRIX matView;
-        D3DXMATRIX matProjection;
-        D3DXMATRIX matWorld;
+        D3DXMATRIXA16 matView;
+        D3DXMATRIXA16 matProjection;
+        D3DXMATRIXA16 matWorld;
 
         // light data
         D3DXVECTOR4 vDirectionalLight;

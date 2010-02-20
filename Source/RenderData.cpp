@@ -50,7 +50,7 @@ HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
 HRESULT RenderData::EnableShaders(IDirect3DDevice9* pd3dDevice) const
 {
     // compute trans(must be transposed for vertex shader)
-    D3DXMATRIX matWorldViewProjTrans = ComputeWorldViewProjection();
+    D3DXMATRIXA16 matWorldViewProjTrans = ComputeWorldViewProjection();
     D3DXMatrixTranspose(&matWorldViewProjTrans, &matWorldViewProjTrans);
     
     D3DXMATRIX matWorldTrans = matWorld;
