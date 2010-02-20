@@ -771,6 +771,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\SlinkyNode.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\SlinkyNode.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\TeapotNode.cpp"
 				>
 			</File>
@@ -989,14 +997,6 @@
 		</File>
 		<File
 			RelativePath=".\Source\Game.h"
-			>
-		</File>
-		<File
-			RelativePath=".\Source\SlinkyNode.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\Source\SlinkyNode.h"
 			>
 		</File>
 		<File

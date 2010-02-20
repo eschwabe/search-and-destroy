@@ -63,11 +63,11 @@ HRESULT RenderData::EnableShaders(IDirect3DDevice9* pd3dDevice) const
     // set vertex shader constants
     pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProjTrans), 4);
     pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorldTrans), 3);
-    pd3dDevice->SetVertexShaderConstantF(7, (const float*)(&vDirectionalLight), 1);
 
     // set pixel shader constants
     pd3dDevice->SetPixelShaderConstantF(0, (const float*)(&vDirectionalLightColor), 1);
-    pd3dDevice->SetPixelShaderConstantF(1, (const float*)(&vAmbientColor), 1);
+    pd3dDevice->SetPixelShaderConstantF(1, (const float*)(&vDirectionalLight), 1);
+    pd3dDevice->SetPixelShaderConstantF(2, (const float*)(&vAmbientColor), 1);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
