@@ -20,6 +20,7 @@
 #include "TeapotNode.h"
 #include "PlayerNode.h"
 #include "NPCNode.h"
+#include "SlinkyNode.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "World.h"
@@ -262,6 +263,10 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     // add dwarf model
     PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 12.5,0,21, 0,0,0);
     g_pBaseNode->AddChild(pDwarf);
+
+    // add slinky node
+    SlinkyNode* pSlinky = new SlinkyNode();
+    g_pBaseNode->AddChild(pSlinky);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     MiniMapNode* p_MiniMap = new MiniMapNode(
