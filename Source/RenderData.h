@@ -32,7 +32,7 @@ class RenderData
         HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const;
         
         // enables basic shaders to perform directional lighting
-        HRESULT EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX* matBones) const;
+        HRESULT EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX& matWorldObj, const D3DXMATRIX* matBones, const DWORD dNumBones) const;
 
         // enables D3D fixed function pipeline directional lighting
         HRESULT EnableD3DLighting(IDirect3DDevice9* pd3dDevice) const;

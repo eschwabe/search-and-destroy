@@ -86,32 +86,32 @@ HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const
 /**
 * Enables skinning shaders
 */
-HRESULT RenderData::EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX* matBones) const
+HRESULT RenderData::EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX& matWorldObj, const D3DXMATRIX* matBones, const DWORD dNumBones) const
 {
-    // compute trans(must be transposed for vertex shader)
+    // compute transform (must be transposed for vertex shader)
     D3DXMATRIXA16 matWorldViewProjTrans = ComputeWorldViewProjection();
+    matWorldViewProjTrans = matWorldObj * matWorldViewProjTrans;
     D3DXMatrixTranspose(&matWorldViewProjTrans, &matWorldViewProjTrans);
     
-    D3DXMATRIX matWorldTrans = matWorld;
-    D3DXMatrixTranspose(&matWorldTrans, &matWorldTrans);
-
-    D3DXMATRIX matBone1 = matBones[0];
-    D3DXMatrixTranspose(&matBone1, &matBone1);
-
-    D3DXMATRIX matBone2 = matBones[1];
-    D3DXMatrixTranspose(&matBone2, &matBone2);
-
     // set shaders
     pd3dDevice->SetVertexShader(m_pVSSkin);
     pd3dDevice->SetPixelShader(m_pPSSkin);
-    
+  
     // set vertex shader constants
     pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProjTrans), 4);
-    //pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorldTrans), 3);
-    pd3dDevice->SetVertexShaderConstantF(4, (const float*)(matBone1), 4);
-    pd3dDevice->SetVertexShaderConstantF(8, (const float*)(matBone2), 4);
+
+    // set vertex shader bone transforms
+    for(DWORD i = 0; i < dNumBones; i++)
+    {
+        D3DXMATRIX matBone = matBones[i];
+        D3DXMatrixTranspose(&matBone, &matBone);
+        pd3dDevice->SetVertexShaderConstantF(4+4*i, (const float*)(&matBone), 4);
+    }
 
     // set pixel shader constants
+    pd3dDevice->SetPixelShaderConstantF(0, (const float*)(&vDirectionalLightColor), 1);
+    pd3dDevice->SetPixelShaderConstantF(1, (const float*)(&vDirectionalLight), 1);
+    pd3dDevice->SetPixelShaderConstantF(2, (const float*)(&vAmbientColor), 1);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }

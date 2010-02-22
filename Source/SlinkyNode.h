@@ -17,7 +17,7 @@ class SlinkyNode : public Node
     public:
 
         // constructor
-        SlinkyNode(void);
+        SlinkyNode(const float& x, const float& y, const float &z);
         virtual ~SlinkyNode(void);
 
     protected:
@@ -82,4 +82,6 @@ class SlinkyNode : public Node
 
         DWORD m_dNumBones;              // number of bones
         D3DXMATRIX* m_pBoneMatrices;    // bone matrices
+
+        D3DXVECTOR3 m_vPos;             // world position
 };

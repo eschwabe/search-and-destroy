@@ -265,7 +265,7 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     g_pBaseNode->AddChild(pDwarf);
 
     // add slinky node
-    SlinkyNode* pSlinky = new SlinkyNode();
+    SlinkyNode* pSlinky = new SlinkyNode(8.0f, 0.0f, 5.0f);
     g_pBaseNode->AddChild(pSlinky);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
