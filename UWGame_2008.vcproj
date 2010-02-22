@@ -987,7 +987,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\PSSkin.pfx"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\VertexShader.vfx"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\VSSkin.vfx"
 				>
 			</File>
 		</Filter>

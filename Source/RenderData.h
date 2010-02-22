@@ -29,7 +29,10 @@ class RenderData
         }
 
         // enables basic shaders to perform directional lighting
-        HRESULT EnableShaders(IDirect3DDevice9* pd3dDevice) const;
+        HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const;
+        
+        // enables basic shaders to perform directional lighting
+        HRESULT EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX* matBones) const;
 
         // enables D3D fixed function pipeline directional lighting
         HRESULT EnableD3DLighting(IDirect3DDevice9* pd3dDevice) const;
@@ -49,5 +52,6 @@ class RenderData
         LPDIRECT3DVERTEXSHADER9 m_pVertexShader;    // vertex shader
         LPDIRECT3DPIXELSHADER9 m_pPixelShader;      // pixel shader
 
-
+        LPDIRECT3DVERTEXSHADER9 m_pVSSkin;          // vertex skinning shader
+        LPDIRECT3DPIXELSHADER9 m_pPSSkin;           // pixel skinning shader
 };

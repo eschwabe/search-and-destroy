@@ -1,0 +1,75 @@
+/*******************************************************************************
+* Game Development Project
+* Vertex Skinning Shader
+*
+* Eric Schwabe
+* 2010-02-20
+*
+*******************************************************************************/
+
+/**
+* CONSTANTS
+*/
+float4x4 matWorldViewProj   : register(c0);	// transposed by game
+float4x4 matBones[10]       : register(c4); // transposed by game
+
+/**
+* INPUT
+*/
+struct VS_INPUT
+{
+    float3 position		: POSITION;
+    float3 normal		: NORMAL;
+    float4 diffuse		: COLOR0;    
+    float4 blendWeights : BLENDWEIGHT;
+    float4 blendIndices : BLENDINDICES;
+};
+
+/**
+* OUTPUT
+*/
+struct VS_OUTPUT
+{
+    float4 position		: POSITION;		// vertex position
+    float4 diffuse		: COLOR0;		// diffuse color
+};
+
+/**
+* MAIN
+*/
+void main(VS_INPUT input, out VS_OUTPUT output)
+{
+	// zero output
+	output = (VS_OUTPUT)0;
+
+    // cast blending data
+    float fBlendWeights[4] = (float[4]) input.blendWeights;
+    int iBoneIndices[4] = (int[4]) D3DCOLORtoUBYTE4( input.blendIndices );
+
+    // convert vectors
+    float4 vPos = float4( input.position.xyz, 1.0f );
+    float4 vNormal = float4( input.normal.xyz, 1.0f );
+
+    // transform position by bone matrices and weights
+    float4 vTransPos = (float4)0;
+    int iBone1Index = iBoneIndices[0];
+    int iBone2Index = iBoneIndices[1];
+    int iBone3Index = iBoneIndices[2];
+    float fBone1Weight = fBlendWeights[0];
+    float fBone2Weight = fBlendWeights[1];
+    float fBone3Weight = fBlendWeights[2];
+    vTransPos += mul( vPos, matBones[iBone1Index] ) * fBone1Weight;
+    vTransPos += mul( vPos, matBones[iBone2Index] ) * fBone2Weight;
+    vTransPos += mul( vPos, matBones[iBone3Index] ) * fBone3Weight;
+
+    // transform normal by bone matrices and weights
+    /*output.normal += mul( vNormal, matBones[iBoneIndices[0]]) * fBlendWeights[0];
+    output.normal += mul( vNormal, matBones[iBoneIndices[1]]) * fBlendWeights[1];
+    output.normal = normalize(output.normal);*/
+
+    // transform position by world-view-projection
+    output.position = mul( vTransPos, matWorldViewProj);
+
+	// pass through colors
+	output.diffuse = input.diffuse;
+}

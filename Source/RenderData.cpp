@@ -13,6 +13,8 @@
 #include "RenderData.h"
 #include "VertexShader.vfxobj"
 #include "PixelShader.pfxobj"
+#include "VSSkin.vfxobj"
+#include "PSSkin.pfxobj"
 
 /**
 * Constructor
@@ -28,6 +30,8 @@ RenderData::~RenderData()
     // cleanup shaders
     SAFE_RELEASE(m_pVertexShader);
     SAFE_RELEASE(m_pPixelShader);
+    SAFE_RELEASE(m_pVSSkin);
+    SAFE_RELEASE(m_pPSSkin);
 }
 
 /**
@@ -35,11 +39,18 @@ RenderData::~RenderData()
 */
 HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
 { 
-    // create shaders
+    // create directional light shaders
     HRESULT result = pd3dDevice->CreateVertexShader((DWORD const*)VFX_VertexShader, &m_pVertexShader);
     
     if( SUCCEEDED(result) )
         result = pd3dDevice->CreatePixelShader((DWORD const*)PFX_PixelShader, &m_pPixelShader);
+
+    // create skinning shaders
+    if( SUCCEEDED(result) )
+        result = pd3dDevice->CreateVertexShader((DWORD const*)VFX_VSSkin, &m_pVSSkin);
+
+    if( SUCCEEDED(result) )
+        result = pd3dDevice->CreatePixelShader((DWORD const*)PFX_PSSkin, &m_pPSSkin);
 
     return result;
 }
@@ -47,7 +58,7 @@ HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
 /**
 * Enables basic shaders to perform directional lighting
 */
-HRESULT RenderData::EnableShaders(IDirect3DDevice9* pd3dDevice) const
+HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const
 {
     // compute trans(must be transposed for vertex shader)
     D3DXMATRIXA16 matWorldViewProjTrans = ComputeWorldViewProjection();
@@ -68,6 +79,39 @@ HRESULT RenderData::EnableShaders(IDirect3DDevice9* pd3dDevice) const
     pd3dDevice->SetPixelShaderConstantF(0, (const float*)(&vDirectionalLightColor), 1);
     pd3dDevice->SetPixelShaderConstantF(1, (const float*)(&vDirectionalLight), 1);
     pd3dDevice->SetPixelShaderConstantF(2, (const float*)(&vAmbientColor), 1);
+
+    return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
+}
+
+/**
+* Enables skinning shaders
+*/
+HRESULT RenderData::EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX* matBones) const
+{
+    // compute trans(must be transposed for vertex shader)
+    D3DXMATRIXA16 matWorldViewProjTrans = ComputeWorldViewProjection();
+    D3DXMatrixTranspose(&matWorldViewProjTrans, &matWorldViewProjTrans);
+    
+    D3DXMATRIX matWorldTrans = matWorld;
+    D3DXMatrixTranspose(&matWorldTrans, &matWorldTrans);
+
+    D3DXMATRIX matBone1 = matBones[0];
+    D3DXMatrixTranspose(&matBone1, &matBone1);
+
+    D3DXMATRIX matBone2 = matBones[1];
+    D3DXMatrixTranspose(&matBone2, &matBone2);
+
+    // set shaders
+    pd3dDevice->SetVertexShader(m_pVSSkin);
+    pd3dDevice->SetPixelShader(m_pPSSkin);
+    
+    // set vertex shader constants
+    pd3dDevice->SetVertexShaderConstantF(0, (const float*)(&matWorldViewProjTrans), 4);
+    //pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorldTrans), 3);
+    pd3dDevice->SetVertexShaderConstantF(4, (const float*)(matBone1), 4);
+    pd3dDevice->SetVertexShaderConstantF(8, (const float*)(matBone2), 4);
+
+    // set pixel shader constants
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }

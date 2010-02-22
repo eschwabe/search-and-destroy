@@ -54,16 +54,16 @@ class WorldNode : public Node
             D3DXVECTOR3 vPos;       // untransformed, 3D position for the vertex
             D3DXVECTOR3 vNormal;    // vertex normal
             D3DXVECTOR2 vTexCoord;  // texture coordinates
-            D3DXCOLOR cDiffuse;     // diffuse color
-            D3DXCOLOR cSpecular;    // specular color
+            D3DCOLOR cDiffuse;      // diffuse color
+            D3DCOLOR cSpecular;     // specular color
 
             // default constructor
             CustomVertex() :
                 vPos(0.0f, 0.0f, 0.0f), 
                 vNormal(0.0f, 0.0f, 0.0f), 
                 vTexCoord(0.0f, 0.0f),
-                cDiffuse(0.0f, 0.0f, 0.0f, 1),
-                cSpecular(0.0f, 0.0f, 0.0f, 1)
+                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1)),
+                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1))
             {}
 
             // initialization constructor
@@ -71,8 +71,8 @@ class WorldNode : public Node
                 vPos(ivPos), 
                 vNormal(ivNormal), 
                 vTexCoord(ivTexCoord), 
-                cDiffuse(0.0f, 0.0f, 0.0f, 1),
-                cSpecular(0.0f, 0.0f, 0.0f, 1)
+                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1)),
+                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1))
             {}
 	    };
 

@@ -201,7 +201,7 @@ void WorldNode::UpdateNode(double /* fTime */)
 void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     // setup shaders
-    rData.EnableShaders(pd3dDevice);
+    rData.EnableDirectionalShaders(pd3dDevice);
 
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
