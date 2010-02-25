@@ -35,7 +35,25 @@ SlinkyNode::SlinkyNode(const float& x, const float& y, const float &z) :
 
     // allocate bone matrices
     m_dNumBones = 10;
+    m_pBoneData = new BoneData[m_dNumBones];
     m_pBoneMatrices = new D3DXMATRIX[m_dNumBones];
+
+    // setup bones
+    D3DXVECTOR3 vCurrentPos = D3DXVECTOR3(0, 0, 0);
+
+    for(DWORD i = 0; i < m_dNumBones; i++)
+    {
+        // set bone origin (based on parent bone)
+        m_pBoneData[i].vPos = vCurrentPos;
+
+        // build bone translation matrix
+        D3DXMatrixTranslation(&m_pBoneData[i].matBoneTranslation, vCurrentPos.x, vCurrentPos.y, vCurrentPos.z);
+        D3DXMatrixIdentity(&m_pBoneData[i].matBoneTransform);
+        
+        // compute next bone origin (only root bone has a z position of 0)
+        // all bones are evenly distributed
+        vCurrentPos.z = m_fCylLength/m_dNumBones;
+    }
 }
 
 /**
@@ -51,7 +69,7 @@ SlinkyNode::~SlinkyNode(void)
     SAFE_RELEASE(m_pCylMesh);
 
     // cleanup bone matrices
-    SAFE_DELETE_ARRAY(m_pBoneMatrices);
+    SAFE_DELETE_ARRAY(m_pBoneData);
 }
 
 /**
@@ -135,8 +153,9 @@ SlinkyNode::CustomVertex SlinkyNode::CreateCustomVertex( const D3DXVECTOR3& vPos
 {
     CustomVertex cv;
 
-    // set basic vertex info
+    // set basic vertex info, set bottom of cylinder to world origin
     cv.vPos = vPos;
+    cv.vPos.z += m_fCylLength/2;
     cv.vNormal = vNormal;
     cv.cDiffuse = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1);
 
@@ -144,13 +163,9 @@ SlinkyNode::CustomVertex SlinkyNode::CreateCustomVertex( const D3DXVECTOR3& vPos
     // break cylinder into pieces equal to number of bones
     // assign bottom of cylinder as root bone
 
-    // modify position to start from origin
-    D3DXVECTOR3 vAdjPos = vPos;
-    vAdjPos.z += (m_fCylLength/2);
-
     // create bone vector along z axis
     D3DXVECTOR3 vBone = D3DXVECTOR3(0, 0, 1.0f);
-    float fVertexLength = D3DXVec3Dot(&vAdjPos, &vBone);
+    float fVertexLength = D3DXVec3Dot(&cv.vPos, &vBone);
 
     // determine length of each bone
     float fBoneLength = m_fCylLength / m_dNumBones;
@@ -160,25 +175,44 @@ SlinkyNode::CustomVertex SlinkyNode::CreateCustomVertex( const D3DXVECTOR3& vPos
     {
         // check if vertex within this bone
         if(fVertexLength >= fBoneLength*iBoneIndex &&
-           fVertexLength < fBoneLength*iBoneIndex+1)
+           fVertexLength < fBoneLength*(iBoneIndex+1))
         {
             // assign bone indices
-            cv.fBlendIndicies = D3DXVECTOR4(
-                (float)min(iBoneIndex-1, 0),               // previous bone
-                (float)iBoneIndex,                         // assigned bone
-                (float)min(iBoneIndex+1, m_dNumBones-1),   // next bone
-                0.0f);
+            // ensure indices do not reference non-existant bones
+            float prevIndex = 0.0f; 
+            if(iBoneIndex > 0) 
+                prevIndex = iBoneIndex-1.0f;
+            
+            float nextIndex = iBoneIndex+1.0f; 
+            if(nextIndex >= m_dNumBones) 
+                nextIndex = m_dNumBones-1.0f;
+
+            cv.fBlendIndicies = D3DXVECTOR4(prevIndex, (float)iBoneIndex, nextIndex, 0.0f);
 
             // assign bone weights
+            // if vertex before bone mid-point, distribute weight between assigned and previous bone
+            // if vertex after bone mid-point, distribute weight between assigned and next bone
             float fAdjBoneWeight = (fVertexLength - fBoneLength*iBoneIndex) / fBoneLength;
-            float fAssignBoneWeight = 0.5f;
-            float fPrevBoneWeight = (1.0f-fAdjBoneWeight)/2.0f;
-            float fNextBoneWeight = 0.5f - fPrevBoneWeight;
-            cv.fBlendWeights = D3DXVECTOR4(
-                fPrevBoneWeight,            // previous bone weight
-                fAssignBoneWeight,          // assigned bone weight
-                fNextBoneWeight,            // next bone weight
-                0.0f);
+            float fAssignBoneWeight = 1.0f;
+            float fPrevBoneWeight = 0.0f;
+            float fNextBoneWeight = 0.0f;
+
+            if(fAdjBoneWeight < 0.5f)
+            {
+                fAssignBoneWeight = fAdjBoneWeight + 0.5f;
+                fPrevBoneWeight = 1.0f - fAssignBoneWeight;
+            }
+            else if(fAdjBoneWeight > 0.5f)
+            {
+                fAssignBoneWeight = (1.0f - fAdjBoneWeight) + 0.5f;
+                fNextBoneWeight = 1.0f - fAssignBoneWeight;
+            }
+            else
+            {
+                fAssignBoneWeight = 0.0f;
+            }
+
+            cv.fBlendWeights = D3DXVECTOR4(fPrevBoneWeight, fAssignBoneWeight, fNextBoneWeight, 0.0f);
 
             break;
         }
@@ -193,38 +227,36 @@ SlinkyNode::CustomVertex SlinkyNode::CreateCustomVertex( const D3DXVECTOR3& vPos
 void SlinkyNode::UpdateNode(double fTime)
 {
     // determine rotation (per bone)
-    const float fMaxRot = D3DX_PI;  // 180 degrees
-    const float fRotInc = 0.0005f;
-
-    static float fRot = 0.0f;
-    static bool bAdd = true;
+    static double fTotalTime = 0.0;
+    fTotalTime += fTime;
     
-    // rotate other direction if max rotation
-    if((fabs(fRot)+fRotInc)*m_dNumBones > D3DX_PI)
-        bAdd = !bAdd;
-
-    // increment rotation
-    if(bAdd)
-        fRot += fRotInc;
-    else
-        fRot -= fRotInc;
-
     // create rotation matrix (adjusts over time)
-    D3DXMATRIX mxRotation;
-    D3DXMatrixRotationYawPitchRoll(&mxRotation, 0.0f, fRot, 0.0f);
-
-    D3DXMATRIX mxCurrentBoneTransform;
-    D3DXMatrixIdentity(&mxCurrentBoneTransform);
+    D3DXMATRIX matRotation;
+    D3DXMatrixRotationYawPitchRoll(&matRotation, 0.0f, sin(fTotalTime)/4, 0.0f);
 
     // update all bone matrices
     // each bone matrix must be applied to it's children
     // each cylinder bone is a child of the previous bone (except root)
     // |root|--|--|--|--|--|--|
-    
+    D3DXMATRIX matIdentity;
+    D3DXMatrixIdentity(&matIdentity);
+
+    // matrices to store current transforms for each bone
+    D3DXMATRIX matInvTrans = matIdentity;
+    D3DXMATRIX matTrans = matIdentity;
+
+    // update each successive bone with previous bone's transform matricies
+    // add additional rotation at each joint
     for(DWORD i = 0; i < m_dNumBones; i++)
     {
-        m_pBoneMatrices[i] = mxCurrentBoneTransform;
-        D3DXMatrixMultiply(&mxCurrentBoneTransform, &mxCurrentBoneTransform, &mxRotation);
+        D3DXMATRIX matBoneInvTrans;
+        D3DXMATRIX matBoneTrans = m_pBoneData[i].matBoneTranslation;
+        D3DXMatrixInverse(&matBoneInvTrans, NULL, &matBoneTrans);
+
+        matInvTrans = matInvTrans * matBoneInvTrans;
+        matTrans = matRotation * matBoneTrans * matTrans;
+        
+        m_pBoneData[i].matBoneTransform = matInvTrans * matTrans;
     }
 }
 
@@ -234,13 +266,20 @@ void SlinkyNode::UpdateNode(double fTime)
 void SlinkyNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     // compute slinky world matrix
+    // move and rotate cylinder to stand on world grid
     D3DXMATRIX matRotate;
     D3DXMATRIX matSlinkyWorld;
-    D3DXMatrixTranslation(&matSlinkyWorld, m_vPos.x, m_vPos.y+m_fCylLength/2, m_vPos.z);
+    D3DXMatrixTranslation(&matSlinkyWorld, m_vPos.x, m_vPos.y, m_vPos.z);
     D3DXMatrixRotationYawPitchRoll(&matRotate, 0.0f, -D3DX_PI/2.0f, 0.0f);
-    matSlinkyWorld = matRotate * matSlinkyWorld ;
+    matSlinkyWorld = matRotate * matSlinkyWorld;
 
-    // setup shader lighting
+    // setup shader bone matrices
+    for(DWORD i = 0; i < m_dNumBones; i++)
+    {
+        m_pBoneMatrices[i] = m_pBoneData[i].matBoneTransform;
+    }
+
+    // enable skinning shaders
     rData.EnableSkinShaders(pd3dDevice, matSlinkyWorld, m_pBoneMatrices, m_dNumBones);
 
     // set vertex declaration

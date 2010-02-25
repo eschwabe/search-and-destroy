@@ -21,8 +21,8 @@ struct VS_INPUT
     float3 position		    : POSITION;
     float3 normal		    : NORMAL;
     float4 diffuse		    : COLOR0;    
-    float4 blendWeights     : BLENDWEIGHT;
-    float4 blendIndices     : BLENDINDICES;
+    float4 blendWeights     : BLENDWEIGHT0;
+    float4 blendIndices     : BLENDINDICES0;
 };
 
 /**
@@ -47,14 +47,18 @@ void main(VS_INPUT input, out VS_OUTPUT output)
     float4 vPos = float4( input.position.xyz, 1.0f );
     float4 vNormal = float4( input.normal.xyz, 1.0f );
 
+    // cast the vectors to arrays
+    float blendWeightsArray[4] = (float[4])input.blendWeights;
+    int blendIndicesArray[4] = (int[4])input.blendIndices;
+
     // transform position by bone matrices and weights
     float4 vTransPos = (float4)0;
-    int iBone1Index = (int)input.blendIndices[0];
-    int iBone2Index = (int)input.blendIndices[1];
-    int iBone3Index = (int)input.blendIndices[2];
-    float fBone1Weight = input.blendWeights[0];
-    float fBone2Weight = input.blendWeights[1];
-    float fBone3Weight = input.blendWeights[2];
+    int iBone1Index = blendIndicesArray[0];
+    int iBone2Index = blendIndicesArray[1];
+    int iBone3Index = blendIndicesArray[2];
+    float fBone1Weight = blendWeightsArray[0];
+    float fBone2Weight = blendWeightsArray[1];
+    float fBone3Weight = blendWeightsArray[2];
     vTransPos += mul( vPos, matBones[iBone1Index] ) * fBone1Weight;
     vTransPos += mul( vPos, matBones[iBone2Index] ) * fBone2Weight;
     vTransPos += mul( vPos, matBones[iBone3Index] ) * fBone3Weight;

@@ -68,6 +68,19 @@ class SlinkyNode : public Node
 
         // METHODS
         CustomVertex CreateCustomVertex( const D3DXVECTOR3& vPos, const D3DXVECTOR3& vNormal);
+        void UpdateBoneTransforms(const DWORD& index, const D3DXMATRIX& matRotation, const D3DXMATRIX& matInvTransform, const D3DXMATRIX& matTransform);
+
+        // BONE DATA
+
+        /**
+        * Bone information
+        */
+        struct BoneData
+        {
+            D3DXMATRIX matBoneTransform;
+            D3DXMATRIX matBoneTranslation;
+            D3DXVECTOR3 vPos;
+        };
 
         // DATA
         LPD3DXMESH m_pCylMesh;          // cylinder mesh
@@ -81,7 +94,8 @@ class SlinkyNode : public Node
         D3DINDEXBUFFER_DESC m_CVIndexDesc;  // custom vertex index description
 
         DWORD m_dNumBones;              // number of bones
-        D3DXMATRIX* m_pBoneMatrices;    // bone matrices
+        BoneData* m_pBoneData;          // bone data
+        D3DXMATRIX *m_pBoneMatrices;    // bone transform matrices
 
         D3DXVECTOR3 m_vPos;             // world position
 };
