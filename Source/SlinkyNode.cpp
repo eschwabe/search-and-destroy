@@ -157,7 +157,7 @@ SlinkyNode::CustomVertex SlinkyNode::CreateCustomVertex( const D3DXVECTOR3& vPos
     cv.vPos = vPos;
     cv.vPos.z += m_fCylLength/2;
     cv.vNormal = vNormal;
-    cv.cDiffuse = D3DXCOLOR(0.5f, 0.5f, 0.5f, 1);
+    cv.cDiffuse = D3DXCOLOR(0.3f, 0.6f, 0.5f, 1);
 
     // cylinder (by default) is aligned to z axis with center at world origin
     // break cylinder into pieces equal to number of bones
@@ -232,7 +232,7 @@ void SlinkyNode::UpdateNode(double fTime)
     
     // create rotation matrix (adjusts over time)
     D3DXMATRIX matRotation;
-    D3DXMatrixRotationYawPitchRoll(&matRotation, 0.0f, sin(fTotalTime)/4, 0.0f);
+    D3DXMatrixRotationYawPitchRoll(&matRotation, cos(fTotalTime/3.0f)/6.0f, sin(fTotalTime)/6.0f, 0.0f);
 
     // update all bone matrices
     // each bone matrix must be applied to it's children
