@@ -232,7 +232,7 @@ void SlinkyNode::UpdateNode(double fTime)
     
     // create rotation matrix (adjusts over time)
     D3DXMATRIX matRotation;
-    D3DXMatrixRotationYawPitchRoll(&matRotation, cos(fTotalTime/3.0f)/6.0f, sin(fTotalTime)/6.0f, 0.0f);
+    D3DXMatrixRotationYawPitchRoll(&matRotation, cos((float)fTotalTime/3.0f)/6.0f, sin((float)fTotalTime)/6.0f, 0.0f);
 
     // update all bone matrices
     // each bone matrix must be applied to it's children
