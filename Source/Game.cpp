@@ -229,6 +229,35 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     V_RETURN( g_DialogResourceManager.OnD3D9CreateDevice( pd3dDevice ) );
     V_RETURN( g_SettingsDlg.OnD3D9CreateDevice( pd3dDevice ) );
     
+    return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
+}
+
+//--------------------------------------------------------------------------------------
+// This callback function will be called immediately after the Direct3D device has been
+// reset, which will happen after a lost device scenario. This is the best location to
+// create D3DPOOL_DEFAULT resources since these resources need to be reloaded whenever
+// the device is lost. Resources created here should be released in the OnLostDevice
+// callback.
+//--------------------------------------------------------------------------------------
+HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
+                                const D3DSURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
+{
+    HRESULT hr;
+
+    V_RETURN( g_DialogResourceManager.OnD3D9ResetDevice() );
+    V_RETURN( g_SettingsDlg.OnD3D9ResetDevice() );
+
+    // initialize world
+	g_World.Initialize(pd3dDevice);
+
+    // font
+    if( g_pFont )
+        V_RETURN( g_pFont->OnResetDevice() );
+
+	// create a sprite to help batch calls when drawing many lines of text
+    V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
+
+
     // Initialize the font
     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
@@ -298,37 +327,6 @@ HRESULT CALLBACK OnCreateDevice( IDirect3DDevice9* pd3dDevice, const D3DSURFACE_
     if( FAILED(g_pRenderData->Initialize(pd3dDevice)) )
         return E_FAIL;
 
-    // get collision quad list
-    g_vQuadList = p_WorldNode->GetCollisionQuadList();
-    g_pNPCNode->SetWorldQuadList(&g_vQuadList);
-
-    return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
-}
-
-//--------------------------------------------------------------------------------------
-// This callback function will be called immediately after the Direct3D device has been
-// reset, which will happen after a lost device scenario. This is the best location to
-// create D3DPOOL_DEFAULT resources since these resources need to be reloaded whenever
-// the device is lost. Resources created here should be released in the OnLostDevice
-// callback.
-//--------------------------------------------------------------------------------------
-HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
-                                const D3DSURFACE_DESC* pBackBufferSurfaceDesc, void* pUserContext )
-{
-    HRESULT hr;
-
-    V_RETURN( g_DialogResourceManager.OnD3D9ResetDevice() );
-    V_RETURN( g_SettingsDlg.OnD3D9ResetDevice() );
-
-	g_World.Initialize(pd3dDevice);
-
-    // font
-    if( g_pFont )
-        V_RETURN( g_pFont->OnResetDevice() );
-
-	// create a sprite to help batch calls when drawing many lines of text
-    V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
-
     // setup the camera's projection parameters
     float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
     g_DebugCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
@@ -347,6 +345,10 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_HUD.SetSize( 170, 170 );
     g_SampleUI.SetLocation( pBackBufferSurfaceDesc->Width-170, pBackBufferSurfaceDesc->Height-270 );
     g_SampleUI.SetSize( 170, 220 );
+
+    // get collision quad list
+    g_vQuadList = p_WorldNode->GetCollisionQuadList();
+    g_pNPCNode->SetWorldQuadList(&g_vQuadList);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -592,10 +594,21 @@ void CALLBACK OnLostDevice( void* pUserContext )
 {
     g_DialogResourceManager.OnD3D9LostDevice();
     g_SettingsDlg.OnD3D9LostDevice();
+
     if( g_pFont )
         g_pFont->OnLostDevice();
 
     SAFE_RELEASE( g_pTextSprite );
+
+    // cleanup all nodes and rendering data
+    delete g_pBaseNode;
+    delete g_pRenderData;
+
+    // cleanup font
+    SAFE_RELEASE(g_pFont);
+
+    // cleanup sound manager
+    SAFE_DELETE(g_pSoundManager);
 }
 
 //--------------------------------------------------------------------------------------
@@ -606,12 +619,6 @@ void CALLBACK OnLostDevice( void* pUserContext )
 //--------------------------------------------------------------------------------------
 void CALLBACK OnDestroyDevice( void* pUserContext )
 {
-    delete g_pBaseNode;
-    delete g_pRenderData;
-
     g_DialogResourceManager.OnD3D9DestroyDevice();
     g_SettingsDlg.OnD3D9DestroyDevice();
-    SAFE_RELEASE(g_pFont);
-
-    SAFE_DELETE(g_pSoundManager);
 }
