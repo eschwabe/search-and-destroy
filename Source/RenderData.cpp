@@ -145,11 +145,7 @@ HRESULT RenderData::EnableD3DLighting(IDirect3DDevice9* pd3dDevice) const
     pd3dDevice->SetLight(0, &light);
     pd3dDevice->LightEnable(0, true);
     
-    pd3dDevice->SetRenderState(D3DRS_COLORVERTEX, false);
-    pd3dDevice->SetRenderState(D3DRS_SPECULARENABLE, false);
-    pd3dDevice->SetRenderState(D3DRS_FILLMODE, D3DFILL_SOLID);
-    pd3dDevice->SetRenderState( D3DRS_NORMALIZENORMALS, TRUE );
+    pd3dDevice->SetRenderState(D3DRS_NORMALIZENORMALS, TRUE);
     
-
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }

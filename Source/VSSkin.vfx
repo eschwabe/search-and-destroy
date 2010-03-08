@@ -45,7 +45,7 @@ void main(VS_INPUT input, out VS_OUTPUT output)
 
     // convert vectors
     float4 vPos = float4( input.position.xyz, 1.0f );
-    float4 vNormal = float4( input.normal.xyz, 1.0f );
+    float4 vNormal = float4( input.normal.xyz, 0.0f );
 
     // convert indices and weights
     int iBone0Index = (int)input.blendIndices[0];

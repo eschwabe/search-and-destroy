@@ -26,6 +26,7 @@
 #include "World.h"
 #include "MiniMapNode.h"
 #include "RenderData.h"
+#include "ParticleEmitter.h"
 
 using namespace std;
 
@@ -54,6 +55,8 @@ VecCollQuad             g_vQuadList;                // collision quad list
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
+ParticleEmitter*        g_pEmitter = NULL;          // particle emitter
+bool                    g_bEnableFountain = false;  // enable particle fountain
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -65,6 +68,7 @@ RenderData*             g_pRenderData = NULL;       // render data
 #define IDC_PREVVIEW            7
 #define IDC_RESETCAMERA         11
 #define IDC_RESETTIME           12
+#define IDC_TOGGLEFOUNTAIN      13
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -97,6 +101,7 @@ bool InitApp()
     g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
     g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
     g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
+    g_HUD.AddButton( IDC_TOGGLEFOUNTAIN,    L"Enable Fountain",     35, iY += 48, 125, 22 );
 
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
@@ -294,8 +299,12 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pBaseNode->AddChild(pDwarf);
 
     // add slinky node
-    SlinkyNode* pSlinky = new SlinkyNode(8.0f, 0.0f, 5.0f);
-    g_pBaseNode->AddChild(pSlinky);
+    //SlinkyNode* pSlinky = new SlinkyNode(8.0f, 0.0f, 5.0f);
+    //g_pBaseNode->AddChild(pSlinky);
+    
+    // add particle emitter
+    g_pEmitter = new ParticleEmitter();
+    g_pBaseNode->AddChild(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     MiniMapNode* p_MiniMap = new MiniMapNode(
@@ -370,13 +379,17 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // update nodes
 	g_pBaseNode->Update(fElapsedTime);
 
-    // Update the camera's position based on user input
+    // add fountain particles
+    if( g_bEnableFountain )
+        g_pEmitter->AddFountainParticles(20, D3DXVECTOR3(12.5f, 0.75f, 12.5f));
+
+    // update the camera's position based on user input
     g_Camera->FrameMove(fElapsedTime);
 
     // check for player collisions with environment
     CollPlayer coll;
-    coll.RunWorldCollision(g_pMainPlayerNode, g_vQuadList);
-    coll.RunWorldCollision(g_pNPCNode, g_vQuadList);
+    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode, g_pEmitter);
+    coll.RunWorldCollision(g_vQuadList, g_pNPCNode, g_pEmitter);
 
     // check for collisions between players
     if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
@@ -579,6 +592,10 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
         case IDC_RESETTIME:
             DXUTGetGlobalTimer()->Reset();
             g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
+            break;
+
+        case IDC_TOGGLEFOUNTAIN:
+            g_bEnableFountain = !g_bEnableFountain;
             break;
     }
 }

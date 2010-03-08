@@ -286,11 +286,13 @@ CollPlayer::CollPlayer()
 * Player is queried for current position (sphere) data and notified
 * if the player needs to be moved.
 */
-void CollPlayer::RunWorldCollision(PlayerNode* player, const VecCollQuad& quads)
+void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerNode* player, ParticleEmitter* pEmitter)
 {
     assert(player);
 
+    // determine middle point of player
     D3DXVECTOR3 vPlayerPos = player->GetPlayerPosition();
+    vPlayerPos.y = min(player->GetPlayerHeight()/2.0f, 1.0f);
 
     // generate sphere from player position and height
     CollSphere sphere;
@@ -304,6 +306,7 @@ void CollPlayer::RunWorldCollision(PlayerNode* player, const VecCollQuad& quads)
         {
             // if collision, send player collision event
             player->EnvironmentCollisionEvent(gCollOutput.push);
+            pEmitter->AddSparkParticles(15, gCollOutput.point, gCollOutput.normal*gCollOutput.length);
             gCollOutput.Reset();
         }
     }  

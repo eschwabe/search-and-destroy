@@ -747,6 +747,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\ParticleEmitter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\ParticleEmitter.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\PlayerCamera.cpp"
 				>
 			</File>
