@@ -22,6 +22,7 @@
 #include "NPCNode.h"
 #include "SlinkyNode.h"
 #include "WorldNode.h"
+#include "WorldDecalNode.h"
 #include "WorldFile.h"
 #include "World.h"
 #include "MiniMapNode.h"
@@ -56,6 +57,7 @@ CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
 ParticleEmitter*        g_pEmitter = NULL;          // particle emitter
+WorldDecalNode*         g_pWorldDecalNode = NULL;   // world decals
 bool                    g_bEnableFountain = false;  // enable particle fountain
 
 //--------------------------------------------------------------------------------------
@@ -285,6 +287,10 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_pBaseNode->AddChild(p_WorldNode);
 
+    // add world decal node
+    g_pWorldDecalNode = new WorldDecalNode(L"planks-burnt-decal.jpg");
+    g_pBaseNode->AddChild(g_pWorldDecalNode);
+
     // add player node
     g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/800.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
     g_pBaseNode->AddChild(g_pMainPlayerNode);
@@ -388,8 +394,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // check for player collisions with environment
     CollPlayer coll;
-    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode, g_pEmitter);
-    coll.RunWorldCollision(g_vQuadList, g_pNPCNode, g_pEmitter);
+    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode, g_pEmitter, g_pWorldDecalNode);
+    coll.RunWorldCollision(g_vQuadList, g_pNPCNode, g_pEmitter,g_pWorldDecalNode);
 
     // check for collisions between players
     if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )

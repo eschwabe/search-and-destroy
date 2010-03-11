@@ -1019,6 +1019,14 @@
 			RelativePath=".\Source\WinMain.cpp"
 			>
 		</File>
+		<File
+			RelativePath=".\Source\WorldDecalNode.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Source\WorldDecalNode.h"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

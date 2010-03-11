@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Game Development Project
-* WorldNode.h
+* ParticleEmitter.h
 *
 * Eric Schwabe
 * 2010-03-07

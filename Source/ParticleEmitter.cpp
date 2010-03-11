@@ -1,6 +1,6 @@
 /*******************************************************************************
 * Game Development Project
-* WorldNode.h
+* ParticleEmitter.cpp
 *
 * Eric Schwabe
 * 2010-03-07
@@ -73,7 +73,7 @@ void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVE
         // build particle
         Particle p;
         p.vPos = vPos;
-        p.fSize = 0.003f;
+        p.fSize = 0.0025f;
         p.fLife = 0.5f;
         p.forceType = kVelocityReduction;
         
@@ -245,6 +245,10 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
         
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCCOLOR);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_DESTCOLOR);
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
 
     // draw
     pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
