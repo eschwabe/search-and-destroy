@@ -11,6 +11,7 @@
 
 #pragma once
 #include "Node.h"
+#include "PlayerNode.h"
 #include <list>
 
 class WorldDecalNode : public Node
@@ -21,14 +22,11 @@ class WorldDecalNode : public Node
         WorldDecalNode(const LPCWSTR sDecalFilename);
         virtual ~WorldDecalNode();
 
-        // add new decal
-        void AddDecalToQuad(
-            D3DXVECTOR3 vQuadP1, 
-            D3DXVECTOR3 vQuadP2,
-            D3DXVECTOR3 vQuadP3,
-            D3DXVECTOR3 vQuadP4,
-            const D3DXVECTOR3& vPos,
-            const D3DXVECTOR3& vNormal);
+        // add new player tracking
+        void AddPlayerTracking(const PlayerNode* player);
+
+        // add floor decal
+        void AddFloorDecal(const D3DXVECTOR3& vPos);
 
     protected:
 
@@ -68,23 +66,37 @@ class WorldDecalNode : public Node
         */
         struct Decal
         {
-            D3DXVECTOR3 vPoint[4];      // decal quad points
-            float fSize;                // size
-            double fLife;               // current life (seconds)
-            double fTotalLife;          // total life (seconds)
+            D3DXVECTOR3 vPos;       // decal quad points
+            float fSize;            // size
+            double fLife;           // current life (seconds)
+            double fTotalLife;      // total life (seconds)
 
             // default constructor
             Decal() :
-                fSize(0.04f),
+                fSize(0.05f),
                 fTotalLife(5.0f),
                 fLife(0.0f)
+            {}
+        };
+
+        /**
+        * Player data
+        */
+        struct PlayerData
+        {
+            const PlayerNode* pPlayer;
+            D3DXVECTOR3 vLastDecalPos;
+
+            PlayerData() :
+                vLastDecalPos( D3DXVECTOR3(0.0f, 0.0f, 0.0f) )
             {}
         };
 
         // DATA
         static const DWORD dDecalVertexCount = 6;
         static const DWORD dMaxDecals = 100;
-        std::list<Decal> m_DecalList;       // list of decals
+        std::list<Decal> m_DecalList;                   // list of decals
+        std::vector<PlayerData> m_PlayerList;           // list of players
 
         LPDIRECT3DTEXTURE9 m_pDecalTexture;
         std::wstring m_sDecalFilename;

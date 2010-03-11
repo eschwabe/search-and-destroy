@@ -18,8 +18,6 @@
 
 #include <vector>
 #include "PlayerNode.h"
-#include "ParticleEmitter.h"
-#include "WorldDecalNode.h"
 
 /************************************************************************/
 /* CONSTANTS                                                            */
@@ -172,7 +170,7 @@ class CollPlayer
         CollPlayer();
 
         // run collision checks between player and environment
-        void RunWorldCollision(const VecCollQuad& quads, PlayerNode* player, ParticleEmitter* pEmitter, WorldDecalNode* pDecal);
+        void RunWorldCollision(const VecCollQuad& quads, PlayerNode* player);
 
         // run collision checks between two players
         bool RunPlayerCollision(PlayerNode* player1, PlayerNode* player2);

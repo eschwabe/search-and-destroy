@@ -32,6 +32,7 @@ class PlayerNode : public Node
 
         // get player information
         D3DXVECTOR3 GetPlayerPosition() const;
+        D3DXVECTOR3 GetPlayerVelocity() const;
         float GetPlayerHeight() const;
         float GetPlayerRotation() const;
 

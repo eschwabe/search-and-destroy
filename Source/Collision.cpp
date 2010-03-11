@@ -286,11 +286,7 @@ CollPlayer::CollPlayer()
 * Player is queried for current position (sphere) data and notified
 * if the player needs to be moved.
 */
-void CollPlayer::RunWorldCollision(
-    const VecCollQuad& quads, 
-    PlayerNode* player, 
-    ParticleEmitter* pEmitter,
-    WorldDecalNode* pDecal)
+void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerNode* player)
 {
     assert(player);
 
@@ -310,8 +306,6 @@ void CollPlayer::RunWorldCollision(
         {
             // if collision, send player collision event
             player->EnvironmentCollisionEvent(gCollOutput.push);
-            pEmitter->AddSparkParticles(15, gCollOutput.point, gCollOutput.normal*gCollOutput.length);
-            pDecal->AddDecalToQuad(quads[i].point[0], quads[i].point[1], quads[i].point[2], quads[i].point[3], gCollOutput.point, gCollOutput.normal); 
             gCollOutput.Reset();
         }
     }  

@@ -69,6 +69,16 @@ D3DXVECTOR3 PlayerNode::GetPlayerPosition() const
 }
 
 /**
+* Get the current velocity of the player.
+*
+* @return vector with player velocity
+*/
+D3DXVECTOR3 PlayerNode::GetPlayerVelocity() const
+{
+    return m_vPlayerVelocity;
+}
+
+/**
 * Get the current height of the player. The current height implementation is fixed
 * to the size of the tiny model. The height should be calculated based on the model.
 *

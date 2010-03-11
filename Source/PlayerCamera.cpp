@@ -60,7 +60,7 @@ void CPlayerCamera::FrameMove( FLOAT fElapsedTime )
     m_vLookAt = vPlayerPos + D3DXVECTOR3(0.0f, fPlayerHeight, 0.0f);
 
     // compute camera position delta based on player rotation
-    D3DXVECTOR3 vEyeDelta = D3DXVECTOR3(0.0f, fPlayerHeight/2, -fPlayerHeight*2);
+    D3DXVECTOR3 vEyeDelta = D3DXVECTOR3(0.0f, fPlayerHeight, -fPlayerHeight*3);
     
     D3DXMATRIX mMoveRot;
     D3DXMatrixRotationYawPitchRoll( &mMoveRot, fPlayerRotation, 0, 0 );

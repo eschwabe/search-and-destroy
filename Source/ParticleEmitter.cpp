@@ -37,6 +37,14 @@ ParticleEmitter::~ParticleEmitter()
 }
 
 /**
+* Add new player tracking
+*/
+void ParticleEmitter::AddPlayerTracking(const PlayerNode* player)
+{
+    m_PlayerList.push_back(player);
+}
+
+/**
 * Initialize particle emitter 
 */
 HRESULT ParticleEmitter::InitializeNode(IDirect3DDevice9* pd3dDevice)
@@ -66,7 +74,7 @@ void ParticleEmitter::AddFountainParticles(const DWORD& dNumParticles, const D3D
 /**
 * Add particles
 */
-void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vDir)
+void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vDir, const D3DXCOLOR& cColor)
 {
     for( DWORD i = 0; i < dNumParticles; i++)
     {
@@ -78,20 +86,22 @@ void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVE
         p.forceType = kVelocityReduction;
         
         // randomize colors (slightly)
-        p.cInitColor = D3DXCOLOR(1.0f, 0.2f, 0.2f, 1.0f);
-        p.cFinalColor = D3DXCOLOR(0.25f, 0.1f, 0.0f, 0.0f) * ((rand() % 10)/5.0f);
+        p.cInitColor = cColor;
+        p.cFinalColor = cColor; 
+        p.cFinalColor.a = 0.0f;
         p.cCurrentColor = p.cInitColor;
 
         // randomize particle velocity/direction
         p.vVel = vDir;
+        float rangeFactor = 150.0f;
         if(p.vVel.y == 0.0f)
-            p.vVel.y = sin((float)(rand()-RAND_MAX/2))/50.0f;
+            p.vVel.y = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
         if(p.vVel.x == 0.0f)
-            p.vVel.x = sin((float)(rand()-RAND_MAX/2))/50.0f;
+            p.vVel.x = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
         if(p.vVel.z == 0.0f)
-            p.vVel.z = sin((float)(rand()-RAND_MAX/2))/50.0f;
+            p.vVel.z = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
         
-        p.vVel = p.vVel/2.0f;
+        p.vVel = p.vVel;
         p.vInitVel = p.vVel;
 
         // add particle
@@ -104,6 +114,20 @@ void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVE
 */
 void ParticleEmitter::UpdateNode(double fTime)                             
 {
+    // check players for updates
+    for(DWORD i = 0; i < m_PlayerList.size(); i++)
+    {
+        float fPlayerVelocity = abs(D3DXVec3Length(&m_PlayerList[i]->GetPlayerVelocity()));
+
+        // display white sparks if walking
+        if( fPlayerVelocity > 1.0f && fPlayerVelocity < 3.0f)
+            AddSparkParticles(20, m_PlayerList[i]->GetPlayerPosition(), D3DXVECTOR3(0.0f, 0.005f, 0.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f));
+    
+        // display red sparks if running
+        else if( fPlayerVelocity > 3.0f )
+            AddSparkParticles(30, m_PlayerList[i]->GetPlayerPosition(), D3DXVECTOR3(0.0f, 0.005f, 0.0f), D3DXCOLOR(1.0f, 0.1f, 0.1f, 1.0f));
+    }
+
     // update existing particles
     std::list<Particle>::iterator it = m_ParticleList.begin();
 
@@ -226,26 +250,11 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
 
     // disable lighting
     pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
-    
-    //D3DMATERIAL9 materialDefault;
-	//materialDefault.Ambient = D3DXCOLOR(1, 1, 1, 1.0f); // white to ambient lighting
-	//materialDefault.Diffuse = D3DXCOLOR(1, 1, 1, 1.0f); // white to diffuse lighting
-	//materialDefault.Emissive = D3DXCOLOR(0, 0, 0, 1.0); // disable emissive
-	//materialDefault.Power = 0;
-	//materialDefault.Specular = D3DXCOLOR(0, 0, 0, 1.0); // disable specular
-	//pd3dDevice->SetMaterial(&materialDefault);
-    
-	//pd3dDevice->SetRenderState(D3DRS_DIFFUSEMATERIALSOURCE, D3DMCS_COLOR1);
-	//pd3dDevice->SetRenderState(D3DRS_SPECULARMATERIALSOURCE, D3DMCS_COLOR1);
-	//pd3dDevice->SetRenderState(D3DRS_AMBIENTMATERIALSOURCE, D3DMCS_COLOR1);
-	//pd3dDevice->SetRenderState(D3DRS_EMISSIVEMATERIALSOURCE, D3DMCS_COLOR1);
-
-    // enable ambient light
-    //pd3dDevice->SetRenderState(D3DRS_AMBIENT, D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f));
-        
+            
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
+    // enable alpha blending
     pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCCOLOR);
     pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_DESTCOLOR);
     pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);

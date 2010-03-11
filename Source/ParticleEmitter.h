@@ -11,6 +11,7 @@
 
 #pragma once
 #include "Node.h"
+#include "PlayerNode.h"
 #include <list>
 
 class ParticleEmitter : public Node
@@ -27,9 +28,12 @@ class ParticleEmitter : public Node
         ParticleEmitter();
         virtual ~ParticleEmitter();
 
+        // player tracking
+        void AddPlayerTracking(const PlayerNode* player);
+
         // particle management
         void AddFountainParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos);
-        void AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vVel);
+        void AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vDir, const D3DXCOLOR& cColor);
 
     protected:
 
@@ -103,7 +107,9 @@ class ParticleEmitter : public Node
 
         // DATA
         static const DWORD dParticleVertexCount = 6;
-        std::list<Particle> m_ParticleList; // list of particles
+        std::list<Particle> m_ParticleList;             // list of particles
+        std::vector<const PlayerNode*> m_PlayerList;    // list of players
+
 
         // prevent copy and assignment
         ParticleEmitter(const ParticleEmitter&);

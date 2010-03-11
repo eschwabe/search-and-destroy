@@ -44,15 +44,19 @@ WorldDecalNode::~WorldDecalNode()
 }
 
 /**
-* Add decal to world
+* Add new player tracking
 */
-void WorldDecalNode::AddDecalToQuad(
-    D3DXVECTOR3 vQuadP1, 
-    D3DXVECTOR3 vQuadP2,
-    D3DXVECTOR3 vQuadP3,
-    D3DXVECTOR3 vQuadP4,
-    const D3DXVECTOR3& vPos,
-    const D3DXVECTOR3& vNormal)
+void WorldDecalNode::AddPlayerTracking(const PlayerNode* player)
+{
+    PlayerData pData;
+    pData.pPlayer = player;
+    m_PlayerList.push_back(pData);
+}
+
+/**
+* Add floor decal to world
+*/
+void WorldDecalNode::AddFloorDecal(const D3DXVECTOR3& vPos)
 {
     Decal d;
 
@@ -60,19 +64,9 @@ void WorldDecalNode::AddDecalToQuad(
     if(m_DecalList.size() >= dMaxDecals)
         m_DecalList.erase(m_DecalList.begin());
 
-    // compute vector from position to quad corner
-    // set length to quad size
-    // add new vector to point to get decal quad point
-    D3DXVec3Normalize(&vQuadP1, &(vQuadP1-vPos)); vQuadP1 *= d.fSize;
-    D3DXVec3Normalize(&vQuadP2, &(vQuadP2-vPos)); vQuadP2 *= d.fSize;
-    D3DXVec3Normalize(&vQuadP3, &(vQuadP3-vPos)); vQuadP3 *= d.fSize;
-    D3DXVec3Normalize(&vQuadP4, &(vQuadP4-vPos)); vQuadP4 *= d.fSize;
-    
-    // calculate decal points
-    d.vPoint[0] = vPos + vQuadP1 + 0.01f*vNormal;
-    d.vPoint[1] = vPos + vQuadP2 + 0.01f*vNormal;
-    d.vPoint[2] = vPos + vQuadP3 + 0.01f*vNormal;
-    d.vPoint[3] = vPos + vQuadP4 + 0.01f*vNormal;
+    // set position
+    d.vPos = vPos;
+    d.vPos.y = 0.005f;
 
     // add decal
     m_DecalList.push_back(d);
@@ -102,7 +96,19 @@ HRESULT WorldDecalNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 */
 void WorldDecalNode::UpdateNode(double fTime)      
 {
-    // update existing particles
+    // check players for updates
+    for(DWORD i = 0; i < m_PlayerList.size(); i++)
+    {
+        float fDecalDistance = abs( D3DXVec3Length( &(m_PlayerList[i].pPlayer->GetPlayerPosition() - m_PlayerList[i].vLastDecalPos) ) );
+
+        if( fDecalDistance > 0.2f )
+        {
+            AddFloorDecal(m_PlayerList[i].pPlayer->GetPlayerPosition());
+            m_PlayerList[i].vLastDecalPos = m_PlayerList[i].pPlayer->GetPlayerPosition();
+        }
+    }
+
+    // update existing decals
     std::list<Decal>::iterator it = m_DecalList.begin();
 
     while(it != m_DecalList.end())
@@ -145,31 +151,31 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
             switch(i)
             {
             // quad triangle 1
-            case 0:
-                cvBuffer[dBufIdx].vPos = d.vPoint[0];
-                cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 0.0f);
-                break;
-            case 1:
-                cvBuffer[dBufIdx].vPos = d.vPoint[1];
+            case 0: // V1
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x - d.fSize, d.vPos.y, d.vPos.z - d.fSize);
                 cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 1.0f);
                 break;
-            case 2:
-                cvBuffer[dBufIdx].vPos = d.vPoint[2];
+            case 1: // V2
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x - d.fSize, d.vPos.y, d.vPos.z + d.fSize);
+                cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 0.0f);
+                break;
+            case 2: // V3
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x + d.fSize, d.vPos.y, d.vPos.z + d.fSize);
                 cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 0.0f);
                 break;
 
             // quad triangle 2
-            case 3:
-                cvBuffer[dBufIdx].vPos = d.vPoint[1];
+            case 3: // V1
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x - d.fSize, d.vPos.y, d.vPos.z - d.fSize);
                 cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 1.0f);
                 break;
-            case 4:
-                cvBuffer[dBufIdx].vPos = d.vPoint[2];
-                cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 1.0f);
-                break;
-            case 5:
-                cvBuffer[dBufIdx].vPos = d.vPoint[3];
+            case 4: // V3
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x + d.fSize, d.vPos.y, d.vPos.z + d.fSize);
                 cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 0.0f);
+                break;
+            case 5: // V4
+                cvBuffer[dBufIdx].vPos = D3DXVECTOR3(d.vPos.x + d.fSize, d.vPos.y, d.vPos.z - d.fSize);
+                cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 1.0f);
                 break;
             }
 
@@ -180,11 +186,16 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
     // set standard mesh transformation matrix
     pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
 
-    // disable lighting
+    // disable lighting and enable alpha blending
     pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
     
     // set decal texture
     pd3dDevice->SetTexture(0, m_pDecalTexture);
+        
+    // enable alpha-blending
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);

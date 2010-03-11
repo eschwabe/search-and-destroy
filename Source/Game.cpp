@@ -57,7 +57,6 @@ CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
 ParticleEmitter*        g_pEmitter = NULL;          // particle emitter
-WorldDecalNode*         g_pWorldDecalNode = NULL;   // world decals
 bool                    g_bEnableFountain = false;  // enable particle fountain
 
 //--------------------------------------------------------------------------------------
@@ -287,10 +286,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_pBaseNode->AddChild(p_WorldNode);
 
-    // add world decal node
-    g_pWorldDecalNode = new WorldDecalNode(L"planks-burnt-decal.jpg");
-    g_pBaseNode->AddChild(g_pWorldDecalNode);
-
     // add player node
     g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/800.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
     g_pBaseNode->AddChild(g_pMainPlayerNode);
@@ -308,8 +303,16 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     //SlinkyNode* pSlinky = new SlinkyNode(8.0f, 0.0f, 5.0f);
     //g_pBaseNode->AddChild(pSlinky);
     
+    // add world decal node
+    WorldDecalNode* pWorldDecalNode = new WorldDecalNode(L"asphalt-burnt-decal.png");
+    pWorldDecalNode->AddPlayerTracking(g_pMainPlayerNode);
+    pWorldDecalNode->AddPlayerTracking(g_pNPCNode);
+    g_pBaseNode->AddChild(pWorldDecalNode);
+
     // add particle emitter
     g_pEmitter = new ParticleEmitter();
+    g_pEmitter->AddPlayerTracking(g_pMainPlayerNode);
+    g_pEmitter->AddPlayerTracking(g_pNPCNode);
     g_pBaseNode->AddChild(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
@@ -394,8 +397,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // check for player collisions with environment
     CollPlayer coll;
-    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode, g_pEmitter, g_pWorldDecalNode);
-    coll.RunWorldCollision(g_vQuadList, g_pNPCNode, g_pEmitter,g_pWorldDecalNode);
+    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode);
+    coll.RunWorldCollision(g_vQuadList, g_pNPCNode);
 
     // check for collisions between players
     if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
