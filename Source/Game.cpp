@@ -309,10 +309,14 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     pWorldDecalNode->AddPlayerTracking(g_pNPCNode);
     g_pBaseNode->AddChild(pWorldDecalNode);
 
-    // add particle emitter
-    g_pEmitter = new ParticleEmitter();
-    g_pEmitter->AddPlayerTracking(g_pMainPlayerNode);
-    g_pEmitter->AddPlayerTracking(g_pNPCNode);
+    // add particle emitter and fire particles
+    g_pEmitter = new ParticleEmitter(L"particle-point.png");
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 3.0f));
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 22.0f));
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 22.0f));
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 3.0f));
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(4.5f, 1.2f, 12.5f));
+    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(20.5f, 1.2f, 12.5f));
     g_pBaseNode->AddChild(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
@@ -387,10 +391,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // update nodes
 	g_pBaseNode->Update(fElapsedTime);
-
-    // add fountain particles
-    if( g_bEnableFountain )
-        g_pEmitter->AddFountainParticles(20, D3DXVECTOR3(12.5f, 0.75f, 12.5f));
 
     // update the camera's position based on user input
     g_Camera->FrameMove(fElapsedTime);
@@ -605,6 +605,11 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_TOGGLEFOUNTAIN:
             g_bEnableFountain = !g_bEnableFountain;
+            if(g_bEnableFountain)
+                g_pEmitter->EnableParticles(ParticleEmitter::kFountain, D3DXVECTOR3(12.5f, 0.75f, 12.5f));
+            else
+                g_pEmitter->DisableParticles(ParticleEmitter::kFountain);
+
             break;
     }
 }

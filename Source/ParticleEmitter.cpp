@@ -11,11 +11,13 @@
 
 #include "DXUT.h"
 #include "ParticleEmitter.h"
+#include "DXUT\SDKmisc.h"
 
 // custom vertex structure definition
 const D3DVERTEXELEMENT9 ParticleEmitter::m_sCustomVertexDeclaration[] =
 {
     { 0, offsetof(CustomVertex, vPos        ), D3DDECLTYPE_FLOAT3  , 0, D3DDECLUSAGE_POSITION, 0 },
+    { 0, offsetof(CustomVertex, vTexCoord   ), D3DDECLTYPE_FLOAT2  , 0, D3DDECLUSAGE_TEXCOORD, 0 },
     { 0, offsetof(CustomVertex, cDiffuse    ), D3DDECLTYPE_D3DCOLOR, 0, D3DDECLUSAGE_COLOR   , 0 },
     D3DDECL_END(),
 };
@@ -23,7 +25,8 @@ const D3DVERTEXELEMENT9 ParticleEmitter::m_sCustomVertexDeclaration[] =
 /**
 * Constructor 
 */
-ParticleEmitter::ParticleEmitter()
+ParticleEmitter::ParticleEmitter(const LPCWSTR sParticleFilename) :
+    m_sParticleFilename(sParticleFilename)
 {
 }
 
@@ -34,14 +37,9 @@ ParticleEmitter::~ParticleEmitter()
 {
     // cleanup vertex declaration
     SAFE_RELEASE(m_pCVDeclaration);
-}
 
-/**
-* Add new player tracking
-*/
-void ParticleEmitter::AddPlayerTracking(const PlayerNode* player)
-{
-    m_PlayerList.push_back(player);
+    // cleanup texture
+    SAFE_RELEASE(m_pParticleTexture);
 }
 
 /**
@@ -52,60 +50,135 @@ HRESULT ParticleEmitter::InitializeNode(IDirect3DDevice9* pd3dDevice)
     // create vertex declaration
     HRESULT result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
 
+    // search and load particle texture
+    if( SUCCEEDED(result) )
+    {
+        WCHAR wsNewPath[ MAX_PATH ];
+        DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), m_sParticleFilename.c_str());
+        result = D3DXCreateTextureFromFile(pd3dDevice, wsNewPath, &m_pParticleTexture);
+    }
+
     return result;
+}
+
+/**
+* Add particle source
+*/
+void ParticleEmitter::EnableParticles(const ParticleType& type, const D3DXVECTOR3& vPos)
+{
+    ParticleSource source;
+    source.vPos = vPos;
+    source.pType = type;
+    source.fLastParticleCreateTime = 0.0f;
+    m_ParticleSourceList.push_back(source);
+}
+
+/**
+* Disable particle sources for specified type
+*/
+void ParticleEmitter::DisableParticles(const ParticleType& type)
+{
+    // check each particle source
+    std::list<ParticleSource>::iterator it = m_ParticleSourceList.begin();
+
+    while(it != m_ParticleSourceList.end())
+    {
+        ParticleSource& source = (*it);
+
+        // remove particle if at end of life
+        if(source.pType == type)
+        {
+            std::list<ParticleSource>::iterator itDelete = it;
+            ++it;
+            m_ParticleSourceList.erase(itDelete);
+            continue;
+        }
+        ++it;
+    }
+}
+
+/**
+* Update particle sources
+*/
+void ParticleEmitter::UpdateParticleSources(double fTime)
+{
+    // update time
+    static double fTotalTime = 0.0;
+    fTotalTime += fTime;
+
+    // update existing particles in all sources
+    for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
+        itSource != m_ParticleSourceList.end();
+        ++itSource)
+    {
+        ParticleSource& source = (*itSource);
+
+        if( source.pType == kFountain )
+        {
+            // fountain particle source
+            AddFountainParticles(10, source);
+        }
+        else if( source.pType == kFire )
+        {
+            // fire particle source
+            if(fTotalTime - source.fLastParticleCreateTime > 0.1f)
+            {
+                AddFireParticles(1, source);
+                source.fLastParticleCreateTime = fTotalTime;
+            }
+        }
+        else
+        {
+            // ignore
+        }
+    }
 }
 
 /**
 * Add fountain particles at specified position
 */
-void ParticleEmitter::AddFountainParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos)
+void ParticleEmitter::AddFountainParticles(const DWORD& dNumParticles, ParticleSource& source)
 {
     // add new particles
     for( DWORD i = 0; i < dNumParticles; i++)
     {
         Particle p;
-        p.vPos = vPos;
-        
-        // randomize colors
-        m_ParticleList.push_back(p);
+        p.vPos = source.vPos;
+        p.vVel = D3DXVECTOR3( sin((float)rand())/10.0f, 0.2f*((float)rand())/RAND_MAX+0.2f, cos((float)rand())/10.0f);
+        p.fSize = 0.1f;
+        source.pList.push_back(p);  
     }
 }
 
 /**
 * Add particles
 */
-void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vDir, const D3DXCOLOR& cColor)
+void ParticleEmitter::AddFireParticles(const DWORD& dNumParticles, ParticleSource& source)
 {
     for( DWORD i = 0; i < dNumParticles; i++)
     {
         // build particle
         Particle p;
-        p.vPos = vPos;
-        p.fSize = 0.0025f;
-        p.fLife = 0.5f;
-        p.forceType = kVelocityReduction;
+        p.vPos = source.vPos;
+        p.fSize = 0.5f;
         
-        // randomize colors (slightly)
-        p.cInitColor = cColor;
-        p.cFinalColor = cColor; 
-        p.cFinalColor.a = 0.0f;
+        // set fire color (orange)
+        //p.cInitColor = D3DXCOLOR(1.0f, 0.5f, 0.2f, 1.0f);
+        p.cInitColor = D3DXCOLOR(1.0f, 0.3f, 0.1f, 1.0f);
+        p.cFinalColor = p.cInitColor; 
         p.cCurrentColor = p.cInitColor;
 
         // randomize particle velocity/direction
-        p.vVel = vDir;
-        float rangeFactor = 150.0f;
-        if(p.vVel.y == 0.0f)
-            p.vVel.y = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
-        if(p.vVel.x == 0.0f)
-            p.vVel.x = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
-        if(p.vVel.z == 0.0f)
-            p.vVel.z = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
+        p.vVel = D3DXVECTOR3(0.0f, 0.02f, 0.0f);
         
-        p.vVel = p.vVel;
+        float rangeFactor = 100.0f;
+        p.vVel.x = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
+        p.vVel.z = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
+        
         p.vInitVel = p.vVel;
 
         // add particle
-        m_ParticleList.push_back(p);
+        source.pList.push_back(p);
     }
 }
 
@@ -114,77 +187,72 @@ void ParticleEmitter::AddSparkParticles(const DWORD& dNumParticles, const D3DXVE
 */
 void ParticleEmitter::UpdateNode(double fTime)                             
 {
-    // check players for updates
-    for(DWORD i = 0; i < m_PlayerList.size(); i++)
+    // add particles for sources
+    UpdateParticleSources(fTime);
+
+    // update existing particles in all sources
+    for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
+        itSource != m_ParticleSourceList.end();
+        ++itSource)
     {
-        float fPlayerVelocity = abs(D3DXVec3Length(&m_PlayerList[i]->GetPlayerVelocity()));
+        ParticleSource& source = (*itSource);
+        std::list<Particle>::iterator itParticle = source.pList.begin();
 
-        // display white sparks if walking
-        if( fPlayerVelocity > 1.0f && fPlayerVelocity < 3.0f)
-            AddSparkParticles(20, m_PlayerList[i]->GetPlayerPosition(), D3DXVECTOR3(0.0f, 0.005f, 0.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f));
-    
-        // display red sparks if running
-        else if( fPlayerVelocity > 3.0f )
-            AddSparkParticles(30, m_PlayerList[i]->GetPlayerPosition(), D3DXVECTOR3(0.0f, 0.005f, 0.0f), D3DXCOLOR(1.0f, 0.1f, 0.1f, 1.0f));
-    }
-
-    // update existing particles
-    std::list<Particle>::iterator it = m_ParticleList.begin();
-
-    while(it != m_ParticleList.end())
-    {
-        Particle& p = *it;
-
-        // update particle life
-        p.fLife += fTime;
-
-        // remove particle if at end of life
-        if(p.fLife > p.fTotalLife)
+        // update each particle
+        while(itParticle != source.pList.end())
         {
-            std::list<Particle>::iterator itDelete = it;
-            ++it;
-            m_ParticleList.erase(itDelete);
-            continue;
+            Particle& p = *itParticle;
+
+            // update particle life
+            p.fLife += fTime;
+
+            // remove particle if at end of life
+            if(p.fLife > p.fTotalLife)
+            {
+                std::list<Particle>::iterator itDelete = itParticle;
+                ++itParticle;
+                source.pList.erase(itDelete);
+                continue;
+            }
+
+            // compute acceleration  
+            D3DXVECTOR3 vAccel = ComputeParticleAccel(source.pType, p);
+            
+            // update particle velocity
+            p.vVel = p.vVel + vAccel;
+
+            // update particle position
+            p.vPos = p.vPos + p.vVel;
+
+            // update colors
+            float fColorWeight = (float)(p.fLife / p.fTotalLife);
+            p.cCurrentColor = p.cInitColor + (p.cFinalColor - p.cInitColor) * fColorWeight;
+
+            // move to next particle
+            ++itParticle;
         }
-
-        // compute acceleration  
-        D3DXVECTOR3 vAccel = ComputeParticleAccel(p);
-        
-        // update particle velocity
-        p.vVel = p.vVel + vAccel;
-
-        // update particle position
-        p.vPos = p.vPos + p.vVel;
-
-        // update colors
-        float fColorWeight = (float)(p.fLife / p.fTotalLife);
-        p.cCurrentColor = p.cInitColor + (p.cFinalColor - p.cInitColor) * fColorWeight;
-
-        // move to next particle
-        ++it;
     }
 }
 
 /**
 * Computes the force applied to the specified particle
 */
-D3DXVECTOR3 ParticleEmitter::ComputeParticleAccel(const Particle& p)
+D3DXVECTOR3 ParticleEmitter::ComputeParticleAccel(const ParticleType& type, const Particle& p)
 {
     D3DXVECTOR3 vAccel = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 
-    switch(p.forceType)
+    switch(type)
     {
-        // gravity simulator
-        case kGravity:
+        case kFountain:
         {
+            // gravity simulator
             D3DXVECTOR3 vForce = D3DXVECTOR3(0.0f, -0.01f, 0.0f);
             vAccel = vForce/p.fMass;
             break;
         }
-        // deacceleration over particle lifetime
-        case kVelocityReduction:
+        case kFire:
         {        
-            //float fVelWeight = (float)( p.fLife / p.fTotalLife);
+            // rising particles
             vAccel = -(p.vInitVel/60);
             break;
         }
@@ -198,50 +266,72 @@ D3DXVECTOR3 ParticleEmitter::ComputeParticleAccel(const Particle& p)
 */
 void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
-    // build vertex buffer
-    CustomVertex* cvBuffer = new CustomVertex[m_ParticleList.size() * dParticleVertexCount];
+    // determine number of particles
+    DWORD dTotalNumParticles = 0;
+    for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
+        itSource != m_ParticleSourceList.end();
+        ++itSource)
+    {
+        dTotalNumParticles += (*itSource).pList.size();
+    }
 
-    // get view x and y vectors (compute vertices that face camera)
+    // build vertex buffer
+    CustomVertex* cvBuffer = new CustomVertex[dTotalNumParticles * dParticleVertexCount];
+
+    // get camera view x and y vectors (compute vertices that face camera)
     D3DXVECTOR3 vXView = D3DXVECTOR3(rData.matView._11, rData.matView._21, rData.matView._31);
     D3DXVECTOR3 vYView = D3DXVECTOR3(rData.matView._12, rData.matView._22, rData.matView._32);
 
-    // form vertices for each particle
+    // form vertices for each particle in each source
     DWORD dBufIdx = 0;
-    for( std::list<Particle>::iterator it = m_ParticleList.begin(); it != m_ParticleList.end(); ++it ) 
+    for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
+        itSource != m_ParticleSourceList.end();
+        ++itSource)
     {
-        Particle& p = *it;
-
-        for(int i = 0; i < dParticleVertexCount; i++)
+        for( std::list<Particle>::iterator itParticle = (*itSource).pList.begin(); 
+            itParticle != (*itSource).pList.end(); 
+            ++itParticle ) 
         {
-            cvBuffer[dBufIdx].vPos = p.vPos;
-            cvBuffer[dBufIdx].cDiffuse = p.cCurrentColor;
+            Particle& p = (*itParticle);
 
-            switch(i)
+            for(int i = 0; i < dParticleVertexCount; i++)
             {
-            // quad triangle 1
-            case 0:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView + p.fSize*vYView;
-                break;
-            case 1:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView + p.fSize*vYView;
-                break;
-            case 2:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView - p.fSize*vYView;
-                break;
+                cvBuffer[dBufIdx].vPos = p.vPos;
+                cvBuffer[dBufIdx].cDiffuse = p.cCurrentColor;
 
-            // quad triangle 2
-            case 3:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView - p.fSize*vYView;
-                break;
-            case 4:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView - p.fSize*vYView;
-                break;
-            case 5:
-                cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView + p.fSize*vYView;
-                break;
+                switch(i)
+                {
+                // quad triangle 1
+                case 0:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView - p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 0.0f);
+                    break;
+                case 1:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView + p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 0.0f);
+                    break;
+                case 2:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView + p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 1.0f);
+                    break;
+
+                // quad triangle 2
+                case 3:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos - p.fSize*vXView - p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 0.0f);
+                    break;
+                case 4:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView + p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(0.0f, 1.0f);
+                    break;
+                case 5:
+                    cvBuffer[dBufIdx].vPos = cvBuffer[dBufIdx].vPos + p.fSize*vXView - p.fSize*vYView;
+                    cvBuffer[dBufIdx].vTexCoord = D3DXVECTOR2(1.0f, 1.0f);
+                    break;
+                }
+
+                dBufIdx++;
             }
-
-            dBufIdx++;
         }
     }
 
@@ -251,17 +341,23 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
     // disable lighting
     pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
             
+    // set particle texture
+    pd3dDevice->SetTexture(0, m_pParticleTexture);
+
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
     // enable alpha blending
-    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCCOLOR);
-    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_DESTCOLOR);
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
     pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+    
+    // disable z buffer
+    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
 
     // draw
     pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
 
     // cleanup temporary vertex buffer
-    SAFE_DELETE(cvBuffer);
+    SAFE_DELETE_ARRAY(cvBuffer);
 }

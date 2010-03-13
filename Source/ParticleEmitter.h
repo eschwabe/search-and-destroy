@@ -11,29 +11,25 @@
 
 #pragma once
 #include "Node.h"
-#include "PlayerNode.h"
 #include <list>
 
 class ParticleEmitter : public Node
 {
     public:
 
-        enum ForceType
+        enum ParticleType
         {
-            kGravity,
-            kVelocityReduction
+            kFire,
+            kFountain
         };
 
         // constructors
-        ParticleEmitter();
+        ParticleEmitter(const LPCWSTR sParticleFilename);
         virtual ~ParticleEmitter();
 
-        // player tracking
-        void AddPlayerTracking(const PlayerNode* player);
-
         // particle management
-        void AddFountainParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos);
-        void AddSparkParticles(const DWORD& dNumParticles, const D3DXVECTOR3& vPos, const D3DXVECTOR3& vDir, const D3DXCOLOR& cColor);
+        void EnableParticles(const ParticleType& type, const D3DXVECTOR3& vPos);
+        void DisableParticles(const ParticleType& type);
 
     protected:
 
@@ -50,17 +46,20 @@ class ParticleEmitter : public Node
 	    struct CustomVertex
 	    {
             D3DXVECTOR3 vPos;       // untransformed, 3D position for the vertex
+            D3DXVECTOR2 vTexCoord;  // texture coordinates
             D3DCOLOR cDiffuse;      // diffuse color
 
             // default constructor
             CustomVertex() :
-                vPos(0.0f, 0.0f, 0.0f), 
+                vPos(0.0f, 0.0f, 0.0f),
+                vTexCoord(0.0f, 0.0f),
                 cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1))
             {}
 
             // initialization constructor
-            CustomVertex(const D3DXVECTOR3& ivPos, const D3DXCOLOR& iColor) :
-                vPos(ivPos), 
+            CustomVertex(const D3DXVECTOR3& ivPos, const D3DXVECTOR3& ivTex, const D3DXCOLOR& iColor) :
+                vPos(ivPos),
+                vTexCoord(ivTex),
                 cDiffuse(iColor)
             {}
 	    };
@@ -76,7 +75,6 @@ class ParticleEmitter : public Node
             D3DXVECTOR3 vPos;           // position
             D3DXVECTOR3 vVel;           // current velocity
             D3DXVECTOR3 vInitVel;       // initial velocity
-            ForceType forceType;        // type of force applied to particle
             float fSize;                // size
             float fMass;                // mass
             double fLife;               // current life (seconds)
@@ -88,10 +86,9 @@ class ParticleEmitter : public Node
             // default constructor
             Particle() :
                 vPos(D3DXVECTOR3(0.0f, 0.0f, 0.0f)),
-                vVel(D3DXVECTOR3( sin((float)rand())/10.0f, 0.2f*((float)rand())/RAND_MAX+0.2f, cos((float)rand())/10.0f)),
+                vVel(D3DXVECTOR3(0.0f, 0.0f, 0.0f)),
                 vInitVel(vVel),
-                forceType(kGravity),
-                fSize(0.05f),
+                fSize(1.0f),
                 fMass(1.0f),
                 fTotalLife(1.0f),
                 fLife(0.0f),
@@ -101,14 +98,31 @@ class ParticleEmitter : public Node
             {}
         };
 
+        /**
+        * Particle Management
+        */
+        struct ParticleSource
+        {
+            std::list<Particle> pList;
+            ParticleType pType;                 // type of particle
+            D3DXVECTOR3 vPos;                   // source position
+            double fLastParticleCreateTime;     // last time a particle was created for source
+        };
+
 
         // METHODS
-        D3DXVECTOR3 ComputeParticleAccel(const Particle& p);
+        D3DXVECTOR3 ComputeParticleAccel(const ParticleType& type, const Particle& p);
+        void UpdateParticleSources(double fTime);
+        void AddFountainParticles(const DWORD& dNumParticles, ParticleSource& source);
+        void AddFireParticles(const DWORD& dNumParticles, ParticleSource& source);
+
 
         // DATA
         static const DWORD dParticleVertexCount = 6;
-        std::list<Particle> m_ParticleList;             // list of particles
-        std::vector<const PlayerNode*> m_PlayerList;    // list of players
+        std::list<ParticleSource> m_ParticleSourceList;   // list of particle sources
+
+        LPDIRECT3DTEXTURE9 m_pParticleTexture;
+        std::wstring m_sParticleFilename;
 
 
         // prevent copy and assignment

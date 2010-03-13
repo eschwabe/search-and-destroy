@@ -66,7 +66,6 @@ void WorldDecalNode::AddFloorDecal(const D3DXVECTOR3& vPos)
 
     // set position
     d.vPos = vPos;
-    d.vPos.y = 0.005f;
 
     // add decal
     m_DecalList.push_back(d);
@@ -188,7 +187,14 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
 
     // disable lighting and enable alpha blending
     pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
-    
+
+    // set depth bias (prevent z-fighting)
+    float fDepthBias = 0.00f;
+    float fDepthBiasSlope = -1.0f;
+    pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+    pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+    pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+     
     // set decal texture
     pd3dDevice->SetTexture(0, m_pDecalTexture);
         
@@ -204,6 +210,6 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
     pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
 
     // cleanup temporary vertex buffer
-    SAFE_DELETE(cvBuffer);
+    SAFE_DELETE_ARRAY(cvBuffer);
 
 }
