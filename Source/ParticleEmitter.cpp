@@ -335,28 +335,32 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
         }
     }
 
-    // set standard mesh transformation matrix
-    pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
+    if(dBufIdx > 0)
+    {
+        // set standard mesh transformation matrix
+        pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
 
-    // disable lighting
-    pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
-            
-    // set particle texture
-    pd3dDevice->SetTexture(0, m_pParticleTexture);
+        // disable lighting
+        pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
+                
+        // set particle texture
+        pd3dDevice->SetTexture(0, m_pParticleTexture);
 
-    // set vertex declaration
-    pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+        // set vertex declaration
+        pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
-    // enable alpha blending
-    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
-    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
-    
-    // disable z buffer
-    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+        // enable alpha blending
+        pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+        pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+        
+        // disable z buffer
+        pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
 
-    // draw
-    pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
+        // draw
+
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
+    }
 
     // cleanup temporary vertex buffer
     SAFE_DELETE_ARRAY(cvBuffer);
