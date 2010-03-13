@@ -182,32 +182,35 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
         }
     }
 
-    // set standard mesh transformation matrix
-    pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
+    if(dBufIdx > 0)
+    {
+        // set standard mesh transformation matrix
+        pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
 
-    // disable lighting and enable alpha blending
-    pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
+        // disable lighting and enable alpha blending
+        pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);
 
-    // set depth bias (prevent z-fighting)
-    float fDepthBias = 0.00f;
-    float fDepthBiasSlope = -1.0f;
-    pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-    pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
-    pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
-     
-    // set decal texture
-    pd3dDevice->SetTexture(0, m_pDecalTexture);
-        
-    // enable alpha-blending
-    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
-    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
+        // set depth bias (prevent z-fighting)
+        float fDepthBias = 0.00f;
+        float fDepthBiasSlope = -1.0f;
+        pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+        pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+        pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+         
+        // set decal texture
+        pd3dDevice->SetTexture(0, m_pDecalTexture);
+            
+        // enable alpha-blending
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, TRUE);
+        pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+        pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 
-    // set vertex declaration
-    pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+        // set vertex declaration
+        pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
-    // draw
-    pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
+        // draw
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, dBufIdx/3, cvBuffer, sizeof(cvBuffer[0]) );
+    }
 
     // cleanup temporary vertex buffer
     SAFE_DELETE_ARRAY(cvBuffer);
