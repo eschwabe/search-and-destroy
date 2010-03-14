@@ -406,7 +406,7 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
         if( !bPlayerCollision )
         {
             // play sound
-            g_pSoundCollision->Play(0, 0);
+            //g_pSoundCollision->Play(0, 0);
             bPlayerCollision = true;
         }
     }

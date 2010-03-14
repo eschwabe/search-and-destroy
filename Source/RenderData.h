@@ -28,6 +28,9 @@ class RenderData
             return matWorld * matView * matProjection;
         }
 
+        // computes a world matrix for drawing shadows (on x-z plane)
+        D3DXMATRIX ComputeShadowWorldMatrix() const;
+
         // enables basic shaders to perform directional lighting
         HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const;
         

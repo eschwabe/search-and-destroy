@@ -359,18 +359,21 @@ void PlayerNode::UpdateNode(double fTime)
 */
 void PlayerNode::ComputeTransform()
 {
-    D3DXMATRIX mx;
+    D3DXMATRIX mxTranslate;
+    D3DXMATRIX mxRotate;
+    D3DXMATRIX mxScale;
 
     // translate player
-    D3DXMatrixTranslation(&m_matPlayer, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
+    D3DXMatrixTranslation(&mxTranslate, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
 
     // rotate
-    D3DXMatrixRotationYawPitchRoll(&mx, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
-    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
-
+    D3DXMatrixRotationYawPitchRoll(&mxRotate, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation );
+    
     // scale
-    D3DXMatrixScaling(&mx, m_fPlayerScale, m_fPlayerScale, m_fPlayerScale);
-    D3DXMatrixMultiply(&m_matPlayer, &mx, &m_matPlayer);
+    D3DXMatrixScaling(&mxScale, m_fPlayerScale, m_fPlayerScale, m_fPlayerScale);
+    
+    // compute transform
+    m_matPlayer = mxScale * mxRotate * mxTranslate;
 }
 
 /**
@@ -431,16 +434,33 @@ void PlayerNode::UpdateAnimation(double fTime)
 void PlayerNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
     D3DXMATRIX matWorld;
-    D3DXMatrixMultiply(&matWorld, &m_matPlayer, &rData.matWorld);
-
-    // compute new player model transform matrix
+    
+    // update player transform
     ComputeTransform();
+
+
+    // DRAW PLAYER
+
+    // compute world player model transform matrix
+    matWorld = m_matPlayer * rData.matWorld;
 
     // update frame transform matrices
     UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
 
     // recursively draw the root frame
-    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData);
+    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData, false);
+
+
+    // DRAW PLAYER SHADOW
+
+    // compute shadow world player model transform matrix
+    matWorld = m_matPlayer * rData.ComputeShadowWorldMatrix();
+
+    // update frame transform matrices
+    UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
+
+    // recursively draw the root frame
+    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData, true);
 }
 
 /**
@@ -462,7 +482,7 @@ void PlayerNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX matWorld
 /**
 * Recursively draw the frame
 */
-void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData)
+void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData, const bool bShadowDraw)
 {
 	// draw all mesh containers in this frame
     EXTD3DXMESHCONTAINER* pMeshContainer = (EXTD3DXMESHCONTAINER*)pFrame->pMeshContainer;
@@ -470,23 +490,23 @@ void PlayerNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, c
     // draw mesh containers
     while(pMeshContainer)
     {
-        DrawMeshContainer(pd3dDevice, pFrame, pMeshContainer, rData);
+        DrawMeshContainer(pd3dDevice, pFrame, pMeshContainer, rData, bShadowDraw);
         pMeshContainer = (EXTD3DXMESHCONTAINER*)pMeshContainer->pNextMeshContainer;
     }
 
 	// recurse for frame sibblings
     if (pFrame->pFrameSibling)
-        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameSibling, rData);
+        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameSibling, rData, bShadowDraw);
 
     // recurse for frame children
 	if (pFrame->pFrameFirstChild)
-        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameFirstChild, rData);
+        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)pFrame->pFrameFirstChild, rData, bShadowDraw);
 }
 
 /**
 * Draw mesh container (standard mesh or skinned mesh)
 */
-void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData)
+void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData, const bool bShadowDraw)
 {
     // check for skinned mesh rendering
     if(pMeshContainer->pSkinInfo)
@@ -529,6 +549,20 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
 
             // we're pretty much ignoring the materials we got from the x-file; just set the texture here
             m_pEffect->SetTexture( "g_txScene", pMeshContainer->ppTextures[ pBC[ dwAttrib ].AttribId ] );
+            
+            // override texture for shadow drawing
+            if(bShadowDraw)
+            {
+                // shadow texture
+                m_pEffect->SetTexture( "g_txScene", 0 );
+
+                // set depth bias (prevent z-fighting)
+                float fDepthBias = 0.00f;
+                float fDepthBiasSlope = -1.0f;
+                pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+                pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+                pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+            }
 
             // set the current number of bones; this tells the effect which shader to use
             m_pEffect->SetInt( "CurNumBones", pMeshContainer->dwNumInfl - 1 );

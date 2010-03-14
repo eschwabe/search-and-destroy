@@ -56,6 +56,27 @@ HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
 }
 
 /**
+* Get shadow world matrix
+*/
+D3DXMATRIX RenderData::ComputeShadowWorldMatrix() const
+{
+    // create skew transform
+    D3DXMATRIX matSkew;
+    D3DXMatrixIdentity(&matSkew);
+    matSkew._21 = 1.5f;
+    matSkew._31 = 0.0f;
+
+    // create world matrix and flatten (y axis)
+    D3DXMATRIX matShadowWorld = matWorld * matSkew;
+    matShadowWorld._12 = 0.0f;
+    matShadowWorld._22 = 0.0f;
+    matShadowWorld._32 = 0.0f;
+    matShadowWorld._42 = 0.0f;
+
+    return matShadowWorld;
+}
+
+/**
 * Enables basic shaders to perform directional lighting
 */
 HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const

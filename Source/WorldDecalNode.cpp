@@ -196,7 +196,7 @@ void WorldDecalNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
         pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
         pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
         pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
-         
+
         // set decal texture
         pd3dDevice->SetTexture(0, m_pDecalTexture);
             

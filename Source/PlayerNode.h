@@ -86,8 +86,8 @@ protected:
         void ComputeTransform();
         void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
         void UpdateBoneMatricesBuffer(DWORD NumBones);
-        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData);
-        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData);
+        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData, const bool bShadowDraw);
+        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData, const bool bShadowDraw);
 
         // user input helper
         Movement GetPlayerMovement(const UINT&);
