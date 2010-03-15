@@ -11,6 +11,7 @@
 
 #include "DXUT.h"
 #include "RenderData.h"
+#include "DXUT\SDKmisc.h"
 #include "VertexShader.vfxobj"
 #include "PixelShader.pfxobj"
 #include "VSSkin.vfxobj"
@@ -32,6 +33,9 @@ RenderData::~RenderData()
     SAFE_RELEASE(m_pPixelShader);
     SAFE_RELEASE(m_pVSSkin);
     SAFE_RELEASE(m_pPSSkin);
+
+    // cleanup textures
+    SAFE_RELEASE(pShadowTexture);
 }
 
 /**
@@ -52,6 +56,14 @@ HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
     if( SUCCEEDED(result) )
         result = pd3dDevice->CreatePixelShader((DWORD const*)PFX_PSSkin, &m_pPSSkin);
 
+    // search and load shadow texture
+    if( SUCCEEDED(result) )
+    {    
+        WCHAR wsNewPath[ MAX_PATH ];
+        DXUTFindDXSDKMediaFileCch(wsNewPath, sizeof(wsNewPath), L"shadow-texture.png");
+        result = D3DXCreateTextureFromFile(pd3dDevice, wsNewPath, &pShadowTexture);
+    }
+
     return result;
 }
 
@@ -63,7 +75,7 @@ D3DXMATRIX RenderData::ComputeShadowWorldMatrix() const
     // create skew transform
     D3DXMATRIX matSkew;
     D3DXMatrixIdentity(&matSkew);
-    matSkew._21 = 1.5f;
+    matSkew._21 = 1.0f;
     matSkew._31 = 0.0f;
 
     // create world matrix and flatten (y axis)
@@ -79,12 +91,30 @@ D3DXMATRIX RenderData::ComputeShadowWorldMatrix() const
 /**
 * Enables basic shaders to perform directional lighting
 */
-HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const
+HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice, const bool bShadowDraw) const
 {
-    // compute trans(must be transposed for vertex shader)
-    D3DXMATRIXA16 matWorldViewProjTrans = ComputeWorldViewProjection();
+    D3DXMATRIXA16 matWorldViewProjTrans;
+    D3DXCOLOR cDirLightColor;
+    D3DXCOLOR cAmbientColor;
+
+    // compute transform and set colors (must be transposed for vertex shader)
+    if(bShadowDraw)
+    {
+        matWorldViewProjTrans = ComputeShadowWorldMatrix() * matView * matProjection;
+        cDirLightColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+        cAmbientColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    else
+    {
+        matWorldViewProjTrans = ComputeWorldViewProjection();
+        cDirLightColor = vDirectionalLightColor;
+        cAmbientColor = vAmbientColor;
+    }
+
+    // transpose world-view-proj matrix for vertex shader
     D3DXMatrixTranspose(&matWorldViewProjTrans, &matWorldViewProjTrans);
-    
+
+    // transpose world matrix
     D3DXMATRIX matWorldTrans = matWorld;
     D3DXMatrixTranspose(&matWorldTrans, &matWorldTrans);
 
@@ -97,9 +127,9 @@ HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const
     pd3dDevice->SetVertexShaderConstantF(4, (const float*)(&matWorldTrans), 3);
 
     // set pixel shader constants
-    pd3dDevice->SetPixelShaderConstantF(0, (const float*)(&vDirectionalLightColor), 1);
+    pd3dDevice->SetPixelShaderConstantF(0, (const float*)(&cDirLightColor), 1);
     pd3dDevice->SetPixelShaderConstantF(1, (const float*)(&vDirectionalLight), 1);
-    pd3dDevice->SetPixelShaderConstantF(2, (const float*)(&vAmbientColor), 1);
+    pd3dDevice->SetPixelShaderConstantF(2, (const float*)(&cAmbientColor), 1);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }

@@ -534,7 +534,6 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
             // set light attributes in shader
             m_pEffect->SetVector( "lhtDir", &rData.vDirectionalLight);
             m_pEffect->SetVector( "lightDiffuse", (const D3DXVECTOR4*)&rData.vDirectionalLightColor );
-            m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&rData.vAmbientColor );
 
             // set effect view projection matrix
             D3DXMATRIX matViewProj;
@@ -544,17 +543,20 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
             // set the matrix palette into the effect
             m_pEffect->SetMatrixArray( "amPalette", m_pBoneMatrices, pMeshContainer->dwNumPaletteEntries );
 
-            // set effect material diffuse
-            m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBC[dwAttrib].AttribId].Diffuse) );
-
-            // we're pretty much ignoring the materials we got from the x-file; just set the texture here
-            m_pEffect->SetTexture( "g_txScene", pMeshContainer->ppTextures[ pBC[ dwAttrib ].AttribId ] );
-            
-            // override texture for shadow drawing
+            // override texture settings for shadow drawing
             if(bShadowDraw)
             {
                 // shadow texture
-                m_pEffect->SetTexture( "g_txScene", 0 );
+                m_pEffect->SetTexture( "g_txScene", rData.pShadowTexture );
+                        
+                // enable alpha blending
+                pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+                pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
+                pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+
+                // override material colors
+                m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&(D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f)) );
+                m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f)) );
 
                 // set depth bias (prevent z-fighting)
                 float fDepthBias = 0.00f;
@@ -562,6 +564,18 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
                 pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
                 pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
                 pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+                
+                // disable z buffer
+                pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+            }
+            else
+            {   
+                // set material colors
+                m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&rData.vAmbientColor );
+                m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBC[dwAttrib].AttribId].Diffuse) );
+
+                // we're pretty much ignoring the materials we got from the x-file; just set the texture here
+                m_pEffect->SetTexture( "g_txScene", pMeshContainer->ppTextures[ pBC[ dwAttrib ].AttribId ] );
             }
 
             // set the current number of bones; this tells the effect which shader to use
@@ -600,8 +614,32 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
             materialDefault.Ambient = rData.vAmbientColor;
             pd3dDevice->SetMaterial(&materialDefault);
 
-            // set texture for this subset
-            pd3dDevice->SetTexture(0, pMeshContainer->ppTextures[i]);
+            // override texture settings for shadow drawing
+            if(bShadowDraw)
+            {
+                // shadow texture
+                pd3dDevice->SetTexture(0, rData.pShadowTexture);
+
+                // enable alpha blending
+                pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+                pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
+                pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+
+                // set depth bias (prevent z-fighting)
+                float fDepthBias = 0.00f;
+                float fDepthBiasSlope = -1.0f;
+                pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+                pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+                pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+                
+                // disable z buffer
+                pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+            }
+            else
+            {
+                // set texture for this subset
+                pd3dDevice->SetTexture(0, pMeshContainer->ppTextures[i]);
+            }
 
             // draw mesh
             pMeshContainer->MeshData.pMesh->DrawSubset(i);

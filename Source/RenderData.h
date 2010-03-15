@@ -32,7 +32,7 @@ class RenderData
         D3DXMATRIX ComputeShadowWorldMatrix() const;
 
         // enables basic shaders to perform directional lighting
-        HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice) const;
+        HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice, const bool bShadowDraw) const;
         
         // enables basic shaders to perform directional lighting
         HRESULT EnableSkinShaders(IDirect3DDevice9* pd3dDevice, const D3DXMATRIX& matWorldObj, const D3DXMATRIX* matBones, const DWORD dNumBones) const;
@@ -50,6 +50,9 @@ class RenderData
         D3DXCOLOR vDirectionalLightColor;
         D3DXCOLOR vAmbientColor;
 
+        // texture data
+        LPDIRECT3DTEXTURE9 pShadowTexture;          // shadow texture
+
     private:
 
         LPDIRECT3DVERTEXSHADER9 m_pVertexShader;    // vertex shader
@@ -57,4 +60,5 @@ class RenderData
 
         LPDIRECT3DVERTEXSHADER9 m_pVSSkin;          // vertex skinning shader
         LPDIRECT3DPIXELSHADER9 m_pPSSkin;           // pixel skinning shader
+
 };

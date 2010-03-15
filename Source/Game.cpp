@@ -296,7 +296,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pBaseNode->AddChild(g_pNPCNode);
 
     // add dwarf model
-    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 3.5f, 12.5,0,21, 0,0,0);
+    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 1.5f, 12.5,0,22, 0,0,0);
     g_pBaseNode->AddChild(pDwarf);
 
     // add slinky node
@@ -304,10 +304,10 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     //g_pBaseNode->AddChild(pSlinky);
     
     // add world decal node
-    WorldDecalNode* pWorldDecalNode = new WorldDecalNode(L"asphalt-burnt-decal.png");
-    pWorldDecalNode->AddPlayerTracking(g_pMainPlayerNode);
-    pWorldDecalNode->AddPlayerTracking(g_pNPCNode);
-    g_pBaseNode->AddChild(pWorldDecalNode);
+    //WorldDecalNode* pWorldDecalNode = new WorldDecalNode(L"asphalt-burnt-decal.png");
+    //pWorldDecalNode->AddPlayerTracking(g_pMainPlayerNode);
+    //pWorldDecalNode->AddPlayerTracking(g_pNPCNode);
+    //g_pBaseNode->AddChild(pWorldDecalNode);
 
     // add particle emitter and fire particles
     g_pEmitter = new ParticleEmitter(L"particle-point.png");

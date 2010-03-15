@@ -200,8 +200,10 @@ void WorldNode::UpdateNode(double /* fTime */)
 */
 void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
 {
+    // DRAW WORLD
+
     // setup shaders
-    rData.EnableDirectionalShaders(pd3dDevice);
+    rData.EnableDirectionalShaders(pd3dDevice, false);
 
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
@@ -217,6 +219,38 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData
     if(m_iWallTriangleCount)
     {
         pd3dDevice->SetTexture(0, m_pWallTexture);
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
+    }
+
+
+    // DRAW WALL SHADOWS
+
+    // setup shaders
+    rData.EnableDirectionalShaders(pd3dDevice, true);
+
+    // set vertex declaration
+    pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+
+    // set depth bias (prevent z-fighting)
+    float fDepthBias = -0.000001f;
+    float fDepthBiasSlope = -1.0f;
+    pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+    pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+    pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+
+    // enable alpha blending
+    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
+    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+
+    // disable z buffer
+    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+    // set wall texture and draw primitives
+    if(m_iWallTriangleCount)
+    {
+        // shadow texture
+        pd3dDevice->SetTexture(0, rData.pShadowTexture);
         pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
     }
 }

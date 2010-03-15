@@ -108,6 +108,7 @@ protected:
         LPD3DXEFFECT m_pEffect;         // effects
         bool m_playerSkinInfo;          // true if model has skin info (removes white dot under tiny...)
 
+
         LPD3DXANIMATIONCONTROLLER m_AnimationController;    // animation controller
 
         // prevent copy and assignment
