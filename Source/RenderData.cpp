@@ -68,6 +68,24 @@ HRESULT RenderData::Initialize(IDirect3DDevice9* pd3dDevice)
 }
 
 /**
+* Setup directional light
+*/
+void RenderData::SetDirectionalLight(const D3DXVECTOR4& vDir, const D3DXCOLOR& cColor)
+{
+    vDirectionalLight = vDir;
+    D3DXVec4Normalize(&vDirectionalLight, &vDirectionalLight);
+    vDirectionalLightColor = cColor;
+}
+
+/**
+* Setup ambient light
+*/
+void RenderData::SetAmbientLight(const D3DXCOLOR& cColor)
+{
+    vAmbientColor = cColor;
+}
+
+/**
 * Get shadow world matrix
 */
 D3DXMATRIX RenderData::ComputeShadowWorldMatrix() const
@@ -75,8 +93,10 @@ D3DXMATRIX RenderData::ComputeShadowWorldMatrix() const
     // create skew transform
     D3DXMATRIX matSkew;
     D3DXMatrixIdentity(&matSkew);
-    matSkew._21 = 1.0f;
-    matSkew._31 = 0.0f;
+    matSkew._21 = 0.5f - vDirectionalLight.x; // kxy
+    matSkew._31 = 0.0f; // kxz (always 0)
+    matSkew._13 = 0.0f; // kzx (always 0)
+    matSkew._23 = 0.5f - vDirectionalLight.y; // kzy
 
     // create world matrix and flatten (y axis)
     D3DXMATRIX matShadowWorld = matWorld * matSkew;
@@ -101,8 +121,8 @@ HRESULT RenderData::EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice, const
     if(bShadowDraw)
     {
         matWorldViewProjTrans = ComputeShadowWorldMatrix() * matView * matProjection;
-        cDirLightColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
-        cAmbientColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f);
+        cDirLightColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f); // negates lighting calculations
+        cAmbientColor = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);  // use only texture colors and alpha
     }
     else
     {

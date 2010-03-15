@@ -559,7 +559,7 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
                 m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f)) );
 
                 // set depth bias (prevent z-fighting)
-                float fDepthBias = 0.00f;
+                float fDepthBias = -0.0000001f;
                 float fDepthBiasSlope = -1.0f;
                 pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
                 pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
@@ -626,7 +626,7 @@ void PlayerNode::DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* p
                 pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
 
                 // set depth bias (prevent z-fighting)
-                float fDepthBias = 0.00f;
+                float fDepthBias = -0.0000005f;
                 float fDepthBiasSlope = -1.0f;
                 pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
                 pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));

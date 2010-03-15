@@ -31,6 +31,10 @@ class RenderData
         // computes a world matrix for drawing shadows (on x-z plane)
         D3DXMATRIX ComputeShadowWorldMatrix() const;
 
+        // setup lights
+        void SetAmbientLight(const D3DXCOLOR& cColor);
+        void SetDirectionalLight(const D3DXVECTOR4& vDir, const D3DXCOLOR& cColor);
+
         // enables basic shaders to perform directional lighting
         HRESULT EnableDirectionalShaders(IDirect3DDevice9* pd3dDevice, const bool bShadowDraw) const;
         

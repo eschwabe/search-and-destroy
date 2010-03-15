@@ -232,7 +232,7 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
     // set depth bias (prevent z-fighting)
-    float fDepthBias = -0.000001f;
+    float fDepthBias = -0.0000001f;
     float fDepthBiasSlope = -1.0f;
     pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
     pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));

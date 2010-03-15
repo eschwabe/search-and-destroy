@@ -355,9 +355,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_PlayerCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
     // configure lights
-    g_pRenderData->vDirectionalLight = D3DXVECTOR4(-0.5f, 0.0f, -0.25f, 1.0f);
-    g_pRenderData->vDirectionalLightColor = D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f);
-    g_pRenderData->vAmbientColor = D3DXCOLOR(0.3f, 0.3f, 0.3f, 0.3f);
+    g_pRenderData->SetDirectionalLight( D3DXVECTOR4(-0.5f, 0.1f, -0.25f, 1.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f) );
+    g_pRenderData->SetAmbientLight( D3DXCOLOR(0.3f, 0.3f, 0.3f, 0.3f) );
 
     // reset the timer
     g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
