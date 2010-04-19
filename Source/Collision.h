@@ -17,7 +17,7 @@
 #pragma once
 
 #include <vector>
-#include "PlayerNode.h"
+#include "PlayerBaseNode.h"
 
 /************************************************************************/
 /* CONSTANTS                                                            */
@@ -170,10 +170,10 @@ class CollPlayer
         CollPlayer();
 
         // run collision checks between player and environment
-        void RunWorldCollision(const VecCollQuad& quads, PlayerNode* player);
+        void RunWorldCollision(const VecCollQuad& quads, PlayerBaseNode* player);
 
         // run collision checks between two players
-        bool RunPlayerCollision(PlayerNode* player1, PlayerNode* player2);
+        bool RunPlayerCollision(PlayerBaseNode* player1, PlayerBaseNode* player2);
     
     private:
 

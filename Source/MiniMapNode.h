@@ -11,7 +11,7 @@
 
 #pragma once
 #include "Node.h"
-#include "PlayerNode.h"
+#include "PlayerBaseNode.h"
 #include "WorldNode.h"
 
 class MiniMapNode : public Node
@@ -37,7 +37,7 @@ class MiniMapNode : public Node
         virtual ~MiniMapNode();
 
         // add player tracking
-        void AddPlayerTracking(const PlayerNode* pPlayer, const PlayerType type);
+        void AddPlayerTracking(const PlayerBaseNode* pPlayer, const PlayerType type);
 
         // set world node
         void SetWorldNode(const WorldNode* world) { m_WorldNode = world; }
@@ -89,7 +89,7 @@ class MiniMapNode : public Node
             int iTriangleCount;                     // number of triangles
             int iVertexCount;                       // number of vertices
 
-            const PlayerNode* pPlayer;              // player object
+            const PlayerBaseNode* pPlayer;          // player object
             PlayerType type;                        // player object type
 
             // default constructor

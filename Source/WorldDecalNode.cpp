@@ -46,7 +46,7 @@ WorldDecalNode::~WorldDecalNode()
 /**
 * Add new player tracking
 */
-void WorldDecalNode::AddPlayerTracking(const PlayerNode* player)
+void WorldDecalNode::AddPlayerTracking(const PlayerBaseNode* player)
 {
     PlayerData pData;
     pData.pPlayer = player;

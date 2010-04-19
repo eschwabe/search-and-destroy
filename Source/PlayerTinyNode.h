@@ -10,31 +10,19 @@
 *******************************************************************************/
 
 #pragma once
-#include "Node.h"
+#include "PlayerBaseNode.h"
 #include "MeshHierarchyBuilder.h"
 
-class PlayerNode : public Node
+class PlayerTinyNode : public PlayerBaseNode
 {
     public:
 
         // constructor
-        PlayerNode(const std::wstring& sMeshFilename, const float fScale, 
-                       const float fX, const float fY, const float fZ, 
-                       const float fXRot, const float fYRot, const float fZRot);
-        virtual ~PlayerNode();
+        PlayerTinyNode(const std::wstring& sMeshFilename, const D3DXVECTOR3& vInitialPos);
+        virtual ~PlayerTinyNode();
 
         // handle user controls
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-        // collision events
-        void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta);
-        void PlayerCollisionEvent() { m_bPlayerCollision = true; }
-
-        // get player information
-        D3DXVECTOR3 GetPlayerPosition() const;
-        D3DXVECTOR3 GetPlayerVelocity() const;
-        float GetPlayerHeight() const;
-        float GetPlayerRotation() const;
 
 protected:
 
@@ -47,25 +35,6 @@ protected:
         // render traversal for drawing objects
 	    virtual void RenderNode(IDirect3DDevice9*, const RenderData& rData);
 
-        // defines the supported camera movements
-        enum Movement
-        {
-            kRotateLeft = 0,    
-            kRotateRight,
-            kMoveForward,
-            kMoveBackward,
-            kIncreaseSpeed,
-            kMaxMovement,
-            kUnknown = 0xFF
-        };
-
-        bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
-        bool m_bEnvironemntCollision;           // indicates the player collided with the environment
-        bool m_bPlayerCollision;                // indicates the player collided with another player
-
-        float m_fPlayerYawRotation;     // player rotation (y-axis)
-        float m_fPlayerPitchRotation;   // player rotation (z-axis)
-        float m_fPlayerRollRotation;    // player rotation (x-axis)
 
     private:
 
@@ -93,10 +62,8 @@ protected:
         Movement GetPlayerMovement(const UINT&);
  
         std::wstring m_sMeshFilename;   // mesh file to load
+        
         float m_fPlayerScale;           // player scaling
-        D3DXVECTOR3 m_vPlayerPos;       // player position
-        D3DXVECTOR3 m_vPlayerVelocity;  // player velocity
-        D3DXVECTOR3 m_vPlayerAccel;     // player acceleration
         Animation m_ePlayerAnimation;   // player animation
         int m_iPlayerAnimationTrack;    // player animation track
 
@@ -106,12 +73,10 @@ protected:
         D3DXMATRIX *m_pBoneMatrices;    // bone matrices for software skinned mesh rendering
         LPD3DXFRAME m_FrameRoot;        // frame root
         LPD3DXEFFECT m_pEffect;         // effects
-        bool m_playerSkinInfo;          // true if model has skin info (removes white dot under tiny...)
-
 
         LPD3DXANIMATIONCONTROLLER m_AnimationController;    // animation controller
 
         // prevent copy and assignment
-        PlayerNode(const PlayerNode&);
-        void operator=(const PlayerNode&);
+        PlayerTinyNode(const PlayerTinyNode&);
+        void operator=(const PlayerTinyNode&);
 };

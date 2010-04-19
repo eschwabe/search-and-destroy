@@ -31,7 +31,7 @@ CPlayerCamera::~CPlayerCamera()
 *
 * @param pPlayerNode player node
 */
-void CPlayerCamera::SetPlayerNode(const PlayerNode* pPlayerNode)
+void CPlayerCamera::SetPlayerNode(const PlayerBaseNode* pPlayerNode)
 {
     m_pPlayerNode = pPlayerNode;
 }
@@ -52,7 +52,7 @@ void CPlayerCamera::FrameMove( FLOAT fElapsedTime )
     if(m_pPlayerNode)
     {
         vPlayerPos = m_pPlayerNode->GetPlayerPosition();
-        fPlayerHeight = m_pPlayerNode->GetPlayerHeight();
+        fPlayerHeight = vPlayerPos.y*2;
         fPlayerRotation = m_pPlayerNode->GetPlayerRotation();
     }
 

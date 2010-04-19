@@ -286,17 +286,17 @@ CollPlayer::CollPlayer()
 * Player is queried for current position (sphere) data and notified
 * if the player needs to be moved.
 */
-void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerNode* player)
+void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerBaseNode* player)
 {
     assert(player);
 
-    // determine middle point of player
+    // get player position
     D3DXVECTOR3 vPlayerPos = player->GetPlayerPosition();
-    vPlayerPos.y = min(player->GetPlayerHeight()/2.0f, 1.0f);
+    //vPlayerPos.y = min(player->GetPlayerHeight()/2.0f, 1.0f);
 
     // generate sphere from player position and height
     CollSphere sphere;
-    sphere.Set(&vPlayerPos, player->GetPlayerHeight()/6.0f);
+    sphere.Set(&vPlayerPos, 0.25f);
 
     // run sphere vs quad checks on entire list
     for(size_t i = 0; i < quads.size(); i++)
@@ -314,25 +314,25 @@ void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerNode* player)
 /**
 * Run collision checks between two players. Returns true if a collision occured.
 */
-bool CollPlayer::RunPlayerCollision(PlayerNode* player1, PlayerNode* player2)
+bool CollPlayer::RunPlayerCollision(PlayerBaseNode* player1, PlayerBaseNode* player2)
 {
     // generate sphere from player1 position and height
     CollSphere p1Sphere;
     D3DXVECTOR3 vPlayer1Pos = player1->GetPlayerPosition();
-    p1Sphere.Set(&vPlayer1Pos, player1->GetPlayerHeight()/6.0f);
+    p1Sphere.Set(&vPlayer1Pos, 0.25f);
 
     // generate sphere from player position and height
     CollSphere p2Sphere;
     D3DXVECTOR3 vPlayer2Pos = player2->GetPlayerPosition();
-    p2Sphere.Set(&vPlayer2Pos, player2->GetPlayerHeight()/6.0f);
+    p2Sphere.Set(&vPlayer2Pos, 0.25f);
 
     bool coll = p1Sphere.VsSphere(&p2Sphere);
 
     // notify players of collision result
     if(coll)
     {        
-        player1->PlayerCollisionEvent();
-        player2->PlayerCollisionEvent();
+        //player1->PlayerCollisionEvent();
+        //player2->PlayerCollisionEvent();
         gCollOutput.Reset();
     }
 

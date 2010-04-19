@@ -11,7 +11,7 @@
 
 #pragma once
 #include "DXUT\DXUTcamera.h"
-#include "PlayerNode.h"
+#include "PlayerBaseNode.h"
 
 class CPlayerCamera : public CBaseCamera
 {
@@ -22,7 +22,7 @@ class CPlayerCamera : public CBaseCamera
         virtual ~CPlayerCamera();
 
         // Set player node reference
-        void SetPlayerNode(const PlayerNode*);
+        void SetPlayerNode(const PlayerBaseNode*);
 
         // Move and update camera
         virtual void FrameMove( FLOAT fElapsedTime );
@@ -36,7 +36,7 @@ class CPlayerCamera : public CBaseCamera
     private:
 
         // DATA
-        const PlayerNode* m_pPlayerNode;        // player node object
+        const PlayerBaseNode* m_pPlayerNode;    // player node object
         D3DXMATRIX m_mCameraWorld;              // world matrix of the camera (inverse of the view matrix)  
 
         // prevent copy and assignment

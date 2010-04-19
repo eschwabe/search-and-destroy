@@ -18,8 +18,8 @@
 #include "PlayerCamera.h"
 #include "Game.h"
 #include "TeapotNode.h"
-#include "PlayerNode.h"
-#include "NPCNode.h"
+#include "PlayerTinyNode.h"
+#include "NPCSphereNode.h"
 #include "SlinkyNode.h"
 #include "WorldNode.h"
 #include "WorldDecalNode.h"
@@ -49,9 +49,9 @@ bool                    g_bPlaySounds = true;       // play sounds if true
 double                  g_fLastAnimTime = 0.0;      // animation time
 World					g_World;				    // world for creating singletons and objects
 WorldFile               g_GridData;                 // drid data loaded from file
-Node*					g_pBaseNode = 0;            // scene node
-PlayerNode*             g_pMainPlayerNode = 0;      // main player node
-NPCNode*                g_pNPCNode = 0;             // NPC player node
+Node*					g_pBaseNode = NULL;         // scene node
+PlayerTinyNode*         g_pMainPlayerNode = NULL;   // main player node
+std::list<PlayerBaseNode*> g_NPCNodeList;           // npc node list
 VecCollQuad             g_vQuadList;                // collision quad list
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
@@ -263,7 +263,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	// create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
-
     // Initialize the font
     V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
                          OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
@@ -287,27 +286,16 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pBaseNode->AddChild(p_WorldNode);
 
     // add player node
-    g_pMainPlayerNode = new PlayerNode(L"tiny.x", 1.0f/800.0f, 13,0,1, 0,-D3DX_PI/2.0f,0);
+    g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(13.0f,0.0f,1.0f) );
     g_pBaseNode->AddChild(g_pMainPlayerNode);
 
-    // add NPC
-    g_pNPCNode = new NPCNode(L"tiny.x", 1.0f/250.0f, 12.5,0,16, 0,-D3DX_PI/2.0f,0);
-    g_pNPCNode->SetEnemyPlayer(g_pMainPlayerNode);
-    g_pBaseNode->AddChild(g_pNPCNode);
-
-    // add dwarf model
-    PlayerNode* pDwarf = new PlayerNode(L"dwarf.x", 1.5f, 12.5,0,22, 0,0,0);
-    g_pBaseNode->AddChild(pDwarf);
-
-    // add slinky node
-    //SlinkyNode* pSlinky = new SlinkyNode(8.0f, 0.0f, 5.0f);
-    //g_pBaseNode->AddChild(pSlinky);
-    
-    // add world decal node
-    //WorldDecalNode* pWorldDecalNode = new WorldDecalNode(L"asphalt-burnt-decal.png");
-    //pWorldDecalNode->AddPlayerTracking(g_pMainPlayerNode);
-    //pWorldDecalNode->AddPlayerTracking(g_pNPCNode);
-    //g_pBaseNode->AddChild(pWorldDecalNode);
+    // add sphere NPCs
+    for( DWORD i = 0; i < 7; i++ )
+    {
+        PlayerBaseNode* pNPC = new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f));
+        g_NPCNodeList.push_back( pNPC );
+        g_pBaseNode->AddChild( pNPC );
+    }
 
     // add particle emitter and fire particles
     g_pEmitter = new ParticleEmitter(L"particle-point.png");
@@ -315,8 +303,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 22.0f));
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 22.0f));
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 3.0f));
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(4.5f, 1.2f, 12.5f));
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(20.5f, 1.2f, 12.5f));
     g_pBaseNode->AddChild(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
@@ -330,8 +316,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 
     p_MiniMap->SetWorldNode(p_WorldNode);
     p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
-    p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
-    p_MiniMap->AddPlayerTracking(pDwarf, MiniMapNode::NPC);
+    //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
+    //p_MiniMap->AddPlayerTracking(pDwarf, MiniMapNode::NPC);
     g_pBaseNode->AddChild(p_MiniMap);
 
     // setup player camera
@@ -369,7 +355,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 
     // get collision quad list
     g_vQuadList = p_WorldNode->GetCollisionQuadList();
-    g_pNPCNode->SetWorldQuadList(&g_vQuadList);
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -397,22 +382,26 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // check for player collisions with environment
     CollPlayer coll;
     coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode);
-    coll.RunWorldCollision(g_vQuadList, g_pNPCNode);
+
+    for(std::list<PlayerBaseNode*>::iterator it = g_NPCNodeList.begin(); it != g_NPCNodeList.end(); ++it)
+    {
+        coll.RunWorldCollision(g_vQuadList, (*it));
+    }
 
     // check for collisions between players
-    if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
-    {
-        if( !bPlayerCollision )
-        {
-            // play sound
-            //g_pSoundCollision->Play(0, 0);
-            bPlayerCollision = true;
-        }
-    }
-    else
-    {
-        bPlayerCollision = false;
-    }
+    //if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
+    //{
+    //    if( !bPlayerCollision )
+    //    {
+    //        // play sound
+    //        //g_pSoundCollision->Play(0, 0);
+    //        bPlayerCollision = true;
+    //    }
+    //}
+    //else
+    //{
+    //    bPlayerCollision = false;
+    //}
 }
 
 //--------------------------------------------------------------------------------------

@@ -11,7 +11,7 @@
 
 #pragma once
 #include "Node.h"
-#include "PlayerNode.h"
+#include "PlayerBaseNode.h"
 #include <list>
 
 class WorldDecalNode : public Node
@@ -23,7 +23,7 @@ class WorldDecalNode : public Node
         virtual ~WorldDecalNode();
 
         // add new player tracking
-        void AddPlayerTracking(const PlayerNode* player);
+        void AddPlayerTracking(const PlayerBaseNode* player);
 
         // add floor decal
         void AddFloorDecal(const D3DXVECTOR3& vPos);
@@ -84,7 +84,7 @@ class WorldDecalNode : public Node
         */
         struct PlayerData
         {
-            const PlayerNode* pPlayer;
+            const PlayerBaseNode* pPlayer;
             D3DXVECTOR3 vLastDecalPos;
 
             PlayerData() :

@@ -63,7 +63,7 @@ MiniMapNode::~MiniMapNode()
 /**
 * Add player tracking. Displays player location on minimap.
 */
-void MiniMapNode::AddPlayerTracking(const PlayerNode* pPlayer, const PlayerType type) 
+void MiniMapNode::AddPlayerTracking(const PlayerBaseNode* pPlayer, const PlayerType type) 
 { 
     PlayerMapInfo info;
     
