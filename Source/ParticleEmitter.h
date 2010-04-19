@@ -10,10 +10,10 @@
 *******************************************************************************/
 
 #pragma once
-#include "Node.h"
+#include "gameobject.h"
 #include <list>
 
-class ParticleEmitter : public Node
+class ParticleEmitter : public GameObject
 {
     public:
 
@@ -33,9 +33,10 @@ class ParticleEmitter : public Node
 
     protected:
 
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
-	    void UpdateNode(double fTime);                                          // update traversal for physics, AI, etc.
-	    void RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData); // render traversal for drawing objects
+        // object methods
+        virtual HRESULT Initialize(IDirect3DDevice9* pd3dDevice);
+	    virtual void Update();
+	    virtual void Render(IDirect3DDevice9*, const RenderData* rData);
 
     private:
 
@@ -112,7 +113,7 @@ class ParticleEmitter : public Node
 
         // METHODS
         D3DXVECTOR3 ComputeParticleAccel(const ParticleType& type, const Particle& p);
-        void UpdateParticleSources(double fTime);
+        void UpdateParticleSources();
         void AddFountainParticles(const DWORD& dNumParticles, ParticleSource& source);
         void AddFireParticles(const DWORD& dNumParticles, ParticleSource& source);
 

@@ -17,17 +17,17 @@
 #include "DebugCamera.h"
 #include "PlayerCamera.h"
 #include "Game.h"
-#include "TeapotNode.h"
 #include "PlayerTinyNode.h"
 #include "NPCSphereNode.h"
-#include "SlinkyNode.h"
 #include "WorldNode.h"
-#include "WorldDecalNode.h"
 #include "WorldFile.h"
-#include "World.h"
 #include "MiniMapNode.h"
 #include "RenderData.h"
 #include "ParticleEmitter.h"
+#include "database.h"
+#include "msgroute.h"
+#include "debuglog.h"
+#include "time.h"
 
 using namespace std;
 
@@ -46,10 +46,11 @@ CDXUTDialog             g_HUD;                      // dialog for standard contr
 CDXUTDialog             g_SampleUI;                 // dialog for sample specific controls
 bool                    g_bShowHelp = true;         // render the UI control text if true
 bool                    g_bPlaySounds = true;       // play sounds if true
-double                  g_fLastAnimTime = 0.0;      // animation time
-World					g_World;				    // world for creating singletons and objects
+Time*                   g_pTime;                    // time manager
+Database*               g_pDatabase;                // game object database
+MsgRoute*               g_pMsgRoute;                // message router
+DebugLog*               g_pDebugLog;                // debug logger
 WorldFile               g_GridData;                 // drid data loaded from file
-Node*					g_pBaseNode = NULL;         // scene node
 PlayerTinyNode*         g_pMainPlayerNode = NULL;   // main player node
 std::list<PlayerBaseNode*> g_NPCNodeList;           // npc node list
 VecCollQuad             g_vQuadList;                // collision quad list
@@ -114,9 +115,6 @@ bool InitApp()
     // setup debug camera movement parameters
     g_DebugCamera.SetViewParams( &vEye, &vAt );
     g_DebugCamera.SetScalers( 0.01f, 5.0f );
-
-	g_World.InitializeSingletons();
-
 
 	return true;
 }
@@ -250,23 +248,25 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 {
     HRESULT hr;
 
+    // reset dialogs
     V_RETURN( g_DialogResourceManager.OnD3D9ResetDevice() );
     V_RETURN( g_SettingsDlg.OnD3D9ResetDevice() );
 
-    // initialize world
-	g_World.Initialize(pd3dDevice);
-
-    // font
-    if( g_pFont )
-        V_RETURN( g_pFont->OnResetDevice() );
+    // initialize singleton objects
+	g_pTime = new Time();
+	g_pDatabase = new Database();
+	g_pMsgRoute = new MsgRoute();
+	g_pDebugLog = new DebugLog();
 
 	// create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
-    // Initialize the font
-    V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET,
-                         OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
-                         L"Consolas", &g_pFont ) );
+    // initialize the font
+    if( g_pFont )
+        V_RETURN( g_pFont->OnResetDevice() );
+
+    V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, 
+                              DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas", &g_pFont ) );
 
     // initialize sound manager
     g_pSoundManager = new CSoundManager();
@@ -278,23 +278,20 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"alarm.wav" );
     g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
 
-    // create base node
-    g_pBaseNode = new Node();
-  
-    // add world node
+    // add world object
     WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
-    g_pBaseNode->AddChild(p_WorldNode);
+    g_database.Store(p_WorldNode);
 
     // add player node
     g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(13.0f,0.0f,1.0f) );
-    g_pBaseNode->AddChild(g_pMainPlayerNode);
+    g_database.Store(g_pMainPlayerNode);
 
     // add sphere NPCs
     for( DWORD i = 0; i < 7; i++ )
     {
         PlayerBaseNode* pNPC = new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f));
         g_NPCNodeList.push_back( pNPC );
-        g_pBaseNode->AddChild( pNPC );
+        g_database.Store( pNPC );
     }
 
     // add particle emitter and fire particles
@@ -303,7 +300,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 22.0f));
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 22.0f));
     g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 3.0f));
-    g_pBaseNode->AddChild(g_pEmitter);
+    g_database.Store(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     MiniMapNode* p_MiniMap = new MiniMapNode(
@@ -317,14 +314,13 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     p_MiniMap->SetWorldNode(p_WorldNode);
     p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
     //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
-    //p_MiniMap->AddPlayerTracking(pDwarf, MiniMapNode::NPC);
-    g_pBaseNode->AddChild(p_MiniMap);
+    g_database.Store(p_MiniMap);
 
     // setup player camera
     g_PlayerCamera.SetPlayerNode(g_pMainPlayerNode);
 
-    // initialize nodes
-    if( FAILED(g_pBaseNode->Initialize(pd3dDevice)) )
+    // initialize database objects
+    if( FAILED(g_database.InitializeObjects(pd3dDevice)) )
     {
         MessageBox( NULL, L"Could not load nodes", L"UWGame", MB_OK );
         return E_FAIL;
@@ -343,9 +339,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     // configure lights
     g_pRenderData->SetDirectionalLight( D3DXVECTOR4(-0.5f, 0.1f, -0.25f, 1.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f) );
     g_pRenderData->SetAmbientLight( D3DXCOLOR(0.3f, 0.3f, 0.3f, 0.3f) );
-
-    // reset the timer
-    g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
 
     // adjust the dialog parameters
     g_HUD.SetLocation( pBackBufferSurfaceDesc->Width-170, 0 );
@@ -367,14 +360,11 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 //--------------------------------------------------------------------------------------
 void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext )
 {
-    static bool bPlayerCollision = false;
+    // update time
+	g_time.MarkTimeThisTick();
 
-    g_fLastAnimTime = fTime;
-
-	g_World.Update();
-
-    // update nodes
-	g_pBaseNode->Update(fElapsedTime);
+    // update database objects
+	g_database.UpdateObjects();
 
     // update the camera's position based on user input
     g_Camera->FrameMove(fElapsedTime);
@@ -389,6 +379,8 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     }
 
     // check for collisions between players
+    //static bool bPlayerCollision = false;
+
     //if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
     //{
     //    if( !bPlayerCollision )
@@ -442,7 +434,7 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         g_pRenderData->matWorld = matIdentity;
 
         // render all nodes
-        g_pBaseNode->Render(pd3dDevice, *g_pRenderData);
+        g_database.RenderObjects(pd3dDevice, g_pRenderData);
 
         // display text on hud
         RenderText();
@@ -542,7 +534,6 @@ void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUse
             case VK_F1:
 				g_bShowHelp = !g_bShowHelp;
 				break;
-
         }
     }
 }
@@ -588,7 +579,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_RESETTIME:
             DXUTGetGlobalTimer()->Reset();
-            g_fLastAnimTime = DXUTGetGlobalTimer()->GetTime();
             break;
 
         case IDC_TOGGLEFOUNTAIN:
@@ -619,8 +609,13 @@ void CALLBACK OnLostDevice( void* pUserContext )
 
     SAFE_RELEASE( g_pTextSprite );
 
-    // cleanup all nodes and rendering data
-    delete g_pBaseNode;
+    // cleanup game singletons and objects
+	delete g_pTime;
+	delete g_pDatabase;
+	delete g_pMsgRoute;
+	delete g_pDebugLog;
+
+    // cleanup render data
     delete g_pRenderData;
 
     // cleanup font

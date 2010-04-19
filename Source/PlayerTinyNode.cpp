@@ -19,7 +19,7 @@
 PlayerTinyNode::PlayerTinyNode(
         const std::wstring& sMeshFilename,
         const D3DXVECTOR3& vInitialPos) :
-    PlayerBaseNode(vInitialPos),
+    PlayerBaseNode(vInitialPos, g_database.GetNewObjectID(), OBJECT_Player, "PLAYER"),
     m_sMeshFilename(sMeshFilename),
     m_NumBoneMatrices(0),
     m_pBoneMatrices(NULL),
@@ -133,7 +133,7 @@ PlayerTinyNode::Movement PlayerTinyNode::GetPlayerMovement(const UINT& key)
 * Initialize player node. Loads the mesh hierarchy from the file and configures
 * the node for rendering.
 */
-HRESULT PlayerTinyNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT PlayerTinyNode::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     // search for file
     WCHAR wsNewPath[ MAX_PATH ];
@@ -188,12 +188,6 @@ HRESULT PlayerTinyNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
         SetupBoneMatrices((EXTD3DXFRAME*)m_FrameRoot);
     }
 
-    // call base player initialize
-    if( SUCCEEDED(result) )
-    {
-        result = PlayerBaseNode::InitializeNode(pd3dDevice);
-    }
-
     return result;
 }
 
@@ -237,13 +231,13 @@ void PlayerTinyNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 /**
 * Update traversal for physics, AI, etc.
 */
-void PlayerTinyNode::UpdateNode(double fTime)
+void PlayerTinyNode::Update()
 {
     // update position
-    UpdatePlayerPosition(fTime);
+    UpdatePlayerPosition();
 
     // update animation
-    UpdateAnimation(fTime);
+    UpdateAnimation();
 }
 
 /**
@@ -272,7 +266,7 @@ void PlayerTinyNode::ComputeTransform()
 * Updates the current player's animation and sets a new animation
 * depending on the player velocity.
 */
-void PlayerTinyNode::UpdateAnimation(double fTime)
+void PlayerTinyNode::UpdateAnimation()
 {
     if(m_AnimationController)
     {
@@ -316,14 +310,14 @@ void PlayerTinyNode::UpdateAnimation(double fTime)
         }
 
         // update animation
-        m_AnimationController->AdvanceTime(fTime, NULL);
+        m_AnimationController->AdvanceTime(g_time.GetElapsedTime(), NULL);
     }
 }
 
 /**
 * Render traversal for drawing objects
 */
-void PlayerTinyNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void PlayerTinyNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     D3DXMATRIX matWorld;
     
@@ -334,7 +328,7 @@ void PlayerTinyNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
     // DRAW PLAYER
 
     // compute world player model transform matrix
-    matWorld = m_matPlayer * rData.matWorld;
+    matWorld = m_matPlayer * rData->matWorld;
 
     // update frame transform matrices
     UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
@@ -346,7 +340,7 @@ void PlayerTinyNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& 
     // DRAW PLAYER SHADOW
 
     // compute shadow world player model transform matrix
-    matWorld = m_matPlayer * rData.ComputeShadowWorldMatrix();
+    matWorld = m_matPlayer * rData->ComputeShadowWorldMatrix();
 
     // update frame transform matrices
     UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
@@ -374,7 +368,7 @@ void PlayerTinyNode::UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX matW
 /**
 * Recursively draw the frame
 */
-void PlayerTinyNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData, const bool bShadowDraw)
+void PlayerTinyNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData* rData, const bool bShadowDraw)
 {
 	// draw all mesh containers in this frame
     EXTD3DXMESHCONTAINER* pMeshContainer = (EXTD3DXMESHCONTAINER*)pFrame->pMeshContainer;
@@ -400,7 +394,7 @@ void PlayerTinyNode::DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFram
 */
 void PlayerTinyNode::DrawMeshContainer(
     IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, 
-    const RenderData& rData, const bool bShadowDraw)
+    const RenderData* rData, const bool bShadowDraw)
 {
     // check bone matrices buffer size
     UpdateBoneMatricesBuffer(pMeshContainer->dwNumPaletteEntries);
@@ -425,12 +419,12 @@ void PlayerTinyNode::DrawMeshContainer(
             }
 
             // set light attributes in shader
-            m_pEffect->SetVector( "lhtDir", &rData.vDirectionalLight);
-            m_pEffect->SetVector( "lightDiffuse", (const D3DXVECTOR4*)&rData.vDirectionalLightColor );
+            m_pEffect->SetVector( "lhtDir", &rData->vDirectionalLight);
+            m_pEffect->SetVector( "lightDiffuse", (const D3DXVECTOR4*)&rData->vDirectionalLightColor );
 
             // set effect view projection matrix
             D3DXMATRIX matViewProj;
-            D3DXMatrixMultiply(&matViewProj, &rData.matView, &rData.matProjection);
+            D3DXMatrixMultiply(&matViewProj, &rData->matView, &rData->matProjection);
             m_pEffect->SetMatrix( "g_mViewProj", &matViewProj );
 
             // set the matrix palette into the effect
@@ -440,7 +434,7 @@ void PlayerTinyNode::DrawMeshContainer(
             if(bShadowDraw)
             {
                 // shadow texture
-                m_pEffect->SetTexture( "g_txScene", rData.pShadowTexture );
+                m_pEffect->SetTexture( "g_txScene", rData->pShadowTexture );
                         
                 // enable alpha blending
                 pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
@@ -464,7 +458,7 @@ void PlayerTinyNode::DrawMeshContainer(
             else
             {   
                 // set material colors
-                m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&rData.vAmbientColor );
+                m_pEffect->SetVector( "MaterialAmbient", (const D3DXVECTOR4*)&rData->vAmbientColor );
                 m_pEffect->SetVector( "MaterialDiffuse", (D3DXVECTOR4*)&(pMeshContainer->pMaterials[pBC[dwAttrib].AttribId].Diffuse) );
 
                 // we're pretty much ignoring the materials we got from the x-file; just set the texture here

@@ -39,6 +39,7 @@ WorldNode::WorldNode(
         const LPCWSTR sGridFilename, 
         const LPCWSTR sFloorFilename, 
         const LPCWSTR sWallFilename) :
+    GameObject(g_database.GetNewObjectID(), OBJECT_World, "WORLD"),
     m_sGridFilename(sGridFilename),
     m_sFloorFilename(sFloorFilename),
     m_sWallFilename(sWallFilename),
@@ -86,7 +87,7 @@ VecCollQuad WorldNode::GetCollisionQuadList()
 /**
 * Initialize world node.
 */
-HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     WCHAR wsNewPath[ MAX_PATH ];
 
@@ -182,7 +183,7 @@ HRESULT WorldNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
 /**
 * Update world node.
 */
-void WorldNode::UpdateNode(double /* fTime */)
+void WorldNode::Update()
 {
 }
 
@@ -198,12 +199,12 @@ void WorldNode::UpdateNode(double /* fTime */)
 * with. Finally, we call DrawPrimitive() which does the actual rendering
 * of our geometry.
 */
-void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void WorldNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     // DRAW WORLD
 
     // setup shaders
-    rData.EnableDirectionalShaders(pd3dDevice, false);
+    rData->EnableDirectionalShaders(pd3dDevice, false);
 
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
@@ -226,7 +227,7 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData
     // DRAW WALL SHADOWS
 
     // setup shaders
-    rData.EnableDirectionalShaders(pd3dDevice, true);
+    rData->EnableDirectionalShaders(pd3dDevice, true);
 
     // set vertex declaration
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
@@ -250,7 +251,7 @@ void WorldNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData
     if(m_iWallTriangleCount)
     {
         // shadow texture
-        pd3dDevice->SetTexture(0, rData.pShadowTexture);
+        pd3dDevice->SetTexture(0, rData->pShadowTexture);
         pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
     }
 }

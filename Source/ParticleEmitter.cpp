@@ -26,6 +26,7 @@ const D3DVERTEXELEMENT9 ParticleEmitter::m_sCustomVertexDeclaration[] =
 * Constructor 
 */
 ParticleEmitter::ParticleEmitter(const LPCWSTR sParticleFilename) :
+    GameObject(g_database.GetNewObjectID(), OBJECT_Projectile, "PROJECTILE"),
     m_sParticleFilename(sParticleFilename)
 {
 }
@@ -45,7 +46,7 @@ ParticleEmitter::~ParticleEmitter()
 /**
 * Initialize particle emitter 
 */
-HRESULT ParticleEmitter::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT ParticleEmitter::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     // create vertex declaration
     HRESULT result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
@@ -100,12 +101,8 @@ void ParticleEmitter::DisableParticles(const ParticleType& type)
 /**
 * Update particle sources
 */
-void ParticleEmitter::UpdateParticleSources(double fTime)
+void ParticleEmitter::UpdateParticleSources()
 {
-    // update time
-    static double fTotalTime = 0.0;
-    fTotalTime += fTime;
-
     // update existing particles in all sources
     for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
         itSource != m_ParticleSourceList.end();
@@ -121,10 +118,10 @@ void ParticleEmitter::UpdateParticleSources(double fTime)
         else if( source.pType == kFire )
         {
             // fire particle source
-            if(fTotalTime - source.fLastParticleCreateTime > 0.1f)
+            if(g_time.GetElapsedTime() - source.fLastParticleCreateTime > 0.1f)
             {
                 AddFireParticles(1, source);
-                source.fLastParticleCreateTime = fTotalTime;
+                source.fLastParticleCreateTime = g_time.GetAbsoluteTime();
             }
         }
         else
@@ -185,10 +182,10 @@ void ParticleEmitter::AddFireParticles(const DWORD& dNumParticles, ParticleSourc
 /**
 * Update particle emitter 
 */
-void ParticleEmitter::UpdateNode(double fTime)                             
+void ParticleEmitter::Update()                             
 {
     // add particles for sources
-    UpdateParticleSources(fTime);
+    UpdateParticleSources();
 
     // update existing particles in all sources
     for(std::list<ParticleSource>::iterator itSource = m_ParticleSourceList.begin();
@@ -204,7 +201,7 @@ void ParticleEmitter::UpdateNode(double fTime)
             Particle& p = *itParticle;
 
             // update particle life
-            p.fLife += fTime;
+            p.fLife += g_time.GetElapsedTime();
 
             // remove particle if at end of life
             if(p.fLife > p.fTotalLife)
@@ -264,7 +261,7 @@ D3DXVECTOR3 ParticleEmitter::ComputeParticleAccel(const ParticleType& type, cons
 /**
 * Render particle emitter 
 */
-void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void ParticleEmitter::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     // determine number of particles
     DWORD dTotalNumParticles = 0;
@@ -279,8 +276,8 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
     CustomVertex* cvBuffer = new CustomVertex[dTotalNumParticles * dParticleVertexCount];
 
     // get camera view x and y vectors (compute vertices that face camera)
-    D3DXVECTOR3 vXView = D3DXVECTOR3(rData.matView._11, rData.matView._21, rData.matView._31);
-    D3DXVECTOR3 vYView = D3DXVECTOR3(rData.matView._12, rData.matView._22, rData.matView._32);
+    D3DXVECTOR3 vXView = D3DXVECTOR3(rData->matView._11, rData->matView._21, rData->matView._31);
+    D3DXVECTOR3 vYView = D3DXVECTOR3(rData->matView._12, rData->matView._22, rData->matView._32);
 
     // form vertices for each particle in each source
     DWORD dBufIdx = 0;
@@ -338,7 +335,7 @@ void ParticleEmitter::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData&
     if(dBufIdx > 0)
     {
         // set standard mesh transformation matrix
-        pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
+        pd3dDevice->SetTransform(D3DTS_WORLD, &rData->matWorld);
 
         // disable lighting
         pd3dDevice->SetRenderState(D3DRS_LIGHTING, false);

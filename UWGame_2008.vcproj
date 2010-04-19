@@ -731,14 +731,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Source\Node.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\Node.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\NPCSphereNode.cpp"
 				>
 			</File>
@@ -787,30 +779,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Source\SlinkyNode.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\SlinkyNode.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\TeapotNode.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\TeapotNode.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\WorldDecalNode.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\WorldDecalNode.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\WorldFile.cpp"
 				>
 			</File>
@@ -852,14 +820,6 @@
 			</File>
 			<File
 				RelativePath=".\Source\time.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\world.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\world.h"
 				>
 			</File>
 			<Filter

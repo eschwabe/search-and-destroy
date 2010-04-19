@@ -22,6 +22,7 @@ MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture,
                          const LPCWSTR sPlayerLocTexture, 
                          const LPCWSTR sNPCLocTexture, 
                          const int iMapsize) :
+    GameObject(g_database.GetNewObjectID(), OBJECT_Map, "MAP"),
     m_sMapTexture(sMapTexture),
     m_sMapMaskTexture(sMapMaskTexture),
     m_sMapBorderTexture(sMapBorderTexture),
@@ -80,7 +81,7 @@ void MiniMapNode::AddPlayerTracking(const PlayerBaseNode* pPlayer, const PlayerT
 /**
 * Initialize minimap
 */
-HRESULT MiniMapNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT MiniMapNode::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     WCHAR wsNewPath[ MAX_PATH ];
 
@@ -161,7 +162,7 @@ void MiniMapNode::InitializeReferenceVertices()
 /**
 * Update minimap
 */
-void MiniMapNode::UpdateNode(double fTime)
+void MiniMapNode::Update()
 {
     // initialize reference vertices if needed   
     if(m_iWinHeight == 0 || m_iWinWidth == 0)
@@ -294,7 +295,7 @@ void MiniMapNode::TransformTextureCoords(const D3DXVECTOR2& vTranslate, const fl
 /**
 * Render minimap
 */
-void MiniMapNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void MiniMapNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     // disable z-buffering
     pd3dDevice->SetRenderState(D3DRS_ZENABLE, D3DZB_FALSE);

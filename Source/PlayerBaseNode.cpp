@@ -15,7 +15,8 @@
 /**
 * Constuct player base node
 */
-PlayerBaseNode::PlayerBaseNode(const D3DXVECTOR3& vInitialPos) :
+PlayerBaseNode::PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name) :
+    GameObject(id, type, name),
     m_vPlayerPos(vInitialPos),
     m_vPlayerVelocity(0.0f, 0.0f, 0.0f),
     m_vPlayerAccel(0.0f, 0.0f, 0.0f),
@@ -37,7 +38,7 @@ PlayerBaseNode::~PlayerBaseNode()
 /**
 * Initialize player base node
 */
-HRESULT PlayerBaseNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT PlayerBaseNode::InitializeLines(IDirect3DDevice9* pd3dDevice)
 {
     // create the vertex buffer
     HRESULT result = pd3dDevice->CreateVertexBuffer( 
@@ -100,7 +101,7 @@ void PlayerBaseNode::EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta)
 /**
 * Update player position, velocity and acceleration
 */
-void PlayerBaseNode::UpdatePlayerPosition(double fTime)
+void PlayerBaseNode::UpdatePlayerPosition()
 {
     const float kMaxSpeed = 3.0f;
 
@@ -120,7 +121,7 @@ void PlayerBaseNode::UpdatePlayerPosition(double fTime)
 
         // check for max velocity (tiles per second)
         if(m_vPlayerVelocity.z < kMaxSpeed)
-            m_vPlayerVelocity += m_vPlayerAccel * (float)fTime;
+            m_vPlayerVelocity += m_vPlayerAccel * g_time.GetElapsedTime();
     }
     else if( m_PlayerMovement[kMoveBackward] )
     {
@@ -130,7 +131,7 @@ void PlayerBaseNode::UpdatePlayerPosition(double fTime)
 
         // check for max velocity (tiles per second)
         if(m_vPlayerVelocity.z > -kMaxSpeed)
-            m_vPlayerVelocity -= m_vPlayerAccel * (float)fTime;
+            m_vPlayerVelocity -= m_vPlayerAccel * g_time.GetElapsedTime();
     }
     else
     {
@@ -141,7 +142,7 @@ void PlayerBaseNode::UpdatePlayerPosition(double fTime)
 
     // compute player position delta
     D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
-    vPosDelta += m_vPlayerVelocity * (float)fTime;
+    vPosDelta += m_vPlayerVelocity * g_time.GetElapsedTime();
 
     // update player rotation (yaw) (radians)
     if( m_PlayerMovement[kRotateLeft] )
@@ -163,7 +164,7 @@ void PlayerBaseNode::UpdatePlayerPosition(double fTime)
 /**
 * Draw a line
 */
-void PlayerBaseNode::DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void PlayerBaseNode::DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     // verify buffer was initialized
     assert(m_lineVertexBuffer);
@@ -188,7 +189,7 @@ void PlayerBaseNode::DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData& rD
 	    pd3dDevice->SetTexture(0, NULL);
 
         // set the world space transform
-        pd3dDevice->SetTransform(D3DTS_WORLD, &rData.matWorld);
+        pd3dDevice->SetTransform(D3DTS_WORLD, &rData->matWorld);
 
         // turn off D3D lighting, since we are providing our own vertex colors
         pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);

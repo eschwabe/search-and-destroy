@@ -24,17 +24,12 @@ class PlayerTinyNode : public PlayerBaseNode
         // handle user controls
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-protected:
+    protected:
 
-        // initialize world node
-        virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
-
-        // update traversal for physics, AI, etc.
-	    virtual void UpdateNode(double fTime);
-
-        // render traversal for drawing objects
-	    virtual void RenderNode(IDirect3DDevice9*, const RenderData& rData);
-
+        // object methods
+        virtual HRESULT Initialize(IDirect3DDevice9* pd3dDevice);
+	    virtual void Update();
+	    virtual void Render(IDirect3DDevice9*, const RenderData* rData);
 
     private:
 
@@ -51,12 +46,12 @@ protected:
         void SetupBoneMatrices(EXTD3DXFRAME *pFrame);
 
         // render helpers        
-        void UpdateAnimation(double fTime);
+        void UpdateAnimation();
         void ComputeTransform();
         void UpdateFrameTransforms(EXTD3DXFRAME* pFrame, D3DXMATRIX rMatWorld);
         void UpdateBoneMatricesBuffer(DWORD NumBones);
-        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData& rData, const bool bShadowDraw);
-        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData& rData, const bool bShadowDraw);
+        void DrawFrame(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, const RenderData* rData, const bool bShadowDraw);
+        void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData* rData, const bool bShadowDraw);
 
         // user input helper
         Movement GetPlayerMovement(const UINT&);

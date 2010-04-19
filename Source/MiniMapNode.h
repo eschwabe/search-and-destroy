@@ -10,11 +10,11 @@
 *******************************************************************************/
 
 #pragma once
-#include "Node.h"
+#include "gameobject.h"
 #include "PlayerBaseNode.h"
 #include "WorldNode.h"
 
-class MiniMapNode : public Node
+class MiniMapNode : public GameObject
 {
     public:
 
@@ -44,14 +44,10 @@ class MiniMapNode : public Node
 
     protected:
 
-        // load and unload
-	    virtual HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
-
-        // update node
-	    virtual void UpdateNode(double fTime);
-
-        // render traversal for drawing objects (including children)
-	    virtual void RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData);
+        // object methods
+        virtual HRESULT Initialize(IDirect3DDevice9* pd3dDevice);
+	    virtual void Update();
+	    virtual void Render(IDirect3DDevice9*, const RenderData* rData);
 
     private:
 

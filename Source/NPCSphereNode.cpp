@@ -25,9 +25,8 @@ const D3DVERTEXELEMENT9 NPCSphereNode::m_sCustomVertexDeclaration[] =
 * Constuct Sphere NPC node
 */
 NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos) :
-    PlayerBaseNode(vInitialPos),
-    m_dNextUpdateTime(0.0f),
-    m_dCurrentTime(0.0f)
+    PlayerBaseNode(vInitialPos, g_database.GetNewObjectID(), OBJECT_NPC, "NPC"),
+    m_dUpdateTime(0.0f)
 {
     // set initial position off the ground (floating sphere)
     m_vPlayerPos.y = 0.5f;
@@ -49,7 +48,7 @@ NPCSphereNode::~NPCSphereNode()
 /**
 * Initialize NPC node. Sets up data and debug line vertex.
 */
-HRESULT NPCSphereNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
+HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 {
     // generate sphere mesh
     HRESULT result = D3DXCreateSphere(
@@ -113,37 +112,28 @@ HRESULT NPCSphereNode::InitializeNode(IDirect3DDevice9* pd3dDevice)
         result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
     }
 
-    // call base player initialize
-    if( SUCCEEDED(result) )
-    {
-        result = PlayerBaseNode::InitializeNode(pd3dDevice);
-    }
-
     return result;
 }
 
 /**
 * Update traversal for physics, AI, etc.
 */
-void NPCSphereNode::UpdateNode(double fTime)
+void NPCSphereNode::Update()
 {
     // randomly change movements
-    AutoPlayerMove(fTime);
+    AutoPlayerMove();
 
     // update position
-    UpdatePlayerPosition(fTime);
+    UpdatePlayerPosition();
 }
 
 /**
 * Automatically changes the NPC movements.
 */
-void NPCSphereNode::AutoPlayerMove(double fTime)
+void NPCSphereNode::AutoPlayerMove()
 {
-    // update time
-    m_dCurrentTime += fTime;
-
     // check if enough time has passed
-    if(m_dCurrentTime >= m_dNextUpdateTime)
+    if(g_time.GetCurTime() >= m_dUpdateTime)
     {
         // reset actions
         for(int i =0; i < kMaxMovement; i++)
@@ -190,20 +180,20 @@ void NPCSphereNode::AutoPlayerMove(double fTime)
         }
 
         // set next update time
-        m_dNextUpdateTime += 1.0;
+        m_dUpdateTime = g_time.GetCurTime() + 1.0f;
     }
 }
 
 /**
 * Render traversal for drawing objects
 */
-void NPCSphereNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData)
+void NPCSphereNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     D3DXMATRIX matWorld;
     D3DXMATRIX matRotate;
     D3DXMatrixTranslation(&matWorld, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
     D3DXMatrixRotationYawPitchRoll(&matRotate, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
-    matWorld = matRotate * matWorld * rData.matWorld;
+    matWorld = matRotate * matWorld * rData->matWorld;
 
     // set the world space transform
     pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
@@ -212,7 +202,7 @@ void NPCSphereNode::RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& r
     pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
 
     // enable lighting
-    rData.EnableD3DLighting(pd3dDevice);
+    rData->EnableD3DLighting(pd3dDevice);
 
     // draw indexed primitive
     pd3dDevice->DrawIndexedPrimitiveUP(

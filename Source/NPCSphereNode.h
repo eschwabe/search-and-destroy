@@ -23,14 +23,10 @@ class NPCSphereNode : public PlayerBaseNode
     
     protected:
 
-        // initialize world node
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
-
-        // update traversal for physics, AI, etc.
-        void UpdateNode(double fTime);
-
-        // render traversal for drawing objects
-	    void RenderNode(IDirect3DDevice9*, const RenderData& rData);
+        // object methods
+        virtual HRESULT Initialize(IDirect3DDevice9* pd3dDevice);
+	    virtual void Update();
+	    virtual void Render(IDirect3DDevice9*, const RenderData* rData);
 
     private:
 
@@ -68,13 +64,10 @@ class NPCSphereNode : public PlayerBaseNode
         D3DINDEXBUFFER_DESC m_CVIndexDesc;  // custom vertex index description
 
 
-
         // automatically change player movement
-        void AutoPlayerMove(double fTime);
+        void AutoPlayerMove();
     
-        double m_dNextUpdateTime;   // next update time
-        double m_dCurrentTime;      // current time
-
+        float m_dUpdateTime;   // update time
 
         // prevent copy and assignment
         NPCSphereNode(const NPCSphereNode&);

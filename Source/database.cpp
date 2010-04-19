@@ -14,20 +14,47 @@
 #include "statemch.h"
 
 
-Database::Database( void )
-: m_nextFreeID( SYSTEM_OBJECT_ID + 1 )
+Database::Database( void ) : 
+    m_nextFreeID( SYSTEM_OBJECT_ID + 1 )
 {
-
 }
 
 Database::~Database( void )
 {
 	dbContainer::iterator i = m_database.begin();
 	while( i != m_database.end() )
-	{	//Destroy object
+	{	
+        //Destroy object
 		delete( *i );
 		i = m_database.erase( i );
 	}
+}
+
+/*---------------------------------------------------------------------------*
+  Name:         InitializeObjects
+
+  Description:  Calls the initialize function for all objects within the database.
+
+  Arguments:    D3D Device
+
+  Returns:      HRESULT
+ *---------------------------------------------------------------------------*/
+HRESULT Database::InitializeObjects(IDirect3DDevice9* pd3dDevice)
+{
+    assert(pd3dDevice);
+
+    HRESULT result = MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
+
+    // initialize objects
+	for( dbContainer::iterator i = m_database.begin(); i != m_database.end(); ++i )
+	{
+		result = (*i)->InitializeObject(pd3dDevice);
+        
+        if( FAILED(result))
+            break;
+	}
+
+    return result;
 }
 
 /*---------------------------------------------------------------------------*
@@ -39,21 +66,24 @@ Database::~Database( void )
 
   Returns:      None.
  *---------------------------------------------------------------------------*/
-void Database::Update( void )
+void Database::UpdateObjects()
 {
+    // update objects
 	for( dbContainer::iterator i = m_database.begin(); i != m_database.end(); ++i )
 	{
-		(*i)->Update();
+		(*i)->UpdateObject();
 	}
 
+    // send messages
 	g_msgroute.DeliverDelayedMessages();
 
-	//Destroy objects that have requested it
+	// destroy objects that have requested it
 	dbContainer::iterator i = m_database.begin();
 	while( i != m_database.end() )
 	{
 		if( (*i)->IsMarkedForDeletion() )
-		{	//Destroy object
+		{	
+            //Destroy object
 			delete( *i );
 			i = m_database.erase( i );
 		}
@@ -61,6 +91,27 @@ void Database::Update( void )
 		{
 			++i;
 		}
+	}
+}
+
+/*---------------------------------------------------------------------------*
+  Name:         RenderObjects
+
+  Description:  Calls the render function for all objects within the database.
+
+  Arguments:    D3D Device and Render Data
+
+  Returns:      None.
+ *---------------------------------------------------------------------------*/
+void Database::RenderObjects(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
+{
+    assert(pd3dDevice);
+    assert(rData);
+
+    // render objects
+	for( dbContainer::iterator i = m_database.begin(); i != m_database.end(); ++i )
+	{
+		(*i)->RenderObject(pd3dDevice, rData);
 	}
 }
 
@@ -147,10 +198,12 @@ void Database::SendMsgFromSystem( MSG_Name name, MSG_Data& data )
 
   Returns:      None.
  *---------------------------------------------------------------------------*/
-void Database::Store( GameObject & object )
+void Database::Store( GameObject* object )
 {
-	if( Find( object.GetID() ) == 0 ) {
-		m_database.push_back( &object );
+    ASSERTMSG(object, "Database::Store - Invalid object");
+
+	if( Find( object->GetID() ) == 0 ) {
+		m_database.push_back( object );
 	}
 	else {
 		ASSERTMSG( 0, "Database::Store - Object ID already represented in database." );

@@ -10,7 +10,7 @@
 *******************************************************************************/
 
 #pragma once
-#include "Node.h"
+#include "gameobject.h"
 #include "Collision.h"
 
 class WorldFile;
@@ -18,7 +18,7 @@ class WorldFile;
 /**
 * World Node
 */
-class WorldNode : public Node
+class WorldNode : public GameObject
 {
     public:
 
@@ -39,9 +39,9 @@ class WorldNode : public Node
 
     protected:
 
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);                   // initialize world node
-	    void UpdateNode(double fTime);                                          // update traversal for physics, AI, etc.
-	    void RenderNode(IDirect3DDevice9* pd3dDevice, const RenderData& rData); // render traversal for drawing objects
+        HRESULT Initialize(IDirect3DDevice9* pd3dDevice);                   // initialize world node
+	    void Update();                                                      // update traversal for physics, AI, etc.
+	    void Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData); // render traversal for drawing objects
 
     private:
         

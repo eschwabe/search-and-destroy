@@ -10,17 +10,14 @@
 *******************************************************************************/
 
 #pragma once
-#include "Node.h"
+#include "gameobject.h"
 
-class PlayerBaseNode : public Node
+class PlayerBaseNode : public GameObject
 {
     public:
 
-        PlayerBaseNode(const D3DXVECTOR3& vInitialPos);
+        PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
-
-        // draw lines
-        void DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData& rData);
 
         // get player information
         D3DXVECTOR3 GetPlayerPosition() const;
@@ -32,11 +29,12 @@ class PlayerBaseNode : public Node
 
     protected:
 
-        // initialize player base node
-        HRESULT InitializeNode(IDirect3DDevice9* pd3dDevice);
+        // draw lines
+        HRESULT InitializeLines(IDirect3DDevice9* pd3dDevice);
+        void DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
 
         // update player position
-        void PlayerBaseNode::UpdatePlayerPosition(double fTime);
+        void UpdatePlayerPosition();
 
         D3DXVECTOR3 m_vPlayerPos;       // player position
         D3DXVECTOR3 m_vPlayerVelocity;  // player velocity

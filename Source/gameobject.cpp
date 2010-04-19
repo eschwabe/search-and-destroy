@@ -13,12 +13,13 @@
 #include "msgroute.h"
 #include "statemch.h"
 
-
-
-GameObject::GameObject( objectID id, unsigned int type, char* name )
-: m_markedForDeletion(false),
-  m_stateMachineManager(0),
-  m_health(0)
+/*---------------------------------------------------------------------------*
+  Constructor
+ *---------------------------------------------------------------------------*/
+GameObject::GameObject( objectID id, unsigned int type, char* name ) : 
+    m_markedForDeletion(false),
+    m_dHealth(0),
+    m_stateMachineManager(0)
 {
 	m_id = id;
 	m_type = type;
@@ -32,34 +33,74 @@ GameObject::GameObject( objectID id, unsigned int type, char* name )
 	}
 }
 
+/*---------------------------------------------------------------------------*
+  Deconstructor
+ *---------------------------------------------------------------------------*/
 GameObject::~GameObject( void )
 {
-	if(m_stateMachineManager)
-	{
-		delete m_stateMachineManager;
-	}
-}
-
-void GameObject::CreateStateMachineManager( void )
-{
-	m_stateMachineManager = new StateMachineManager( *this );
+    SAFE_RELEASE(m_pStateBlock);
+	SAFE_DELETE(m_stateMachineManager);
 }
 
 /*---------------------------------------------------------------------------*
-  Name:         Update
-
-  Description:  Calls the update function of the currect state machine.
-
-  Arguments:    None.
-
-  Returns:      None.
+  Get State Machine
  *---------------------------------------------------------------------------*/
-void GameObject::Update( void )
+StateMachineManager* GameObject::GetStateMachineManager( void )
+{ 
+    ASSERTMSG(m_stateMachineManager, "GameObject::GetStateMachineManager - m_stateMachineManager not set"); 
+    return( m_stateMachineManager ); 
+}
+
+/*---------------------------------------------------------------------------*
+  Initialize Object
+ *---------------------------------------------------------------------------*/
+HRESULT GameObject::InitializeObject(IDirect3DDevice9* pd3dDevice)
+{
+    assert(pd3dDevice);
+    
+    // create state machine manager
+	m_stateMachineManager = new StateMachineManager( *this );
+
+    // setup state block
+    HRESULT result = pd3dDevice->CreateStateBlock(D3DSBT_ALL, &m_pStateBlock);
+
+    if( SUCCEEDED(result) )
+    {
+        // implemented by derived object
+        result = Initialize(pd3dDevice);
+    }
+
+    return result;
+}
+
+/*---------------------------------------------------------------------------*
+  Update Object
+ *---------------------------------------------------------------------------*/
+void GameObject::UpdateObject()
 {
 	if(m_stateMachineManager)
 	{
 		m_stateMachineManager->Update();
 	}
+
+    // implemented by derived object
+    Update();
 }
 
+/*---------------------------------------------------------------------------*
+  Render Object
+ *---------------------------------------------------------------------------*/
+void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
+{
+    assert(pd3dDevice);
+    assert(rData);
 
+    // capture state
+    m_pStateBlock->Capture();
+
+    // implemented by derived object
+    Render(pd3dDevice, rData);
+
+    // restore state
+    m_pStateBlock->Apply();
+}

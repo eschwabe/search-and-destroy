@@ -8,7 +8,6 @@
 
 #include "DXUT.h"
 #include "Game.h"
-#include "world.h"
 
 //--------------------------------------------------------------------------------------
 // Entry point to the program. Initializes everything and goes into a message processing
