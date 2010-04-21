@@ -11,12 +11,13 @@
 
 #include "DXUT.h"
 #include "PlayerCamera.h"
+#include "gameobject.h"
 
 /**
 * Constructor
 */
 CPlayerCamera::CPlayerCamera() :
-    m_pPlayerNode(NULL)
+    m_objPlayer(NULL)
 {
 }
 
@@ -27,13 +28,11 @@ CPlayerCamera::~CPlayerCamera()
 {}
 
 /**
-* Set player node for computing camera position
-*
-* @param pPlayerNode player node
+* Find player by object id for camera positioning
 */
-void CPlayerCamera::SetPlayerNode(const PlayerBaseNode* pPlayerNode)
+void CPlayerCamera::SetPlayer(objectID id)
 {
-    m_pPlayerNode = pPlayerNode;
+    m_objPlayer = g_database.Find(id);
 }
 
 /**
@@ -43,17 +42,17 @@ void CPlayerCamera::SetPlayerNode(const PlayerBaseNode* pPlayerNode)
 */
 void CPlayerCamera::FrameMove( FLOAT fElapsedTime )
 {
-    // default player info
+    // default camera position info
     D3DXVECTOR3 vPlayerPos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
     float fPlayerHeight = 1.0f;
     float fPlayerRotation = 0.0f;
-    
+
     // get player position, height, and rotation
-    if(m_pPlayerNode)
+    if(m_objPlayer)
     {
-        vPlayerPos = m_pPlayerNode->GetPlayerPosition();
-        fPlayerHeight = vPlayerPos.y*2;
-        fPlayerRotation = m_pPlayerNode->GetPlayerRotation();
+        vPlayerPos = m_objPlayer->GetPosition();
+        fPlayerHeight = m_objPlayer->GetHeight();
+        fPlayerRotation = m_objPlayer->GetYawRotation();
     }
 
     // compute player head position (look at)

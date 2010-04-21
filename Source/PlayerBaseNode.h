@@ -19,12 +19,6 @@ class PlayerBaseNode : public GameObject
         PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
 
-        // get player information
-        D3DXVECTOR3 GetPlayerPosition() const;
-        D3DXVECTOR3 GetPlayerVelocity() const;
-        float GetPlayerRotation() const;
-
-        // collision events
         virtual void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta);
 
     protected:
@@ -35,14 +29,6 @@ class PlayerBaseNode : public GameObject
 
         // update player position
         void UpdatePlayerPosition();
-
-        D3DXVECTOR3 m_vPlayerPos;       // player position
-        D3DXVECTOR3 m_vPlayerVelocity;  // player velocity
-        D3DXVECTOR3 m_vPlayerAccel;     // player acceleration
-        
-        float m_fPlayerYawRotation;     // player rotation (y-axis)
-        float m_fPlayerPitchRotation;   // player rotation (z-axis)
-        float m_fPlayerRollRotation;    // player rotation (x-axis)
 
         // defines the supported player movements
         enum Movement

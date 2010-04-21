@@ -278,7 +278,7 @@ CollSphere* AppendMobyCollSphere(CollSphere& sphere)
 /**
 * Constructor
 */
-CollPlayer::CollPlayer()
+CollObject::CollObject()
 {}
  
 /**
@@ -286,17 +286,16 @@ CollPlayer::CollPlayer()
 * Player is queried for current position (sphere) data and notified
 * if the player needs to be moved.
 */
-void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerBaseNode* player)
+void CollObject::RunWorldCollision(const VecCollQuad& quads, GameObject* obj)
 {
-    assert(player);
+    assert(obj);
 
-    // get player position
-    D3DXVECTOR3 vPlayerPos = player->GetPlayerPosition();
-    //vPlayerPos.y = min(player->GetPlayerHeight()/2.0f, 1.0f);
+    // get object position
+    D3DXVECTOR3 vObjPos = obj->GetPosition();
 
     // generate sphere from player position and height
     CollSphere sphere;
-    sphere.Set(&vPlayerPos, 0.25f);
+    sphere.Set(&vObjPos, 0.25f);
 
     // run sphere vs quad checks on entire list
     for(size_t i = 0; i < quads.size(); i++)
@@ -305,28 +304,28 @@ void CollPlayer::RunWorldCollision(const VecCollQuad& quads, PlayerBaseNode* pla
         if(sphere.VsQuad(quads[i]))
         {
             // if collision, send player collision event
-            player->EnvironmentCollisionEvent(gCollOutput.push);
+            obj->EnvironmentCollisionEvent(gCollOutput.push);
             gCollOutput.Reset();
         }
     }  
 }
 
 /**
-* Run collision checks between two players. Returns true if a collision occured.
+* Run collision checks between two objects. Returns true if a collision occured.
 */
-bool CollPlayer::RunPlayerCollision(PlayerBaseNode* player1, PlayerBaseNode* player2)
+bool CollObject::RunObjectCollision(GameObject* obj1, GameObject* obj2)
 {
-    // generate sphere from player1 position and height
-    CollSphere p1Sphere;
-    D3DXVECTOR3 vPlayer1Pos = player1->GetPlayerPosition();
-    p1Sphere.Set(&vPlayer1Pos, 0.25f);
+    // generate sphere from position and height
+    CollSphere obj1Sphere;
+    D3DXVECTOR3 vObj1Pos = obj1->GetPosition();
+    obj1Sphere.Set(&vObj1Pos, 0.25f);
 
     // generate sphere from player position and height
-    CollSphere p2Sphere;
-    D3DXVECTOR3 vPlayer2Pos = player2->GetPlayerPosition();
-    p2Sphere.Set(&vPlayer2Pos, 0.25f);
+    CollSphere obj2Sphere;
+    D3DXVECTOR3 vObj2Pos = obj2->GetPosition();
+    obj2Sphere.Set(&vObj2Pos, 0.25f);
 
-    bool coll = p1Sphere.VsSphere(&p2Sphere);
+    bool coll = obj1Sphere.VsSphere(&obj2Sphere);
 
     // notify players of collision result
     if(coll)

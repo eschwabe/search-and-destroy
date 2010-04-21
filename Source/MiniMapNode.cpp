@@ -178,8 +178,8 @@ void MiniMapNode::Update()
         if( m_vPlayerMapInfo[i].type == PLAYER )
         {
             // save location and rotation, no transform required
-            vPlayerLoc = m_vPlayerMapInfo[i].pPlayer->GetPlayerPosition();
-            fPlayerRot = m_vPlayerMapInfo[i].pPlayer->GetPlayerRotation();
+            vPlayerLoc = m_vPlayerMapInfo[i].pPlayer->GetPosition();
+            fPlayerRot = m_vPlayerMapInfo[i].pPlayer->GetYawRotation();
             break;
         }
     }
@@ -219,7 +219,7 @@ void MiniMapNode::Update()
                 m_vPlayerMapInfo[i].cvPlayerLocVertices);
             
             // translate NPC texture to NPC location
-            D3DXVECTOR2 vNPCTextureCoords = ComputeTextureCoordsFromWorld(m_vPlayerMapInfo[i].pPlayer->GetPlayerPosition());
+            D3DXVECTOR2 vNPCTextureCoords = ComputeTextureCoordsFromWorld(m_vPlayerMapInfo[i].pPlayer->GetPosition());
 
             // invert coordinates (fixes inverted result?)
             vNPCTextureCoords.x = -vNPCTextureCoords.x;

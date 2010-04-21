@@ -29,7 +29,7 @@ NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos) :
     m_dUpdateTime(0.0f)
 {
     // set initial position off the ground (floating sphere)
-    m_vPlayerPos.y = 0.5f;
+    m_vPos.y += 0.5f;
 }
 
 /**
@@ -189,10 +189,11 @@ void NPCSphereNode::AutoPlayerMove()
 */
 void NPCSphereNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
+    D3DXVECTOR3 pos = GetPosition();
     D3DXMATRIX matWorld;
     D3DXMATRIX matRotate;
-    D3DXMatrixTranslation(&matWorld, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
-    D3DXMatrixRotationYawPitchRoll(&matRotate, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
+    D3DXMatrixTranslation(&matWorld, pos.x, pos.y, pos.z);
+    D3DXMatrixRotationYawPitchRoll(&matRotate, GetYawRotation(), GetPitchRotation(), GetRollRotation());
     matWorld = matRotate * matWorld * rData->matWorld;
 
     // set the world space transform

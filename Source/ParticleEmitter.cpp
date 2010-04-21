@@ -118,10 +118,10 @@ void ParticleEmitter::UpdateParticleSources()
         else if( source.pType == kFire )
         {
             // fire particle source
-            if(g_time.GetElapsedTime() - source.fLastParticleCreateTime > 0.1f)
+            if(g_time.GetCurTime() - source.fLastParticleCreateTime > 0.1f)
             {
                 AddFireParticles(1, source);
-                source.fLastParticleCreateTime = g_time.GetAbsoluteTime();
+                source.fLastParticleCreateTime = g_time.GetCurTime();
             }
         }
         else

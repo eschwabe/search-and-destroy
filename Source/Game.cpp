@@ -50,9 +50,8 @@ Time*                   g_pTime;                    // time manager
 Database*               g_pDatabase;                // game object database
 MsgRoute*               g_pMsgRoute;                // message router
 DebugLog*               g_pDebugLog;                // debug logger
+PlayerTinyNode*         g_pMainPlayerNode;          // main player
 WorldFile               g_GridData;                 // drid data loaded from file
-PlayerTinyNode*         g_pMainPlayerNode = NULL;   // main player node
-std::list<PlayerBaseNode*> g_NPCNodeList;           // npc node list
 VecCollQuad             g_vQuadList;                // collision quad list
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
@@ -285,13 +284,12 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     // add player node
     g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(13.0f,0.0f,1.0f) );
     g_database.Store(g_pMainPlayerNode);
+    g_PlayerCamera.SetPlayer(g_pMainPlayerNode->GetID());
 
     // add sphere NPCs
-    for( DWORD i = 0; i < 7; i++ )
+    for( DWORD i = 0; i < 8; i++ )
     {
-        PlayerBaseNode* pNPC = new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f));
-        g_NPCNodeList.push_back( pNPC );
-        g_database.Store( pNPC );
+        g_database.Store( new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f)) );
     }
 
     // add particle emitter and fire particles
@@ -315,9 +313,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
     //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
     g_database.Store(p_MiniMap);
-
-    // setup player camera
-    g_PlayerCamera.SetPlayerNode(g_pMainPlayerNode);
 
     // initialize database objects
     if( FAILED(g_database.InitializeObjects(pd3dDevice)) )
@@ -369,11 +364,13 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     // update the camera's position based on user input
     g_Camera->FrameMove(fElapsedTime);
 
-    // check for player collisions with environment
-    CollPlayer coll;
-    coll.RunWorldCollision(g_vQuadList, g_pMainPlayerNode);
+    // generate list of players and NPCs
+    dbCompositionList pList;
+    g_database.ComposeList( pList, OBJECT_NPC | OBJECT_Player );
 
-    for(std::list<PlayerBaseNode*>::iterator it = g_NPCNodeList.begin(); it != g_NPCNodeList.end(); ++it)
+    // check for player collisions with environment
+    CollObject coll;
+    for(dbCompositionList::iterator it = pList.begin(); it != pList.end(); ++it)
     {
         coll.RunWorldCollision(g_vQuadList, (*it));
     }
@@ -478,7 +475,7 @@ void RenderText()
     txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
         L"LookAt:", g_Camera->GetLookAtPt()->x, g_Camera->GetLookAtPt()->y, g_Camera->GetLookAtPt()->z);
     txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"Player:", g_pMainPlayerNode->GetPlayerPosition().x, g_pMainPlayerNode->GetPlayerPosition().y, g_pMainPlayerNode->GetPlayerPosition().z);
+        L"Player:", g_pMainPlayerNode->GetPosition().x, g_pMainPlayerNode->GetPosition().y, g_pMainPlayerNode->GetPosition().z);
     
     txtHelper.End();
 }

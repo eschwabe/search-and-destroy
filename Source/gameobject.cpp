@@ -13,13 +13,20 @@
 #include "msgroute.h"
 #include "statemch.h"
 
-/*---------------------------------------------------------------------------*
-  Constructor
- *---------------------------------------------------------------------------*/
+/**
+* Constructor
+*/
 GameObject::GameObject( objectID id, unsigned int type, char* name ) : 
     m_markedForDeletion(false),
+    m_vPos(0.0f, 0.0f, 0.0f),
+    m_vVelocity(0.0f, 0.0f, 0.0f),
+    m_vAccel(0.0f, 0.0f, 0.0f),
+    m_fYawRotation(0.0f),
+    m_fPitchRotation(0.0f),
+    m_fRollRotation(0.0f),
+    m_fHeight(0.0f),
     m_dHealth(0),
-    m_stateMachineManager(0)
+    m_stateMachineManager(NULL)
 {
 	m_id = id;
 	m_type = type;
@@ -33,27 +40,27 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
 	}
 }
 
-/*---------------------------------------------------------------------------*
-  Deconstructor
- *---------------------------------------------------------------------------*/
+/**
+* Deconstructor
+*/
 GameObject::~GameObject( void )
 {
     SAFE_RELEASE(m_pStateBlock);
 	SAFE_DELETE(m_stateMachineManager);
 }
 
-/*---------------------------------------------------------------------------*
-  Get State Machine
- *---------------------------------------------------------------------------*/
+/**
+* Get State Machine
+*/
 StateMachineManager* GameObject::GetStateMachineManager( void )
 { 
     ASSERTMSG(m_stateMachineManager, "GameObject::GetStateMachineManager - m_stateMachineManager not set"); 
     return( m_stateMachineManager ); 
 }
 
-/*---------------------------------------------------------------------------*
-  Initialize Object
- *---------------------------------------------------------------------------*/
+/**
+* Initialize Object
+*/
 HRESULT GameObject::InitializeObject(IDirect3DDevice9* pd3dDevice)
 {
     assert(pd3dDevice);
@@ -73,9 +80,9 @@ HRESULT GameObject::InitializeObject(IDirect3DDevice9* pd3dDevice)
     return result;
 }
 
-/*---------------------------------------------------------------------------*
-  Update Object
- *---------------------------------------------------------------------------*/
+/**
+* Update Object
+*/
 void GameObject::UpdateObject()
 {
 	if(m_stateMachineManager)
@@ -87,9 +94,9 @@ void GameObject::UpdateObject()
     Update();
 }
 
-/*---------------------------------------------------------------------------*
-  Render Object
- *---------------------------------------------------------------------------*/
+/**
+* Render Object
+*/
 void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     assert(pd3dDevice);
@@ -103,4 +110,15 @@ void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rD
 
     // restore state
     m_pStateBlock->Apply();
+}
+
+/**
+* Get the current position of the object. 
+* Position is the center of the object.
+*/
+D3DXVECTOR3 GameObject::GetPosition() const
+{
+    D3DXVECTOR3 pos = m_vPos;
+    pos.y += m_fHeight/2.0f;
+    return pos;
 }

@@ -17,7 +17,7 @@
 #pragma once
 
 #include <vector>
-#include "PlayerBaseNode.h"
+#include "gameobject.h"
 
 /************************************************************************/
 /* CONSTANTS                                                            */
@@ -158,28 +158,28 @@ class CollQuad
 typedef std::vector<CollQuad> VecCollQuad;
 
 /**
-* Checks for collisions between a list of quads (environment) and the player.
+* Checks for collisions between a list of quads (environment) and an object.
 * When collisions are detected, the player is notified to move. Also, can check
 * for collisions between two players and move them.
 */
-class CollPlayer
+class CollObject
 {
     public:
 
         // constructor
-        CollPlayer();
+        CollObject();
 
         // run collision checks between player and environment
-        void RunWorldCollision(const VecCollQuad& quads, PlayerBaseNode* player);
+        void RunWorldCollision(const VecCollQuad& quads, GameObject* obj);
 
         // run collision checks between two players
-        bool RunPlayerCollision(PlayerBaseNode* player1, PlayerBaseNode* player2);
+        bool RunObjectCollision(GameObject* obj1, GameObject* obj2);
     
     private:
 
         // prevent copy and assignment
-        CollPlayer(const CollPlayer&);
-        void operator=(const CollPlayer&);
+        CollObject(const CollObject&);
+        void operator=(const CollObject&);
 };
 
 /**

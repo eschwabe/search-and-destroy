@@ -23,18 +23,13 @@ PlayerTinyNode::PlayerTinyNode(
     m_sMeshFilename(sMeshFilename),
     m_NumBoneMatrices(0),
     m_pBoneMatrices(NULL),
-    m_fPlayerScale(1.0f/800.0f),            // shrink tiny model
+    m_fPlayerScale(1.0f/800.0f),    // shrink tiny model
     m_ePlayerAnimation(kWait),
     m_iPlayerAnimationTrack(0)
 {
-    // override initial rotations for tiny model
-    m_fPlayerYawRotation = 0.0f;
-    m_fPlayerPitchRotation = -D3DX_PI/2.0f;
-    m_fPlayerRollRotation = 0.0f;
-
-    // initialize movement to default state
-    for(int i =0; i < sizeof(m_PlayerMovement); i++)
-        m_PlayerMovement[i] = false;
+    // set rotation and height for tiny model
+    m_fPitchRotation = -D3DX_PI/2.0f;
+    m_fHeight = 0.5f;
 }
 
 /**
@@ -250,10 +245,10 @@ void PlayerTinyNode::ComputeTransform()
     D3DXMATRIX mxScale;
 
     // translate player
-    D3DXMatrixTranslation(&mxTranslate, m_vPlayerPos.x, m_vPlayerPos.y, m_vPlayerPos.z);
+    D3DXMatrixTranslation(&mxTranslate, m_vPos.x, m_vPos.y, m_vPos.z);
 
     // rotate
-    D3DXMatrixRotationYawPitchRoll(&mxRotate, m_fPlayerYawRotation, m_fPlayerPitchRotation, m_fPlayerRollRotation);
+    D3DXMatrixRotationYawPitchRoll(&mxRotate, m_fYawRotation, m_fPitchRotation, m_fRollRotation);
     
     // scale
     D3DXMatrixScaling(&mxScale, m_fPlayerScale, m_fPlayerScale, m_fPlayerScale);
@@ -273,9 +268,9 @@ void PlayerTinyNode::UpdateAnimation()
         // determine animation
         Animation newAnimation;
 
-        if( abs(m_vPlayerVelocity.z) > 3.0)
+        if( abs(m_vVelocity.z) > 3.0)
             newAnimation = kRun;
-        else if( abs(m_vPlayerVelocity.z) > 0.0)
+        else if( abs(m_vVelocity.z) > 0.0)
             newAnimation = kWalk;
         else
             newAnimation = kWait;

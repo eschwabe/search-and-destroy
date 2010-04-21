@@ -60,9 +60,21 @@ class GameObject
         void UpdateObject();
         void RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
         
-        // object (player) health
-	    DWORD GetHealth(void)		    { return( m_dHealth ); }
-	    void SetHealth(DWORD health)	{ m_dHealth = health; }
+        // object info
+        DWORD GetHealth() const                 { return m_dHealth;         };
+        void SetHealth(DWORD health)            { m_dHealth = health;       };
+        float GetHeight() const                 { return m_fHeight;         };
+
+        // object position info
+        D3DXVECTOR3 GetPosition() const;
+        D3DXVECTOR3 GetVelocity() const         { return m_vVelocity;       };
+        D3DXVECTOR3 GetAcceleration() const     { return m_vAccel;          };
+        float GetYawRotation() const            { return m_fYawRotation;    };
+        float GetPitchRotation() const          { return m_fPitchRotation;  };
+        float GetRollRotation() const           { return m_fRollRotation;   };
+        
+        // collision events
+        virtual void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta) { m_vPos += vPosDelta; };
 
     protected:
 
@@ -71,16 +83,27 @@ class GameObject
         virtual void Update() = 0;
         virtual void Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData) = 0;
 
+        // object info
+        float m_fHeight;            // object height
+        DWORD m_dHealth;            // object health
+
+        // object position info
+        D3DXVECTOR3 m_vPos;         // position
+        D3DXVECTOR3 m_vVelocity;    // velocity
+        D3DXVECTOR3 m_vAccel;       // acceleration
+        
+        float m_fYawRotation;       // rotation (y-axis)
+        float m_fPitchRotation;     // rotation (z-axis)
+        float m_fRollRotation;      // rotation (x-axis)
+
     private:
 
-	    objectID m_id;									// unique id of object (safer than a pointer)
-	    unsigned int m_type;							// type of object (can be combination)
-	    bool m_markedForDeletion;						// flag to delete this object (when it is safe to do so)
-	    char m_name[GAME_OBJECT_MAX_NAME_SIZE];			// string name of object
+	    objectID m_id;								// unique id of object (safer than a pointer)
+	    unsigned int m_type;						// type of object (can be combination)
+	    bool m_markedForDeletion;					// flag to delete this object (when it is safe to do so)
+	    char m_name[GAME_OBJECT_MAX_NAME_SIZE];		// string name of object
+  
+        IDirect3DStateBlock9* m_pStateBlock;        // state block
 
-        DWORD m_dHealth;                                // object health
-        
-        IDirect3DStateBlock9* m_pStateBlock;            // state block
-
-	    StateMachineManager* m_stateMachineManager;
+	    StateMachineManager* m_stateMachineManager; // state machine manager
 };

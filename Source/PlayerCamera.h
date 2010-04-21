@@ -11,23 +11,23 @@
 
 #pragma once
 #include "DXUT\DXUTcamera.h"
-#include "PlayerBaseNode.h"
+#include "database.h"
 
 class CPlayerCamera : public CBaseCamera
 {
     public:
 
-        // Constructors
+        // constructors
         CPlayerCamera();
         virtual ~CPlayerCamera();
 
-        // Set player node reference
-        void SetPlayerNode(const PlayerBaseNode*);
+        // set player for camera
+        void SetPlayer(objectID id);
 
-        // Move and update camera
-        virtual void FrameMove( FLOAT fElapsedTime );
+        // move and update camera
+        virtual void FrameMove( float fElapsedTime );
 
-        // Get camera state
+        // get camera state
         const D3DXMATRIX* GetWorldMatrix()          { return &m_mCameraWorld; }
         const D3DXVECTOR3* GetWorldRight() const    { return (D3DXVECTOR3*)&m_mCameraWorld._11; }
         const D3DXVECTOR3* GetWorldUp() const       { return (D3DXVECTOR3*)&m_mCameraWorld._21; }
@@ -36,8 +36,8 @@ class CPlayerCamera : public CBaseCamera
     private:
 
         // DATA
-        const PlayerBaseNode* m_pPlayerNode;    // player node object
         D3DXMATRIX m_mCameraWorld;              // world matrix of the camera (inverse of the view matrix)  
+        const GameObject* m_objPlayer;          // player database object
 
         // prevent copy and assignment
         CPlayerCamera(const CPlayerCamera&);
