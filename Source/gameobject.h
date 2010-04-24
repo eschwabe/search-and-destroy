@@ -67,12 +67,19 @@ class GameObject
 
         // object position info
         D3DXVECTOR3 GetPosition() const;
-        D3DXVECTOR3 GetVelocity() const         { return m_vVelocity;       };
-        D3DXVECTOR3 GetAcceleration() const     { return m_vAccel;          };
+        D3DXVECTOR3 GetTargetPosition() const   { return m_vTargetPos;      };
+        float GetVelocity() const               { return m_fVelocity;       };
+        float GetAcceleration() const           { return m_fAccel;          };
         float GetYawRotation() const            { return m_fYawRotation;    };
         float GetPitchRotation() const          { return m_fPitchRotation;  };
         float GetRollRotation() const           { return m_fRollRotation;   };
         
+        // set object parameters
+        void SetVelocity(const float& vel)              { m_fVelocity = vel; };
+        void SetAcceleration(const float& accel)        { m_fAccel = accel; };
+        void SetTargetPosition(const D3DXVECTOR3& pos);
+        void HoldPosition();
+
         // collision events
         virtual void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta) { m_vPos += vPosDelta; };
 
@@ -89,12 +96,17 @@ class GameObject
 
         // object position info
         D3DXVECTOR3 m_vPos;         // position
-        D3DXVECTOR3 m_vVelocity;    // velocity
-        D3DXVECTOR3 m_vAccel;       // acceleration
+        D3DXVECTOR3 m_vDirection;   // direction
+        D3DXVECTOR3 m_vTargetPos;   // target position
+        float m_fVelocity;          // velocity
+        float m_fAccel;             // acceleration
         
         float m_fYawRotation;       // rotation (y-axis)
         float m_fPitchRotation;     // rotation (z-axis)
         float m_fRollRotation;      // rotation (x-axis)
+    
+        // default info
+        const D3DXVECTOR3 m_vDefaultDirection;    // forward vector for all objects
 
     private:
 

@@ -54,8 +54,8 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
     HRESULT result = D3DXCreateSphere(
         pd3dDevice,
         0.25f,              // radius
-        35,                 // slices
-        35,                 // stacks
+        20,                 // slices
+        20,                 // stacks
         &m_pSphereMesh,     // mesh
         NULL);
 
@@ -120,68 +120,15 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 */
 void NPCSphereNode::Update()
 {
-    // randomly change movements
-    AutoPlayerMove();
+    // update direction
+    m_vDirection = m_vTargetPos - m_vPos;
+    D3DXVec3Normalize(&m_vDirection, &m_vDirection);
+
+    // update object rotation
+    m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
 
     // update position
     UpdatePlayerPosition();
-}
-
-/**
-* Automatically changes the NPC movements.
-*/
-void NPCSphereNode::AutoPlayerMove()
-{
-    // check if enough time has passed
-    if(g_time.GetCurTime() >= m_dUpdateTime)
-    {
-        // reset actions
-        for(int i =0; i < kMaxMovement; i++)
-            m_PlayerMovement[i] = false;
-
-        // if collision, rotate player
-        if(m_bEnvironemntCollision)
-        {
-            // reset collision flag
-            m_bEnvironemntCollision = false;
-
-            // choose rotate action
-            switch(rand() % 2)
-            {
-            case 0:
-                m_PlayerMovement[kRotateLeft] = true;
-                break;
-            case 1:
-                m_PlayerMovement[kRotateRight] = true;
-                break;
-            
-            default:
-                break;
-            }
-        }
-        else
-        {
-            // choose new move action
-            switch(rand() % 3)
-            {
-            case 0:
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            case 1:
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            case 2:
-                m_PlayerMovement[kIncreaseSpeed] = true;
-                m_PlayerMovement[kMoveForward] = true;
-                break;
-            default:
-                break;
-            }
-        }
-
-        // set next update time
-        m_dUpdateTime = g_time.GetCurTime() + 1.0f;
-    }
 }
 
 /**

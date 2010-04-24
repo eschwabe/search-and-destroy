@@ -70,61 +70,11 @@ void PlayerBaseNode::EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta)
 */
 void PlayerBaseNode::UpdatePlayerPosition()
 {
-    const float kMaxSpeed = 3.0f;
-
-    // update player acceleration
-    if( m_PlayerMovement[kIncreaseSpeed] )
-    {
-        // set acceleration
-        m_vAccel.z = 1.5f;
-    }
-
-    // update player velocity
-    if( m_PlayerMovement[kMoveForward] )
-    {
-        // set initial velocity if not moving (+tiles per second)
-        if(m_vVelocity.z == 0.0f)
-            m_vVelocity.z = 1.5f;
-
-        // check for max velocity (tiles per second)
-        if(m_vVelocity.z < kMaxSpeed)
-            m_vVelocity += m_vAccel * g_time.GetElapsedTime();
-    }
-    else if( m_PlayerMovement[kMoveBackward] )
-    {
-        // set initial velocity if not moving (-tiles per second)
-        if(m_vVelocity.z == 0.0f)
-            m_vVelocity.z = -1.5f;
-
-        // check for max velocity (tiles per second)
-        if(m_vVelocity.z > -kMaxSpeed)
-            m_vVelocity -= m_vAccel * g_time.GetElapsedTime();
-    }
-    else
-    {
-        // reset velocity and acceleration
-        m_vAccel = D3DXVECTOR3(0,0,0);
-        m_vVelocity = D3DXVECTOR3(0,0,0);
-    }
-
-    // compute player position delta
-    D3DXVECTOR3 vPosDelta = D3DXVECTOR3(0,0,0);
-    vPosDelta += m_vVelocity * g_time.GetElapsedTime();
-
-    // update player rotation (yaw) (radians)
-    if( m_PlayerMovement[kRotateLeft] )
-        m_fYawRotation -= 0.03f;
-    if( m_PlayerMovement[kRotateRight] )
-        m_fYawRotation += 0.03f;
-
-    // create movement rotation matrix (yaw only)
-    D3DXMATRIX mMoveRot;
-    D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fYawRotation, 0.0f, 0.0f );
-
-    // rotate position delta based on yaw
-    D3DXVec3TransformCoord( &vPosDelta, &vPosDelta, &mMoveRot );
-
-    // move player position
+    // update velocity and determine position delta
+    m_fVelocity += m_fAccel * g_time.GetElapsedTime();
+    D3DXVECTOR3 vPosDelta = m_vDirection * m_fVelocity * g_time.GetElapsedTime();
+    
+    // update player position
     m_vPos += vPosDelta;
 }
 

@@ -19,6 +19,7 @@
 #include "Game.h"
 #include "PlayerTinyNode.h"
 #include "NPCSphereNode.h"
+#include "SMPatrol.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "MiniMapNode.h"
@@ -287,9 +288,16 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_PlayerCamera.SetPlayer(g_pMainPlayerNode->GetID());
 
     // add sphere NPCs
-    for( DWORD i = 0; i < 8; i++ )
+    for( DWORD i = 0; i < 4; i++ )
     {
-        g_database.Store( new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f)) );
+        NPCSphereNode* npc = new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f+i));
+        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(22.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(22.5f, 0.0f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+
+        g_database.Store( npc );
     }
 
     // add particle emitter and fire particles
@@ -477,6 +485,50 @@ void RenderText()
     txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
         L"Player:", g_pMainPlayerNode->GetPosition().x, g_pMainPlayerNode->GetPosition().y, g_pMainPlayerNode->GetPosition().z);
     
+    // state details
+	dbCompositionList list;
+	g_database.ComposeList( list, OBJECT_Ignore_Type );
+    int starttext = 5;
+	int count = 0;
+	dbCompositionList::iterator i;
+	for( i=list.begin(); i!=list.end(); ++i )
+	{
+		StateMachine* pStateMachine = (*i)->GetStateMachineManager()->GetStateMachine(STATE_MACHINE_QUEUE_0);
+		if( pStateMachine )
+		{
+			char* name = (*i)->GetName();
+			char* statename = pStateMachine->GetCurrentStateNameString();
+			char* substatename = pStateMachine->GetCurrentSubstateNameString();
+			TCHAR* unicode_name = new TCHAR[strlen(name)+1];
+			TCHAR* unicode_statename = new TCHAR[strlen(statename)+1];
+			TCHAR* unicode_substatename = new TCHAR[strlen(substatename)+1];
+			mbstowcs(unicode_name, name, strlen(name)+1);
+			mbstowcs(unicode_statename, statename, strlen(statename)+1);
+			mbstowcs(unicode_substatename, substatename, strlen(substatename)+1);
+			if( substatename[0] != 0 )
+			{
+				txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
+				txtHelper.SetInsertionPos( 5, starttext-1+(12*count) );
+				txtHelper.DrawFormattedTextLine( L"%s:   %s, %s", unicode_name, unicode_statename, unicode_substatename );
+				txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+				txtHelper.SetInsertionPos( 4, starttext+(12*count++) );
+				txtHelper.DrawFormattedTextLine( L"%s:   %s, %s", unicode_name, unicode_statename, unicode_substatename );
+			}
+			else
+			{
+				txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
+				txtHelper.SetInsertionPos( 4, starttext-1+(12*count) );
+				txtHelper.DrawFormattedTextLine( L"%s:   %s", unicode_name, unicode_statename );
+				txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+				txtHelper.SetInsertionPos( 5, starttext+(12*count++) );
+				txtHelper.DrawFormattedTextLine( L"%s:   %s", unicode_name, unicode_statename );
+			}
+			delete unicode_name;
+			delete unicode_statename;
+			delete unicode_substatename;
+		}
+	}
+
     txtHelper.End();
 }
 

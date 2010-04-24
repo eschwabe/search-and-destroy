@@ -878,11 +878,11 @@
 				Name="StateMachines"
 				>
 				<File
-					RelativePath=".\Source\example.cpp"
+					RelativePath=".\Source\SMPatrol.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\Source\example.h"
+					RelativePath=".\Source\SMPatrol.h"
 					>
 				</File>
 				<Filter

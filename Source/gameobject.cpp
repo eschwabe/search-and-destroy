@@ -19,8 +19,10 @@
 GameObject::GameObject( objectID id, unsigned int type, char* name ) : 
     m_markedForDeletion(false),
     m_vPos(0.0f, 0.0f, 0.0f),
-    m_vVelocity(0.0f, 0.0f, 0.0f),
-    m_vAccel(0.0f, 0.0f, 0.0f),
+    m_vTargetPos(0.0f, 0.0f, 0.0f),
+    m_fVelocity(0.0f),
+    m_fAccel(0.0f),
+    m_vDefaultDirection(0.0f, 0.0f, 1.0f),
     m_fYawRotation(0.0f),
     m_fPitchRotation(0.0f),
     m_fRollRotation(0.0f),
@@ -38,6 +40,9 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
 		strcpy( m_name, "invalid_name" );
 		ASSERTMSG(0, "GameObject::GameObject - name is too long" );
 	}
+
+    // create state machine manager
+	m_stateMachineManager = new StateMachineManager( *this );
 }
 
 /**
@@ -65,9 +70,6 @@ HRESULT GameObject::InitializeObject(IDirect3DDevice9* pd3dDevice)
 {
     assert(pd3dDevice);
     
-    // create state machine manager
-	m_stateMachineManager = new StateMachineManager( *this );
-
     // setup state block
     HRESULT result = pd3dDevice->CreateStateBlock(D3DSBT_ALL, &m_pStateBlock);
 
@@ -119,6 +121,24 @@ void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rD
 D3DXVECTOR3 GameObject::GetPosition() const
 {
     D3DXVECTOR3 pos = m_vPos;
-    pos.y += m_fHeight/2.0f;
     return pos;
+}
+
+/**
+* Set the target position for the object. Computes
+* a new direction vector for the object.
+*/
+void GameObject::SetTargetPosition(const D3DXVECTOR3& pos)
+{
+    // update target position
+    m_vTargetPos = pos;
+}
+
+/**
+* Sets the object parameters to hold at the current position.
+*/
+void GameObject::HoldPosition()
+{
+    m_fVelocity = 0.0f;
+    m_fAccel = 0.0f;
 }

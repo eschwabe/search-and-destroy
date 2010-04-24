@@ -228,6 +228,54 @@ void PlayerTinyNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 */
 void PlayerTinyNode::Update()
 {
+    const float kMaxSpeed = 3.0f;
+
+    // update player acceleration
+    if( m_PlayerMovement[kIncreaseSpeed] )
+    {
+        // set acceleration
+        m_fAccel = 1.5f;
+    }
+
+    // update player velocity
+    if( m_PlayerMovement[kMoveForward] )
+    {
+        // set initial velocity if not moving (+tiles per second)
+        if(m_fVelocity == 0.0f)
+            m_fVelocity = 1.5f;
+
+        // check for max velocity (tiles per second)
+        if(m_fVelocity < kMaxSpeed)
+            m_fVelocity += m_fAccel * g_time.GetElapsedTime();
+    }
+    else if( m_PlayerMovement[kMoveBackward] )
+    {
+        // set initial velocity if not moving (-tiles per second)
+        if(m_fVelocity == 0.0f)
+            m_fVelocity = -1.5f;
+
+        // check for max velocity (tiles per second)
+        if(m_fVelocity > -kMaxSpeed)
+            m_fVelocity -= m_fAccel * g_time.GetElapsedTime();
+    }
+    else
+    {
+        // reset velocity and acceleration
+        m_fAccel = 0.0f;
+        m_fVelocity = 0.0f;
+    }
+
+    // update player rotation (yaw) (radians)
+    if( m_PlayerMovement[kRotateLeft] )
+        m_fYawRotation -= 0.03f;
+    if( m_PlayerMovement[kRotateRight] )
+        m_fYawRotation += 0.03f;
+
+    // update direction based on player rotation
+    D3DXMATRIX mMoveRot;
+    D3DXMatrixRotationYawPitchRoll( &mMoveRot, m_fYawRotation, 0, 0 );
+    D3DXVec3TransformCoord( &m_vDirection, &m_vDefaultDirection, &mMoveRot );
+
     // update position
     UpdatePlayerPosition();
 
@@ -268,9 +316,9 @@ void PlayerTinyNode::UpdateAnimation()
         // determine animation
         Animation newAnimation;
 
-        if( abs(m_vVelocity.z) > 3.0)
+        if( abs(m_fVelocity) > 3.0)
             newAnimation = kRun;
-        else if( abs(m_vVelocity.z) > 0.0)
+        else if( abs(m_fVelocity) > 0.0)
             newAnimation = kWalk;
         else
             newAnimation = kWait;
