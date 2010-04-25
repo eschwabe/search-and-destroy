@@ -16,7 +16,7 @@
 // add new states
 enum StateName 
 {
-	STATE_MoveToLocation,   // note: first enum is the starting state
+	STATE_PatrolToPosition,   // note: first enum is the starting state
 	STATE_Idle
 };
 
@@ -51,7 +51,7 @@ BeginStateMachine
 
     /*-------------------------------------------------------------------------*/
 	
-    DeclareState( STATE_MoveToLocation )
+    DeclareState( STATE_PatrolToPosition )
 
 		OnEnter
             // set object to patrol to position

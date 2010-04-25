@@ -878,11 +878,51 @@
 				Name="StateMachines"
 				>
 				<File
+					RelativePath=".\Source\SMGame.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMGame.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Source\SMPatrol.cpp"
 					>
 				</File>
 				<File
 					RelativePath=".\Source\SMPatrol.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMPlayer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMPlayer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMProjectile.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMProjectile.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMSeekPlayer.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMSeekPlayer.h"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMWander.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMWander.h"
 					>
 				</File>
 				<Filter

@@ -279,7 +279,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
 
     // add world object
-    WorldNode* p_WorldNode = new WorldNode(L"level-collision.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
+    WorldNode* p_WorldNode = new WorldNode(L"level.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_database.Store(p_WorldNode);
 
     // add player node
@@ -309,18 +309,18 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_database.Store(g_pEmitter);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
-    MiniMapNode* p_MiniMap = new MiniMapNode(
-        L"level-collision-map.png", 
-        L"level-collision-map-alpha.png", 
-        L"minimap-border.png", 
-        L"minimap-player.png", 
-        L"minimap-npc.png", 
-        200);
+    //MiniMapNode* p_MiniMap = new MiniMapNode(
+    //    L"level-collision-map.png", 
+    //    L"level-collision-map-alpha.png", 
+    //    L"minimap-border.png", 
+    //    L"minimap-player.png", 
+    //    L"minimap-npc.png", 
+    //    200);
 
-    p_MiniMap->SetWorldNode(p_WorldNode);
-    p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
-    //p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
-    g_database.Store(p_MiniMap);
+    //p_MiniMap->SetWorldNode(p_WorldNode);
+    //p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
+    ////p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
+    //g_database.Store(p_MiniMap);
 
     // initialize database objects
     if( FAILED(g_database.InitializeObjects(pd3dDevice)) )
