@@ -8,17 +8,18 @@
  * "Portions Copyright Steve Rabin, 2008"
  */
 
-//These message names are processed inside msg.h
+// these message names are processed inside msg.h
 
-REGISTER_MESSAGE_NAME(MSG_NULL)							//Reserved message name
-REGISTER_MESSAGE_NAME(MSG_GENERIC_TIMER)				//Reserved message name
-REGISTER_MESSAGE_NAME(MSG_CHANGE_STATE_DELAYED)			//Reserved message name
-REGISTER_MESSAGE_NAME(MSG_CHANGE_SUBSTATE_DELAYED)		//Reserved message name
+REGISTER_MESSAGE_NAME(MSG_NULL)							// reserved message name
+REGISTER_MESSAGE_NAME(MSG_GENERIC_TIMER)				// reserved message name
+REGISTER_MESSAGE_NAME(MSG_CHANGE_STATE_DELAYED)			// reserved message name
+REGISTER_MESSAGE_NAME(MSG_CHANGE_SUBSTATE_DELAYED)		// reserved message name
 
-//Add new messages here
+// add new messages here
+REGISTER_MESSAGE_NAME(MSG_FireProjectile)
+REGISTER_MESSAGE_NAME(MSG_FireBigProjectile)
 
-
-//Used for Zombie and Human demo state machines
+// used for zombie and human demo state machines
 REGISTER_MESSAGE_NAME(MSG_CheckTouch)
 REGISTER_MESSAGE_NAME(MSG_Tagged)
 REGISTER_MESSAGE_NAME(MSG_SetTargetPosition)
@@ -26,8 +27,7 @@ REGISTER_MESSAGE_NAME(MSG_Arrived)
 REGISTER_MESSAGE_NAME(MSG_Reset)
 REGISTER_MESSAGE_NAME(MSG_MouseClick)
 
-
-//Unit test messages
+// unit test messages
 REGISTER_MESSAGE_NAME(MSG_UnitTestMessage)
 REGISTER_MESSAGE_NAME(MSG_UnitTestMessage2)
 REGISTER_MESSAGE_NAME(MSG_UnitTestMessage3)

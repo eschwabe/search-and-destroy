@@ -11,14 +11,13 @@
 
 #include "DXUT.h"
 #include "SMWander.h"
-
+#include "SMSeekPlayer.h"
 
 // add new states
 enum StateName 
 {
 	STATE_Initialize,           // note: first enum is the starting state
 	STATE_Wander,
-    STATE_AdjustDirection,
     STATE_Blocked
 };
 
@@ -91,6 +90,19 @@ BeginStateMachine
             // update last position
             (*vLastPos) = m_owner->GetPosition();
 
+            // check if player nearby
+            dbCompositionList list;
+            g_database.ComposeList(list, OBJECT_Player);
+            for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+            {
+                D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
+                if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
+                {
+                    // push seek player state machine
+                    PushStateMachine( *new SMSeekPlayer( m_owner, (*it)->GetID()) );
+                }
+            }
+
             // update object feelers
             UpdateFeelers();
 
@@ -105,36 +117,19 @@ BeginStateMachine
                 m_owner->SetDirection( RotateVector(vDir, fYawRotate) );
             }
            
-        OnTimeInState(2.0f)
+        OnPeriodicTimeInState(2.0f)
         
-            // adjust direction after a duration
-            ChangeState( STATE_AdjustDirection );
-
-        OnExit
-
-            // reset velocity
-            m_owner->SetVelocity(0.0f);
-
-            delete vLastPos;
-
-    /*-------------------------------------------------------------------------*/
-
-    DeclareState( STATE_AdjustDirection )
-
-        OnEnter
-
-            // set velocity
-            m_owner->SetVelocity(5.0f);
-
-            // randomly adjust direction by a small amount
+            // randomly adjust direction by a small amount periodically
             float fYawRotate = D3DX_PI/3.0f * (1 - rand() % 3);
             m_owner->SetDirection( RotateVector(m_owner->GetDirection(), fYawRotate) );
             ChangeStateDelayed( 0.1f, STATE_Wander );
-        
+
         OnExit
-            
-            // reset velocity
-            m_owner->SetVelocity(0.0f);
+
+            // reset
+            m_owner->ResetMovement();
+
+            delete vLastPos;
 
     /*-------------------------------------------------------------------------*/
 

@@ -18,6 +18,10 @@ class PlayerBaseNode : public GameObject
 
         PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
+        
+        // control player movement
+        virtual void ResumeMovement()   { m_bStopMovement = false;  };
+        virtual void StopMovement()     { m_bStopMovement = true;   };
 
     protected:
 
@@ -29,17 +33,20 @@ class PlayerBaseNode : public GameObject
         void UpdatePlayerPosition();
 
         // defines the supported player movements
-        enum Movement
+        enum PlayerActions
         {
             kRotateLeft = 0,    
             kRotateRight,
             kMoveForward,
             kMoveBackward,
             kIncreaseSpeed,
+            kFireProjectile,
+            kFireBigProjectile,
             kMaxMovement,
             kUnknown = 0xFF
         };
 
+        bool m_bStopMovement;                   // stop all player movements
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
 
     private:

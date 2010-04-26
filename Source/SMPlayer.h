@@ -15,11 +15,12 @@ class SMPlayer : public StateMachine
 {
     public:
 
-        SMPlayer(GameObject* object);
+        SMPlayer(GameObject* object, IDirect3DDevice9* pd3dDevice);
         virtual ~SMPlayer();
 
     private:
 
         virtual bool States( State_Machine_Event event, MSG_Object* msg, int state, int substate );
 
+        IDirect3DDevice9* m_pd3dDevice;
 };

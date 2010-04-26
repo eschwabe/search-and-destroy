@@ -11,7 +11,7 @@
 
 #include "DXUT.h"
 #include "SMPatrol.h"
-#include "database.h"
+#include "SMSeekPlayer.h"
 
 // add new states
 enum StateName 
@@ -62,6 +62,19 @@ BeginStateMachine
 
         OnUpdate
 
+            // check if player nearby
+            dbCompositionList list;
+            g_database.ComposeList(list, OBJECT_Player);
+            for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+            {
+                D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
+                if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
+                {
+                    // push seek player state machine
+                    PushStateMachine( *new SMSeekPlayer( m_owner, (*it)->GetID()) );
+                }
+            }
+
             // determine direction (ignore height)
             D3DXVECTOR2 vDirection = m_vPatrolPos - m_owner->GetGridPosition();
 
@@ -81,7 +94,7 @@ BeginStateMachine
         OnExit
 
             // stop object
-            m_owner->HoldPosition();
+            m_owner->ResetMovement();
             
 
 	/*-------------------------------------------------------------------------*/

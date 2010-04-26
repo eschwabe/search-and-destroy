@@ -72,7 +72,7 @@ LRESULT PlayerTinyNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         // Key down message
         case WM_KEYDOWN:
         {
-            Movement move = GetPlayerMovement( (UINT)wParam );
+            PlayerActions move = GetPlayerMovement( (UINT)wParam );
             if( move != kUnknown )
             {
                 m_PlayerMovement[move] = true;  
@@ -83,12 +83,24 @@ LRESULT PlayerTinyNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
         // Key up message
         case WM_KEYUP:
         {
-            Movement move = GetPlayerMovement( (UINT)wParam );
+            PlayerActions move = GetPlayerMovement( (UINT)wParam );
             if( move != kUnknown )
             {
                 m_PlayerMovement[move] = false;  
             }
             break; 
+        }
+
+        // left mouse
+        case WM_LBUTTONDOWN:
+        {
+            g_database.SendMsgFromSystem(GetID(), MSG_FireProjectile); 
+        }
+
+        // right mouse
+        case WM_RBUTTONDOWN:
+        {
+            g_database.SendMsgFromSystem(GetID(), MSG_FireBigProjectile);
         }
 
         // Unsupported message
@@ -104,21 +116,21 @@ LRESULT PlayerTinyNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 *
 * @return camera movement 
 */
-PlayerTinyNode::Movement PlayerTinyNode::GetPlayerMovement(const UINT& key)
+PlayerTinyNode::PlayerActions PlayerTinyNode::GetPlayerMovement(const UINT& key)
 {
     switch(key)
     {
-        case VK_LEFT:   return kRotateLeft;     // turn player left
-        case VK_RIGHT:  return kRotateRight;    // turn player right
-        case VK_UP:     return kMoveForward;    // move player forward
-        case VK_DOWN:   return kMoveBackward;   // move player backward
+        case VK_LEFT:       return kRotateLeft;         // turn player left
+        case VK_RIGHT:      return kRotateRight;        // turn player right
+        case VK_UP:         return kMoveForward;        // move player forward
+        case VK_DOWN:       return kMoveBackward;       // move player backward
 
-        case 'A':       return kRotateLeft;     // turn player left
-        case 'D':       return kRotateRight;    // turn player right
-        case 'W':       return kMoveForward;    // move player forward
-        case 'S':       return kMoveBackward;   // move player backward
+        case 'A':           return kRotateLeft;         // turn player left
+        case 'D':           return kRotateRight;        // turn player right
+        case 'W':           return kMoveForward;        // move player forward
+        case 'S':           return kMoveBackward;       // move player backward
 
-        case VK_SHIFT:  return kIncreaseSpeed;  // increase player speed
+        case VK_SHIFT:      return kIncreaseSpeed;      // increase player speed
 
         default:        return kUnknown;        // unsupported
     }

@@ -10,7 +10,7 @@
 
 #include "DXUT.h"
 #include "SMPlayer.h"
-
+#include "ProjectileParticles.h"
 
 // add new states
 enum StateName 
@@ -33,8 +33,9 @@ enum SubstateName
 /**
 * Constructor
 */
-SMPlayer::SMPlayer( GameObject* object ) :
-    StateMachine( *object )
+SMPlayer::SMPlayer( GameObject* object, IDirect3DDevice9* pd3dDevice ) :
+    StateMachine( *object ),
+    m_pd3dDevice(pd3dDevice)
 {}
 
 /**
@@ -58,41 +59,54 @@ BeginStateMachine
 
     	OnEnter
 
-            // select player
+            ChangeState( STATE_Move );
 
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_Move )
 
 		OnEnter
-            // Enable movement
+            
+            // enable movement
+            m_owner->ResumeMovement();
 
-        //OnMsg( MSG_FireProjectile )
-            // Change state
+        OnMsg( MSG_FireProjectile )
+            
+            // create projectile
+            ProjectileParticles* projectile = new ProjectileParticles(m_owner->GetPosition(), ProjectileParticles::kFire);
+            projectile->InitializeObject(m_pd3dDevice);
+            g_database.Store(projectile);
 
-        //OnMsg( MSG_FireProjectile )
-            // Change state
+            // change state
+            ChangeState(STATE_FireProjectile);
+
+        OnMsg( MSG_FireBigProjectile )
+            
+            // change state
+            ChangeState(STATE_FireBigProjectile);
 
         OnExit
-            // Disable movement
+
+            // disable movement
+            m_owner->StopMovement();
 
 	/*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FireProjectile )
 
 		OnEnter
-            // Create projectile
-            // Delayed state change
-
-        OnUpdate
+            
+            // create projectile
+            ChangeStateDelayed(0.25f, STATE_Move);
 
 	/*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FireBigProjectile )
 
 		OnEnter
-
-        OnUpdate
+            
+            // create projectile
+            ChangeStateDelayed(0.5f, STATE_Move);
 
     /*-------------------------------------------------------------------------*/
 	    

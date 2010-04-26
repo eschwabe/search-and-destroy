@@ -21,11 +21,12 @@
 #include "NPCSphereNode.h"
 #include "SMPatrol.h"
 #include "SMWander.h"
+#include "SMPlayer.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "MiniMapNode.h"
 #include "RenderData.h"
-#include "ParticleEmitter.h"
+#include "ProjectileParticles.h"
 #include "database.h"
 #include "msgroute.h"
 #include "debuglog.h"
@@ -58,8 +59,6 @@ GameObjectCollision*    g_objColl= NULL;            // collision object
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
-ParticleEmitter*        g_pEmitter = NULL;          // particle emitter
-bool                    g_bEnableFountain = false;  // enable particle fountain
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -71,7 +70,6 @@ bool                    g_bEnableFountain = false;  // enable particle fountain
 #define IDC_PREVVIEW            7
 #define IDC_RESETCAMERA         11
 #define IDC_RESETTIME           12
-#define IDC_TOGGLEFOUNTAIN      13
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -104,7 +102,6 @@ bool InitApp()
     g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
     g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
     g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
-    g_HUD.AddButton( IDC_TOGGLEFOUNTAIN,    L"Enable Fountain",     35, iY += 48, 125, 22 );
 
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
@@ -301,12 +298,14 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_database.Store( wanderNPC2 );
 
     // add particle emitter and fire particles
-    g_pEmitter = new ParticleEmitter(L"particle-point.png");
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 3.0f));
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(3.0f, 0.2f, 22.0f));
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 22.0f));
-    g_pEmitter->EnableParticles(ParticleEmitter::kFire, D3DXVECTOR3(22.0f, 0.2f, 3.0f));
-    g_database.Store(g_pEmitter);
+    ProjectileParticles* fb1 = new ProjectileParticles(D3DXVECTOR3(3.0f, 0.2f, 3.0f), ProjectileParticles::kFire);
+    g_database.Store(fb1);
+    ProjectileParticles* fb2 = new ProjectileParticles(D3DXVECTOR3(3.0f, 0.2f, 22.0f), ProjectileParticles::kFire);
+    g_database.Store(fb2);
+    ProjectileParticles* fb3 = new ProjectileParticles(D3DXVECTOR3(22.0f, 0.2f, 22.0f), ProjectileParticles::kFire);
+    g_database.Store(fb3);
+    ProjectileParticles* fb4 = new ProjectileParticles(D3DXVECTOR3(22.0f, 0.2f, 3.0f), ProjectileParticles::kFire);
+    g_database.Store(fb4);
 
     // add minimap node (note: draw 2D elements after rendering 3D)
     //MiniMapNode* p_MiniMap = new MiniMapNode(
@@ -347,6 +346,9 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+
+    // setup player state machine
+    g_pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(g_pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );
 
     // initialize render data
     g_pRenderData = new RenderData();
@@ -643,15 +645,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_RESETTIME:
             DXUTGetGlobalTimer()->Reset();
-            break;
-
-        case IDC_TOGGLEFOUNTAIN:
-            g_bEnableFountain = !g_bEnableFountain;
-            if(g_bEnableFountain)
-                g_pEmitter->EnableParticles(ParticleEmitter::kFountain, D3DXVECTOR3(12.5f, 0.75f, 12.5f));
-            else
-                g_pEmitter->DisableParticles(ParticleEmitter::kFountain);
-
             break;
     }
 }

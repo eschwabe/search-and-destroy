@@ -54,7 +54,7 @@ class PlayerTinyNode : public PlayerBaseNode
         void DrawMeshContainer(IDirect3DDevice9* pd3dDevice, EXTD3DXFRAME* pFrame, EXTD3DXMESHCONTAINER* pMeshContainer, const RenderData* rData, const bool bShadowDraw);
 
         // user input helper
-        Movement GetPlayerMovement(const UINT&);
+        PlayerActions GetPlayerMovement(const UINT&);
  
         std::wstring m_sMeshFilename;   // mesh file to load
         

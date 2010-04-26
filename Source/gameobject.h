@@ -65,7 +65,7 @@ class GameObject
         void SetHealth(DWORD health)            { m_dHealth = health;       };
         float GetHeight() const                 { return m_fHeight;         };
 
-        // object position info
+        // object position and movement info
         D3DXVECTOR3 GetPosition() const         { return m_vPos;            };
         D3DXVECTOR3 GetDirection() const        { return m_vDirection;      };
         D3DXVECTOR2 GetGridPosition() const;
@@ -76,14 +76,18 @@ class GameObject
         float GetPitchRotation() const          { return m_fPitchRotation;  };
         float GetRollRotation() const           { return m_fRollRotation;   };
         
-        // set object parameters
+        // set object position and movement
         void SetPosition(const D3DXVECTOR3& pos)        { m_vPos = pos;                             };
         void SetDirection(const D3DXVECTOR3& dir)       { D3DXVec3Normalize(&m_vDirection, &dir);   };
         void SetGridPosition(const D3DXVECTOR2& pos);
         void SetGridDirection(const D3DXVECTOR2& dir);
         void SetVelocity(const float& vel)              { m_fVelocity = vel;    };
         void SetAcceleration(const float& accel)        { m_fAccel = accel;     };
-        void HoldPosition();
+
+        // control object movement
+        void ResetMovement();
+        virtual void ResumeMovement()   {};
+        virtual void StopMovement()     {};
 
     protected:
 

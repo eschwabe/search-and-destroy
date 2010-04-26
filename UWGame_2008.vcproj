@@ -739,14 +739,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Source\ParticleEmitter.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\ParticleEmitter.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Source\PlayerBaseNode.cpp"
 				>
 			</File>
@@ -768,6 +760,14 @@
 			</File>
 			<File
 				RelativePath=".\Source\PlayerTinyNode.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\ProjectileParticles.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\ProjectileParticles.h"
 				>
 			</File>
 			<File

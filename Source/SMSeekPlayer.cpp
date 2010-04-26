@@ -33,8 +33,9 @@ enum SubstateName
 /**
 * Constructor
 */
-SMSeekPlayer::SMSeekPlayer( GameObject* object ) :
-    StateMachine( *object )
+SMSeekPlayer::SMSeekPlayer( GameObject* object, objectID pid ) :
+    StateMachine( *object ),
+    m_idPlayer(pid)
 {}
 
 /**
@@ -57,7 +58,8 @@ BeginStateMachine
     DeclareState( STATE_Initialize )
 
     	OnEnter
-            // select player
+
+            ChangeState( STATE_Pursue );
 
     /*-------------------------------------------------------------------------*/
 	
@@ -65,7 +67,25 @@ BeginStateMachine
 
 		OnEnter
 
+            // set velocity and acceleration
+            m_owner->SetVelocity(1.5f);
+            m_owner->SetAcceleration(0.0f);
+
         OnUpdate
+
+            // follow player
+            GameObject* player = g_database.Find(m_idPlayer);
+            D3DXVECTOR3 vNewDir = player->GetPosition() - m_owner->GetPosition();
+            m_owner->SetDirection(player->GetPosition() - m_owner->GetPosition());
+
+            // change state if player out of range
+            if( D3DXVec3Length(&vNewDir) > 5.0f )
+                ChangeState( STATE_Stunned );
+
+        OnExit
+
+            // reset object
+            m_owner->ResetMovement();
 
 	/*-------------------------------------------------------------------------*/
 	
@@ -89,7 +109,22 @@ BeginStateMachine
 
 		OnEnter
 
+            // stop object from moving
+            m_owner->StopMovement();
+
         OnUpdate
+
+            // rotate or shake each update
+
+        OnTimeInState(5.0f)
+
+            // end state machine after duration
+            PopStateMachine();
+
+        OnExit
+
+            // enable movement
+            m_owner->ResumeMovement();
 
     /*-------------------------------------------------------------------------*/
 	

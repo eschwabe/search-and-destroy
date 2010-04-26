@@ -117,7 +117,7 @@ void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rD
 /**
 * Sets the object parameters to hold at the current position.
 */
-void GameObject::HoldPosition()
+void GameObject::ResetMovement()
 {
     m_fVelocity = 0.0f;
     m_fAccel = 0.0f;

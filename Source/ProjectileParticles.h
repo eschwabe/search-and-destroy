@@ -5,7 +5,7 @@
 * Eric Schwabe
 * 2010-03-07
 *
-* Particle Emitter
+* Projectile particles
 *
 *******************************************************************************/
 
@@ -13,23 +13,19 @@
 #include "gameobject.h"
 #include <list>
 
-class ParticleEmitter : public GameObject
+class ProjectileParticles : public GameObject
 {
     public:
 
         enum ParticleType
         {
             kFire,
-            kFountain
+            kLightBall
         };
 
         // constructors
-        ParticleEmitter(const LPCWSTR sParticleFilename);
-        virtual ~ParticleEmitter();
-
-        // particle management
-        void EnableParticles(const ParticleType& type, const D3DXVECTOR3& vPos);
-        void DisableParticles(const ParticleType& type);
+        ProjectileParticles(const D3DXVECTOR3& vPos, const ParticleType& type);
+        virtual ~ProjectileParticles();
 
     protected:
 
@@ -99,34 +95,25 @@ class ParticleEmitter : public GameObject
             {}
         };
 
-        /**
-        * Particle Management
-        */
-        struct ParticleSource
-        {
-            std::list<Particle> pList;
-            ParticleType pType;                 // type of particle
-            D3DXVECTOR3 vPos;                   // source position
-            double fLastParticleCreateTime;     // last time a particle was created for source
-        };
 
 
         // METHODS
-        D3DXVECTOR3 ComputeParticleAccel(const ParticleType& type, const Particle& p);
-        void UpdateParticleSources();
-        void AddFountainParticles(const DWORD& dNumParticles, ParticleSource& source);
-        void AddFireParticles(const DWORD& dNumParticles, ParticleSource& source);
+        D3DXVECTOR3 ComputeParticleAccel(const Particle& p);
+        void CreateParticles(const DWORD& dNumParticles);
 
 
         // DATA
         static const DWORD dParticleVertexCount = 6;
-        std::list<ParticleSource> m_ParticleSourceList;   // list of particle sources
+        
+        std::list<Particle> m_pList;          // particle list
+        ParticleType m_pType;                 // particle type
+        double m_fLastParticleCreateTime;     // last time a particle was created for source
 
         LPDIRECT3DTEXTURE9 m_pParticleTexture;
         std::wstring m_sParticleFilename;
 
 
         // prevent copy and assignment
-        ParticleEmitter(const ParticleEmitter&);
-        void operator=(const ParticleEmitter&);
+        ProjectileParticles(const ProjectileParticles&);
+        void operator=(const ProjectileParticles&);
 };
