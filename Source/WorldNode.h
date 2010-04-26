@@ -30,8 +30,8 @@ class WorldNode : public GameObject
 
 	    ~WorldNode();
 
-        // returns a list of all quads (walls only)
-        VecCollQuad GetCollisionQuadList();
+        // returns a game collision object
+        GameObjectCollision* GetCollisionObject();
 
         // return world size
         int GetWorldHeight() const { return iWorldHeight; }
@@ -120,7 +120,7 @@ class WorldNode : public GameObject
         // add plane to the appropriate buffer
         void AddPlane(const CustomVertex& v1, const CustomVertex& v2, const CustomVertex& v3, const TileType& type);
         
-        // setup world collision walls
+        // setup world boundary collision walls
         void SetupWorldCollWalls(const WorldFile& grid);
 
         // checks if a buffer is large enough

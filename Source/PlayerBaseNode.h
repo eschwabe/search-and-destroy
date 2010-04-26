@@ -19,8 +19,6 @@ class PlayerBaseNode : public GameObject
         PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
 
-        virtual void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta);
-
     protected:
 
         // draw lines
@@ -43,7 +41,6 @@ class PlayerBaseNode : public GameObject
         };
 
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
-        bool m_bEnvironemntCollision;           // indicates the player collided with the environment
 
     private:
 

@@ -24,9 +24,10 @@ const D3DVERTEXELEMENT9 NPCSphereNode::m_sCustomVertexDeclaration[] =
 /**
 * Constuct Sphere NPC node
 */
-NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos) :
+NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos, const D3DXCOLOR& cColor) :
     PlayerBaseNode(vInitialPos, g_database.GetNewObjectID(), OBJECT_NPC, "NPC"),
-    m_dUpdateTime(0.0f)
+    m_dUpdateTime(0.0f),
+    m_cColor(cColor)
 {
     // set initial position off the ground (floating sphere)
     m_vPos.y += 0.5f;
@@ -81,7 +82,7 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
             // copy data
             for(DWORD i = 0; i < m_CVBufferSize; i++)
             {
-                m_CVBuffer[i] = CustomVertex( pVBData[i].vPos, pVBData[i].vNormal, D3DXCOLOR(0.3f, 0.6f, 0.5f, 1) );
+                m_CVBuffer[i] = CustomVertex( pVBData[i].vPos, pVBData[i].vNormal, m_cColor );
             }
         }
     }
@@ -120,10 +121,6 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 */
 void NPCSphereNode::Update()
 {
-    // update direction
-    m_vDirection = m_vTargetPos - m_vPos;
-    D3DXVec3Normalize(&m_vDirection, &m_vDirection);
-
     // update object rotation
     m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
 

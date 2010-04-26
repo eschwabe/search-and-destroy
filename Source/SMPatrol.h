@@ -17,7 +17,7 @@ class SMPatrol : public StateMachine
 {
     public:
 
-	    SMPatrol( GameObject* object, const D3DXVECTOR3& pos );
+	    SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos );
         ~SMPatrol();
 
     private:
@@ -25,5 +25,5 @@ class SMPatrol : public StateMachine
 	    virtual bool States( State_Machine_Event event, MSG_Object* msg, int state, int substate );
 
         // data
-        D3DXVECTOR3 m_vPos;
+        D3DXVECTOR2 m_vPatrolPos;
 };

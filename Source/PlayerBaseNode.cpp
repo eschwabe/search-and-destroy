@@ -52,20 +52,6 @@ HRESULT PlayerBaseNode::InitializeLines(IDirect3DDevice9* pd3dDevice)
 }
 
 /**
-* Notifies the player that it has collided with the environment. The event provides
-* the position delta required to resolve the collision. Modifies the player 
-* position by the specified delta.
-*/
-void PlayerBaseNode::EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta)
-{
-    // set collision flag
-    m_bEnvironemntCollision = true;
-
-    // move player position
-    m_vPos += vPosDelta;
-}
-
-/**
 * Update player position, velocity and acceleration
 */
 void PlayerBaseNode::UpdatePlayerPosition()

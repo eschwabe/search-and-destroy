@@ -20,6 +20,7 @@
 #include "PlayerTinyNode.h"
 #include "NPCSphereNode.h"
 #include "SMPatrol.h"
+#include "SMWander.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
 #include "MiniMapNode.h"
@@ -53,7 +54,7 @@ MsgRoute*               g_pMsgRoute;                // message router
 DebugLog*               g_pDebugLog;                // debug logger
 PlayerTinyNode*         g_pMainPlayerNode;          // main player
 WorldFile               g_GridData;                 // drid data loaded from file
-VecCollQuad             g_vQuadList;                // collision quad list
+GameObjectCollision*    g_objColl= NULL;            // collision object
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
@@ -283,22 +284,21 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_database.Store(p_WorldNode);
 
     // add player node
-    g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(13.0f,0.0f,1.0f) );
+    g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(12.5f,0.0f,2.0f) );
     g_database.Store(g_pMainPlayerNode);
     g_PlayerCamera.SetPlayer(g_pMainPlayerNode->GetID());
 
     // add sphere NPCs
-    for( DWORD i = 0; i < 4; i++ )
-    {
-        NPCSphereNode* npc = new NPCSphereNode(D3DXVECTOR3(12.5f,0.0f,16.0f+i));
-        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(22.5f, 0.0f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(22.5f, 0.0f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-        npc->GetStateMachineManager()->PushStateMachine( *new SMPatrol(npc, D3DXVECTOR3(2.5f, 0.0f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    NPCSphereNode* patrolNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,22.5f));
+    NPCSphereNode* patrolNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,2.5f));
+    g_database.Store( patrolNPC1 );
+    g_database.Store( patrolNPC2 );
 
-        g_database.Store( npc );
-    }
+    // add wandering NPC
+    NPCSphereNode* wanderNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,2.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    NPCSphereNode* wanderNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,22.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    g_database.Store( wanderNPC1 );
+    g_database.Store( wanderNPC2 );
 
     // add particle emitter and fire particles
     g_pEmitter = new ParticleEmitter(L"particle-point.png");
@@ -329,6 +329,25 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
         return E_FAIL;
     }
 
+    // set collision object
+    g_objColl = p_WorldNode->GetCollisionObject();
+
+    // setup NPC state machines
+    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+
     // initialize render data
     g_pRenderData = new RenderData();
     if( FAILED(g_pRenderData->Initialize(pd3dDevice)) )
@@ -348,9 +367,6 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_HUD.SetSize( 170, 170 );
     g_SampleUI.SetLocation( pBackBufferSurfaceDesc->Width-170, pBackBufferSurfaceDesc->Height-270 );
     g_SampleUI.SetSize( 170, 220 );
-
-    // get collision quad list
-    g_vQuadList = p_WorldNode->GetCollisionQuadList();
 
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
@@ -377,10 +393,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     g_database.ComposeList( pList, OBJECT_NPC | OBJECT_Player );
 
     // check for player collisions with environment
-    CollObject coll;
     for(dbCompositionList::iterator it = pList.begin(); it != pList.end(); ++it)
     {
-        coll.RunWorldCollision(g_vQuadList, (*it));
+        g_objColl->RunWorldCollision(*it);
     }
 
     // check for collisions between players
@@ -489,7 +504,7 @@ void RenderText()
 	dbCompositionList list;
 	g_database.ComposeList( list, OBJECT_Ignore_Type );
     int starttext = 5;
-	int count = 0;
+	int count = 10;
 	dbCompositionList::iterator i;
 	for( i=list.begin(); i!=list.end(); ++i )
 	{

@@ -76,12 +76,12 @@ WorldNode::~WorldNode()
 }
 
 /*
-* Returns a list of all quads (walls). The list will be empty if the world node
-* has not been initialized yet.
+* Returns a game collision object with world walls. The object will
+* not contain any walls if the world node has not been initialized.
 */
-VecCollQuad WorldNode::GetCollisionQuadList()
+GameObjectCollision* WorldNode::GetCollisionObject()
 {
-    return m_vCollQuads;
+    return new GameObjectCollision(m_vCollQuads);
 }
 
 /**
@@ -144,19 +144,19 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
                     // check for occupied cells next to cell, draw cube sides if not occupied
 
                     // left
-                    if(grid(row,col-1) == WorldFile::EMPTY_CELL)
+                    if(grid(row,col-1) == WorldFile::EMPTY_CELL || grid(row,col-1) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kLeft, kWall);
 
                     // right
-                    if(grid(row,col+1) == WorldFile::EMPTY_CELL)
+                    if(grid(row,col+1) == WorldFile::EMPTY_CELL || grid(row,col+1) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kRight, kWall);
 
                     // upper
-                    if(grid(row+1,col) == WorldFile::EMPTY_CELL)
+                    if(grid(row+1,col) == WorldFile::EMPTY_CELL || grid(row+1,col) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kUpper, kWall);
 
                     // lower
-                    if(grid(row-1,col) == WorldFile::EMPTY_CELL)
+                    if(grid(row-1,col) == WorldFile::EMPTY_CELL || grid(row-1,col) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kLower, kWall);
 
                     break;
@@ -171,9 +171,6 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
         }
     }
     
-    // setup world collision walls
-    SetupWorldCollWalls(grid);
-
     // create vertex declaration
     HRESULT result = pd3dDevice->CreateVertexDeclaration(m_sCustomVertexDeclaration, &m_pCVDeclaration);
 

@@ -66,8 +66,10 @@ class GameObject
         float GetHeight() const                 { return m_fHeight;         };
 
         // object position info
-        D3DXVECTOR3 GetPosition() const;
-        D3DXVECTOR3 GetTargetPosition() const   { return m_vTargetPos;      };
+        D3DXVECTOR3 GetPosition() const         { return m_vPos;            };
+        D3DXVECTOR3 GetDirection() const        { return m_vDirection;      };
+        D3DXVECTOR2 GetGridPosition() const;
+        D3DXVECTOR2 GetGridDirection() const;
         float GetVelocity() const               { return m_fVelocity;       };
         float GetAcceleration() const           { return m_fAccel;          };
         float GetYawRotation() const            { return m_fYawRotation;    };
@@ -75,13 +77,13 @@ class GameObject
         float GetRollRotation() const           { return m_fRollRotation;   };
         
         // set object parameters
-        void SetVelocity(const float& vel)              { m_fVelocity = vel; };
-        void SetAcceleration(const float& accel)        { m_fAccel = accel; };
-        void SetTargetPosition(const D3DXVECTOR3& pos);
+        void SetPosition(const D3DXVECTOR3& pos)        { m_vPos = pos;                             };
+        void SetDirection(const D3DXVECTOR3& dir)       { D3DXVec3Normalize(&m_vDirection, &dir);   };
+        void SetGridPosition(const D3DXVECTOR2& pos);
+        void SetGridDirection(const D3DXVECTOR2& dir);
+        void SetVelocity(const float& vel)              { m_fVelocity = vel;    };
+        void SetAcceleration(const float& accel)        { m_fAccel = accel;     };
         void HoldPosition();
-
-        // collision events
-        virtual void EnvironmentCollisionEvent(const D3DXVECTOR3& vPosDelta) { m_vPos += vPosDelta; };
 
     protected:
 
@@ -97,7 +99,6 @@ class GameObject
         // object position info
         D3DXVECTOR3 m_vPos;         // position
         D3DXVECTOR3 m_vDirection;   // direction
-        D3DXVECTOR3 m_vTargetPos;   // target position
         float m_fVelocity;          // velocity
         float m_fAccel;             // acceleration
         

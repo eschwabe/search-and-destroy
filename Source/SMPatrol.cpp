@@ -29,9 +29,9 @@ enum SubstateName
 /**
 * Constructor
 */
-SMPatrol::SMPatrol( GameObject* object, const D3DXVECTOR3& pos ) :
+SMPatrol::SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos ) :
     StateMachine( *object ),
-    m_vPos(pos)
+    m_vPatrolPos(vPatrolPos)
 {}
 
 /**
@@ -48,38 +48,56 @@ bool SMPatrol::States( State_Machine_Event event, MSG_Object* msg, int state, in
 BeginStateMachine
 
 	// global message responses go here
+    // handle any attack messages
 
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_PatrolToPosition )
 
 		OnEnter
-            // set object to patrol to position
-            m_owner->SetTargetPosition( m_vPos );
-            m_owner->SetVelocity(1.0f);
-            m_owner->SetAcceleration(0.25f);
+
+            // set object speed
+            m_owner->SetVelocity(2.0f);
+            m_owner->SetAcceleration(0.5f);
 
         OnUpdate
-            // determine if the object has arrived
-            D3DXVECTOR3 vTarget = m_owner->GetTargetPosition() - m_owner->GetPosition();
-            vTarget.y = 0;
 
-	        if( D3DXVec3Length( &vTarget ) < 0.01f )
+            // determine direction (ignore height)
+            D3DXVECTOR2 vDirection = m_vPatrolPos - m_owner->GetGridPosition();
+
+            // determine if the object has arrived
+	        if( D3DXVec2Length( &vDirection ) < 0.1f )
             {
-                m_owner->HoldPosition();
+                // switch to idle state
                 ChangeState( STATE_Idle );
             }
+            else
+            {
+                // set object direction towards position
+                D3DXVec2Normalize(&vDirection, &vDirection);
+                m_owner->SetGridDirection(vDirection);
+            }
+
+        OnExit
+
+            // stop object
+            m_owner->HoldPosition();
+            
 
 	/*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_Idle )
 
-		OnEnter
+        OnEnter
+
+            // required
 
         OnTimeInState(2.0f)
+            
             // requeue the state machine to the end of the patrol list
             RequeueStateMachine();
 
+	/*-------------------------------------------------------------------------*/
 
 EndStateMachine
 }

@@ -17,8 +17,8 @@ class NPCSphereNode : public PlayerBaseNode
 {
     public:
 
-        // constructor
-        NPCSphereNode(const D3DXVECTOR3& vInitialPos);
+        // constructor (default color is green)
+        NPCSphereNode(const D3DXVECTOR3& vInitialPos, const D3DXCOLOR& cColor = D3DXCOLOR(0.3f, 0.6f, 0.5f, 1));
         virtual ~NPCSphereNode();
     
     protected:
@@ -54,6 +54,7 @@ class NPCSphereNode : public PlayerBaseNode
         static const D3DVERTEXELEMENT9 m_sCustomVertexDeclaration[];    // custom vertex structure definition
         LPDIRECT3DVERTEXDECLARATION9 m_pCVDeclaration;                  // custom vertex declaration
 
+        D3DXCOLOR m_cColor;             // sphere color
         LPD3DXMESH m_pSphereMesh;       // sphere mesh data
 
         CustomVertex* m_CVBuffer;       // custom vertex buffer

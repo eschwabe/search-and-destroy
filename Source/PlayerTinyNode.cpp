@@ -234,7 +234,7 @@ void PlayerTinyNode::Update()
     if( m_PlayerMovement[kIncreaseSpeed] )
     {
         // set acceleration
-        m_fAccel = 1.5f;
+        m_fAccel = 1.0f;
     }
 
     // update player velocity
@@ -245,8 +245,8 @@ void PlayerTinyNode::Update()
             m_fVelocity = 1.5f;
 
         // check for max velocity (tiles per second)
-        if(m_fVelocity < kMaxSpeed)
-            m_fVelocity += m_fAccel * g_time.GetElapsedTime();
+        if(m_fVelocity > kMaxSpeed)
+            m_fAccel = 0.0f;
     }
     else if( m_PlayerMovement[kMoveBackward] )
     {
@@ -255,8 +255,8 @@ void PlayerTinyNode::Update()
             m_fVelocity = -1.5f;
 
         // check for max velocity (tiles per second)
-        if(m_fVelocity > -kMaxSpeed)
-            m_fVelocity -= m_fAccel * g_time.GetElapsedTime();
+        if(m_fVelocity < -kMaxSpeed)
+            m_fAccel = 0.0f;
     }
     else
     {

@@ -152,55 +152,38 @@ class CollQuad
         };
 };
 
+/************************************************************************/
+/* GAME OBJECT COLLISION                                                */
+/************************************************************************/
+
 /**
 * Collision Quad List
 */
 typedef std::vector<CollQuad> VecCollQuad;
 
 /**
-* Checks for collisions between a list of quads (environment) and an object.
-* When collisions are detected, the player is notified to move. Also, can check
-* for collisions between two players and move them.
+* Checks for collisions between a list of quads (environment) and objects.
+* When collisions are detected, the object is notified to move.
 */
-class CollObject
+class GameObjectCollision
 {
     public:
 
         // constructor
-        CollObject();
+        GameObjectCollision(const VecCollQuad& quads);
 
-        // run collision checks between player and environment
-        void RunWorldCollision(const VecCollQuad& quads, GameObject* obj);
+        // run collision check between object and environment
+        void RunWorldCollision(GameObject* obj);
 
-        // run collision checks between two players
+        // run collision check between two objects
         bool RunObjectCollision(GameObject* obj1, GameObject* obj2);
     
-    private:
-
-        // prevent copy and assignment
-        CollObject(const CollObject&);
-        void operator=(const CollObject&);
-};
-
-/**
-* Checks for line collisions against a list of quads. Modifies the
-* end of the line to the nearest collision point.
-*/
-class CollLineOfSight
-{
-    public:
-
-        // constructor
-        CollLineOfSight() {}
-
-        // run line of sight collision check
-        bool RunLineOfSightCollision(const VecCollQuad& quads, const D3DXVECTOR3& p1, D3DXVECTOR3& p2);
+        // run line collision check
+        bool RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, CollOutput* output);
 
     private:
 
-        // prevent copy and assignment
-        CollLineOfSight(const CollLineOfSight&);
-        void operator=(const CollLineOfSight&);
+        VecCollQuad m_vQuadList;
 };
 
 /************************************************************************/

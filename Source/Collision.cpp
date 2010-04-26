@@ -272,21 +272,20 @@ CollSphere* AppendMobyCollSphere(CollSphere& sphere)
 
 
 /************************************************************************/
-/* Collision Player                                                     */
+/* Game Object Collision                                                */
 /************************************************************************/
 
 /**
 * Constructor
 */
-CollObject::CollObject()
+GameObjectCollision::GameObjectCollision(const VecCollQuad& quads) :
+    m_vQuadList(quads)
 {}
  
 /**
-* Run collision checks between player and environment.
-* Player is queried for current position (sphere) data and notified
-* if the player needs to be moved.
+* Run collision checks between object and environment.
 */
-void CollObject::RunWorldCollision(const VecCollQuad& quads, GameObject* obj)
+void GameObjectCollision::RunWorldCollision(GameObject* obj)
 {
     assert(obj);
 
@@ -298,13 +297,13 @@ void CollObject::RunWorldCollision(const VecCollQuad& quads, GameObject* obj)
     sphere.Set(&vObjPos, 0.25f);
 
     // run sphere vs quad checks on entire list
-    for(size_t i = 0; i < quads.size(); i++)
+    for(size_t i = 0; i < m_vQuadList.size(); i++)
     {
         // check for collision
-        if(sphere.VsQuad(quads[i]))
+        if(sphere.VsQuad(m_vQuadList[i]))
         {
             // if collision, send player collision event
-            obj->EnvironmentCollisionEvent(gCollOutput.push);
+            obj->SetPosition( obj->GetPosition() + gCollOutput.push );
             gCollOutput.Reset();
         }
     }  
@@ -313,8 +312,11 @@ void CollObject::RunWorldCollision(const VecCollQuad& quads, GameObject* obj)
 /**
 * Run collision checks between two objects. Returns true if a collision occured.
 */
-bool CollObject::RunObjectCollision(GameObject* obj1, GameObject* obj2)
+bool GameObjectCollision::RunObjectCollision(GameObject* obj1, GameObject* obj2)
 {
+    assert(obj1);
+    assert(obj2);
+
     // generate sphere from position and height
     CollSphere obj1Sphere;
     D3DXVECTOR3 vObj1Pos = obj1->GetPosition();
@@ -329,45 +331,40 @@ bool CollObject::RunObjectCollision(GameObject* obj1, GameObject* obj2)
 
     // notify players of collision result
     if(coll)
-    {        
-        //player1->PlayerCollisionEvent();
-        //player2->PlayerCollisionEvent();
+    {
+        obj1->SetPosition( obj1->GetPosition() + gCollOutput.push );
         gCollOutput.Reset();
     }
 
     return coll;
 }
 
-/************************************************************************/
-/* Collision Line Of Sight                                              */
-/************************************************************************/
-
 /**
-* Run line of sight collision check between line and environment. Line
-* end point is modified to collision point if a collision occurs. Returns
+* Run line collision check between line and environment. Returns
 * true if a collision occured.
 */
-bool CollLineOfSight::RunLineOfSightCollision(
-    const VecCollQuad& quads, const D3DXVECTOR3& p1, D3DXVECTOR3& p2)
+bool GameObjectCollision::RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, CollOutput* output)
 {
-    bool coll_occured = false;
+    assert(output);
+
+    bool coll = false;
 
     // run sphere vs quad checks on entire list
-    for(size_t i = 0; i < quads.size(); i++)
+    for(size_t i = 0; i < m_vQuadList.size(); i++)
     {
         // generate collision line
         CollLine line;
         line.Set(&p1, &p2);
 
         // check for collision
-        if(line.VsQuad(quads[i]))
+        if(line.VsQuad(m_vQuadList[i]))
         {
             // if collision, modify line end point
-            p2 += gCollOutput.push;
+            *output = gCollOutput;
             gCollOutput.Reset();
-            coll_occured = true;
+            coll = true;
         }
     }
 
-    return coll_occured;
+    return coll;
 }

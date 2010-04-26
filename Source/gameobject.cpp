@@ -19,10 +19,10 @@
 GameObject::GameObject( objectID id, unsigned int type, char* name ) : 
     m_markedForDeletion(false),
     m_vPos(0.0f, 0.0f, 0.0f),
-    m_vTargetPos(0.0f, 0.0f, 0.0f),
+    m_vDefaultDirection(0.0f, 0.0f, 1.0f),
+    m_vDirection(0.0f, 0.0f, 1.0f),
     m_fVelocity(0.0f),
     m_fAccel(0.0f),
-    m_vDefaultDirection(0.0f, 0.0f, 1.0f),
     m_fYawRotation(0.0f),
     m_fPitchRotation(0.0f),
     m_fRollRotation(0.0f),
@@ -115,26 +115,6 @@ void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rD
 }
 
 /**
-* Get the current position of the object. 
-* Position is the center of the object.
-*/
-D3DXVECTOR3 GameObject::GetPosition() const
-{
-    D3DXVECTOR3 pos = m_vPos;
-    return pos;
-}
-
-/**
-* Set the target position for the object. Computes
-* a new direction vector for the object.
-*/
-void GameObject::SetTargetPosition(const D3DXVECTOR3& pos)
-{
-    // update target position
-    m_vTargetPos = pos;
-}
-
-/**
 * Sets the object parameters to hold at the current position.
 */
 void GameObject::HoldPosition()
@@ -142,3 +122,43 @@ void GameObject::HoldPosition()
     m_fVelocity = 0.0f;
     m_fAccel = 0.0f;
 }
+
+/**
+* Gets the grid position for the object. Ignores y direction.
+*/
+D3DXVECTOR2 GameObject::GetGridPosition() const     
+{ 
+    D3DXVECTOR2 pos; 
+    pos.x = m_vPos.x; 
+    pos.y = m_vPos.z; 
+    return pos; 
+}
+
+/**
+* Gets the grid direction for the object. Ignores y direction.
+*/
+D3DXVECTOR2 GameObject::GetGridDirection() const    
+{ 
+    D3DXVECTOR2 pos; 
+    pos.x = m_vDirection.x; 
+    pos.y = m_vDirection.z; 
+    return pos; 
+}
+
+/**
+* Sets the object position. Ignores y direction.
+*/
+void GameObject::SetGridPosition(const D3DXVECTOR2& pos)    
+{ 
+    m_vPos.x = pos.x;
+    m_vPos.z = pos.y;
+};
+
+/**
+* Sets the object direction. Ignores y direction.
+*/
+void GameObject::SetGridDirection(const D3DXVECTOR2& dir)   
+{ 
+    m_vDirection.x = dir.x;
+    m_vDirection.z = dir.y;
+};
