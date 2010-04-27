@@ -11,13 +11,12 @@
 
 #pragma once
 #include "statemch.h"
-#include "collision.h"
 
 class SMWander : public StateMachine
 {
     public:
 
-        SMWander(GameObject* object, GameObjectCollision* coll);
+        SMWander(GameObject* object);
         virtual ~SMWander();
 
     private:
@@ -30,6 +29,5 @@ class SMWander : public StateMachine
 
 
         const float kFrontFeelerLength;     // length of feeler sensor
-        GameObjectCollision* m_objColl;     // object collision
-        D3DXVECTOR3 m_vFrontFeelerPos;      // 
+        D3DXVECTOR3 m_vFrontFeelerPos;      // front feeler position
 };

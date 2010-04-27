@@ -165,12 +165,12 @@ typedef std::vector<CollQuad> VecCollQuad;
 * Checks for collisions between a list of quads (environment) and objects.
 * When collisions are detected, the object is notified to move.
 */
-class GameObjectCollision
+class ObjectCollision : public Singleton<ObjectCollision>
 {
     public:
 
         // constructor
-        GameObjectCollision(const VecCollQuad& quads);
+        ObjectCollision(const VecCollQuad& quads);
 
         // run collision check between object and environment
         void RunWorldCollision(GameObject* obj);

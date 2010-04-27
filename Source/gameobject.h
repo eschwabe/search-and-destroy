@@ -61,8 +61,8 @@ class GameObject
         void RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
         
         // object info
-        DWORD GetHealth() const                 { return m_dHealth;         };
-        void SetHealth(DWORD health)            { m_dHealth = health;       };
+        int GetHealth() const                   { return m_dHealth;         };
+        void SetHealth(int health)              { if(m_dHealth < health) health = 0; else m_dHealth = health; };
         float GetHeight() const                 { return m_fHeight;         };
 
         // object position and movement info
@@ -101,7 +101,7 @@ class GameObject
 
         // object info
         float m_fHeight;            // object height
-        DWORD m_dHealth;            // object health
+        int m_dHealth;              // object health
 
         // object position info
         D3DXVECTOR3 m_vPos;         // position

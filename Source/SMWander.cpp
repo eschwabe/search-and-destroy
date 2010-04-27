@@ -12,6 +12,7 @@
 #include "DXUT.h"
 #include "SMWander.h"
 #include "SMSeekPlayer.h"
+#include "collision.h"
 
 // add new states
 enum StateName 
@@ -31,9 +32,8 @@ enum SubstateName
 /**
 * Constructor
 */
-SMWander::SMWander( GameObject* object, GameObjectCollision* coll ) :
+SMWander::SMWander( GameObject* object ) :
     StateMachine( *object ),
-    m_objColl( coll ),
     kFrontFeelerLength(3.0f),
     m_vFrontFeelerPos( 0.0f, 0.0f, 0.0f )
 {}
@@ -51,8 +51,12 @@ bool SMWander::States( State_Machine_Event event, MSG_Object* msg, int state, in
 {
 BeginStateMachine
 
-	// global message responses go here
-    // if attacked, switch to seek player state machine
+	// global message responses
+    OnMsg(MSG_Damaged)
+
+        // update health and seek player
+        m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
+        PushStateMachine( *new SMSeekPlayer( m_owner, INVALID_OBJECT_ID ) );
 
     /*-------------------------------------------------------------------------*/
 
@@ -98,7 +102,7 @@ BeginStateMachine
             // check for future collisions
             CollOutput output;
             
-            if( m_objColl->RunLineCollision(m_owner->GetPosition(), m_vFrontFeelerPos, &output) )
+            if( g_objcollision.RunLineCollision(m_owner->GetPosition(), m_vFrontFeelerPos, &output) )
             {                
                 // change object direction
                 D3DXVECTOR3 vDir = m_owner->GetDirection();

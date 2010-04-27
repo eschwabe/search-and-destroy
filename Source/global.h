@@ -22,7 +22,7 @@
 #define g_msgroute MsgRoute::GetSingleton()
 #define g_debuglog DebugLog::GetSingleton()
 #define g_debugdrawing DebugDrawing::GetSingleton()
-
+#define g_objcollision ObjectCollision::GetSingleton()
 
 #define INVALID_OBJECT_ID 0
 #define SYSTEM_OBJECT_ID 1

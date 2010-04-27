@@ -49,13 +49,13 @@ CDXUTDialog             g_HUD;                      // dialog for standard contr
 CDXUTDialog             g_SampleUI;                 // dialog for sample specific controls
 bool                    g_bShowHelp = true;         // render the UI control text if true
 bool                    g_bPlaySounds = true;       // play sounds if true
-Time*                   g_pTime;                    // time manager
-Database*               g_pDatabase;                // game object database
-MsgRoute*               g_pMsgRoute;                // message router
-DebugLog*               g_pDebugLog;                // debug logger
+Time*                   g_pTime = NULL;             // time manager
+Database*               g_pDatabase = NULL;         // game object database
+MsgRoute*               g_pMsgRoute = NULL;         // message router
+DebugLog*               g_pDebugLog = NULL;         // debug logger
+ObjectCollision*        g_objColl = NULL;           // collision object
 PlayerTinyNode*         g_pMainPlayerNode;          // main player
 WorldFile               g_GridData;                 // drid data loaded from file
-GameObjectCollision*    g_objColl= NULL;            // collision object
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
@@ -328,24 +328,24 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
         return E_FAIL;
     }
 
-    // set collision object
-    g_objColl = p_WorldNode->GetCollisionObject();
+    // create collision object
+    g_objColl = new ObjectCollision( p_WorldNode->GetCollQuadList() );
 
     // setup NPC state machines
-    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
-    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2), STATE_MACHINE_QUEUE_0, TRUE );
     
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
 
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2, g_objColl), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
 
     // setup player state machine
     g_pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(g_pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );
@@ -671,6 +671,7 @@ void CALLBACK OnLostDevice( void* pUserContext )
 	delete g_pDatabase;
 	delete g_pMsgRoute;
 	delete g_pDebugLog;
+    delete g_objColl;
 
     // cleanup render data
     delete g_pRenderData;

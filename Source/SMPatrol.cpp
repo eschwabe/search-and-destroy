@@ -17,7 +17,8 @@
 enum StateName 
 {
 	STATE_PatrolToPosition,   // note: first enum is the starting state
-	STATE_Idle
+	STATE_Idle,
+    STATE_Damaged
 };
 
 // add new substates
@@ -47,8 +48,12 @@ bool SMPatrol::States( State_Machine_Event event, MSG_Object* msg, int state, in
 {
 BeginStateMachine
 
-	// global message responses go here
-    // handle any attack messages
+	// global message responses
+    OnMsg(MSG_Damaged)
+
+        // update health and seek player
+        m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
+        ChangeState( STATE_Damaged );
 
     /*-------------------------------------------------------------------------*/
 	
@@ -111,6 +116,12 @@ BeginStateMachine
             RequeueStateMachine();
 
 	/*-------------------------------------------------------------------------*/
+
+    DeclareState( STATE_Damaged )
+
+        OnEnter
+
+            ChangeStateDelayed(2.0f, STATE_PatrolToPosition);
 
 EndStateMachine
 }

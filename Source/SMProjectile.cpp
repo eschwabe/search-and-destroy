@@ -10,7 +10,7 @@
 
 #include "DXUT.h"
 #include "SMProjectile.h"
-
+#include "Collision.h"
 
 // add new states
 enum StateName 
@@ -18,7 +18,6 @@ enum StateName
 	STATE_Initialize,   // note: first enum is the starting state
 	STATE_FollowObject,
     STATE_FollowPath,
-    STATE_AttackObject,
     STATE_Expired
 };
 
@@ -105,17 +104,22 @@ BeginStateMachine
 
         OnUpdate
 
+            // check for NPC collisions
+            dbCompositionList list;
+            g_database.ComposeList(list, OBJECT_NPC);
+            for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+            {
+                if( g_objcollision.RunObjectCollision(m_owner, (*it)) )
+                {
+                    // send damage message on collision and expire
+                    SendMsgDelayed(0.1f, MSG_Damaged, (*it)->GetID(), MSG_Data(50));
+                    ChangeState( STATE_Expired );
+                }
+            }
+
         OnTimeInState(2.5f)
 
             ChangeState( STATE_Expired );
-
-	/*-------------------------------------------------------------------------*/
-	
-    DeclareState( STATE_AttackObject )
-
-		OnEnter
-
-        OnUpdate
 
 	/*-------------------------------------------------------------------------*/
 	
@@ -126,7 +130,7 @@ BeginStateMachine
             // stop movement
             m_owner->ResetMovement();
 
-            // play explosion animation
+            // play explosion animation (set health to 0?)
 
         OnTimeInState(1.0f)
 

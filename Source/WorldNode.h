@@ -31,7 +31,7 @@ class WorldNode : public GameObject
 	    ~WorldNode();
 
         // returns a game collision object
-        GameObjectCollision* GetCollisionObject();
+        VecCollQuad GetCollQuadList();
 
         // return world size
         int GetWorldHeight() const { return iWorldHeight; }

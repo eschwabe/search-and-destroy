@@ -278,14 +278,14 @@ CollSphere* AppendMobyCollSphere(CollSphere& sphere)
 /**
 * Constructor
 */
-GameObjectCollision::GameObjectCollision(const VecCollQuad& quads) :
+ObjectCollision::ObjectCollision(const VecCollQuad& quads) :
     m_vQuadList(quads)
 {}
  
 /**
 * Run collision checks between object and environment.
 */
-void GameObjectCollision::RunWorldCollision(GameObject* obj)
+void ObjectCollision::RunWorldCollision(GameObject* obj)
 {
     assert(obj);
 
@@ -312,7 +312,7 @@ void GameObjectCollision::RunWorldCollision(GameObject* obj)
 /**
 * Run collision checks between two objects. Returns true if a collision occured.
 */
-bool GameObjectCollision::RunObjectCollision(GameObject* obj1, GameObject* obj2)
+bool ObjectCollision::RunObjectCollision(GameObject* obj1, GameObject* obj2)
 {
     assert(obj1);
     assert(obj2);
@@ -343,7 +343,7 @@ bool GameObjectCollision::RunObjectCollision(GameObject* obj1, GameObject* obj2)
 * Run line collision check between line and environment. Returns
 * true if a collision occured.
 */
-bool GameObjectCollision::RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, CollOutput* output)
+bool ObjectCollision::RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3& p2, CollOutput* output)
 {
     assert(output);
 

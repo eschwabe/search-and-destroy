@@ -36,7 +36,15 @@ enum SubstateName
 SMSeekPlayer::SMSeekPlayer( GameObject* object, objectID pid ) :
     StateMachine( *object ),
     m_idPlayer(pid)
-{}
+{
+    if(m_idPlayer == INVALID_OBJECT_ID)
+    {
+        // if invalid, find the player
+        dbCompositionList list;
+        g_database.ComposeList(list, OBJECT_Player);
+        m_idPlayer = (*list.begin())->GetID();
+    }
+}
 
 /**
 * Deconstructor
@@ -51,7 +59,7 @@ bool SMSeekPlayer::States( State_Machine_Event event, MSG_Object* msg, int state
 {
 BeginStateMachine
 
-	// global message responses go here
+	// global message responses
 
     /*-------------------------------------------------------------------------*/
 	

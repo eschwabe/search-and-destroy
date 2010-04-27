@@ -76,12 +76,12 @@ WorldNode::~WorldNode()
 }
 
 /*
-* Returns a game collision object with world walls. The object will
+* Returns a collision quad list object with world walls. The object will
 * not contain any walls if the world node has not been initialized.
 */
-GameObjectCollision* WorldNode::GetCollisionObject()
+VecCollQuad WorldNode::GetCollQuadList()
 {
-    return new GameObjectCollision(m_vCollQuads);
+    return m_vCollQuads;
 }
 
 /**
