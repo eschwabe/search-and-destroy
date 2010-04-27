@@ -20,7 +20,8 @@ class ProjectileParticles : public GameObject
         enum ParticleType
         {
             kFire,
-            kLightBall
+            kLightBall,
+            kBigLightBall
         };
 
         // constructors
@@ -95,8 +96,6 @@ class ProjectileParticles : public GameObject
             {}
         };
 
-
-
         // METHODS
         D3DXVECTOR3 ComputeParticleAccel(const Particle& p);
         void CreateParticles(const DWORD& dNumParticles);
@@ -105,12 +104,12 @@ class ProjectileParticles : public GameObject
         // DATA
         static const DWORD dParticleVertexCount = 6;
         
-        std::list<Particle> m_pList;          // particle list
-        ParticleType m_pType;                 // particle type
-        double m_fLastParticleCreateTime;     // last time a particle was created for source
+        std::list<Particle> m_pList;            // particle list
+        ParticleType m_pType;                   // particle type
+        double m_fLastParticleCreateTime;       // last time a particle was created for source
 
-        LPDIRECT3DTEXTURE9 m_pParticleTexture;
-        std::wstring m_sParticleFilename;
+        LPDIRECT3DTEXTURE9 m_pParticleTexture;  // particle texture
+        std::wstring m_sParticleFilename;       // particle texture filename
 
 
         // prevent copy and assignment

@@ -17,8 +17,7 @@
 */
 PlayerBaseNode::PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name) :
     GameObject(id, type, name),
-    m_lineVertexBuffer(NULL),
-    m_bStopMovement(false)
+    m_lineVertexBuffer(NULL)
 {
     m_vPos = vInitialPos;
         
@@ -50,23 +49,6 @@ HRESULT PlayerBaseNode::InitializeLines(IDirect3DDevice9* pd3dDevice)
         NULL);
 
     return result;
-}
-
-/**
-* Update player position, velocity and acceleration
-*/
-void PlayerBaseNode::UpdatePlayerPosition()
-{
-    // check if movement allowed
-    if( !m_bStopMovement )
-    {
-        // update velocity and determine position delta
-        m_fVelocity += m_fAccel * g_time.GetElapsedTime();
-        D3DXVECTOR3 vPosDelta = m_vDirection * m_fVelocity * g_time.GetElapsedTime();
-        
-        // update player position
-        m_vPos += vPosDelta;
-    }
 }
 
 /**

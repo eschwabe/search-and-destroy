@@ -242,13 +242,6 @@ void PlayerTinyNode::Update()
 {
     const float kMaxSpeed = 3.0f;
 
-    // update player acceleration
-    if( m_PlayerMovement[kIncreaseSpeed] )
-    {
-        // set acceleration
-        m_fAccel = 1.0f;
-    }
-
     // update player velocity
     if( m_PlayerMovement[kMoveForward] )
     {
@@ -259,6 +252,8 @@ void PlayerTinyNode::Update()
         // check for max velocity (tiles per second)
         if(m_fVelocity > kMaxSpeed)
             m_fAccel = 0.0f;
+        else
+            m_fAccel = 1.0f;
     }
     else if( m_PlayerMovement[kMoveBackward] )
     {
@@ -269,6 +264,8 @@ void PlayerTinyNode::Update()
         // check for max velocity (tiles per second)
         if(m_fVelocity < -kMaxSpeed)
             m_fAccel = 0.0f;
+        else
+            m_fAccel = -1.0f;
     }
     else
     {
@@ -289,7 +286,7 @@ void PlayerTinyNode::Update()
     D3DXVec3TransformCoord( &m_vDirection, &m_vDefaultDirection, &mMoveRot );
 
     // update position
-    UpdatePlayerPosition();
+    UpdateObjectPosition();
 
     // update animation
     UpdateAnimation();

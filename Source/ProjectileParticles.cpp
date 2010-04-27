@@ -114,6 +114,9 @@ void ProjectileParticles::Update()
         // move to next particle
         ++itParticle;
     }
+
+    // update object position
+    UpdateObjectPosition();
 }
 
 /**
@@ -125,22 +128,45 @@ void ProjectileParticles::CreateParticles(const DWORD& dNumParticles)
     {
         // build particle
         Particle p;
-        p.fSize = 0.5f;
-        
-        // set fire color (orange)
-        //p.cInitColor = D3DXCOLOR(1.0f, 0.5f, 0.2f, 1.0f);
-        p.cInitColor = D3DXCOLOR(1.0f, 0.3f, 0.1f, 1.0f);
-        p.cFinalColor = p.cInitColor; 
-        p.cCurrentColor = p.cInitColor;
+
+        // particle float distance
+        float rangeFactor = 100.0f;
+
+        // customize particle
+        switch(m_pType)
+        {
+            // small projectile ball
+            case kLightBall:
+                rangeFactor = 1000.0f;
+                p.fSize = 0.1f;
+                p.vVel = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+                p.cInitColor = D3DXCOLOR(0.1f, 0.3f, 1.0f, 1.0f);
+                break;
+
+            // large projectile ball
+            case kBigLightBall:
+                rangeFactor = 500.0f;
+                p.fSize = 0.3f;
+                p.vVel = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
+                p.cInitColor = D3DXCOLOR(0.2f, 0.4f, 1.0f, 1.0f);
+                break;
+
+            // large fire ball
+            default:
+                p.fSize = 0.5f;
+                p.vVel = D3DXVECTOR3(0.0f, 0.02f, 0.0f);
+                p.cInitColor = D3DXCOLOR(1.0f, 0.3f, 0.1f, 1.0f);
+                break;
+        }
 
         // randomize particle velocity/direction
-        p.vVel = D3DXVECTOR3(0.0f, 0.02f, 0.0f);
-        
-        float rangeFactor = 100.0f;
         p.vVel.x = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
         p.vVel.z = sin((float)(rand()-RAND_MAX/2))/rangeFactor;
-        
         p.vInitVel = p.vVel;
+
+        // set color changes
+        p.cFinalColor = p.cInitColor; 
+        p.cCurrentColor = p.cInitColor;
 
         // add particle
         m_pList.push_back(p);
@@ -154,15 +180,8 @@ D3DXVECTOR3 ProjectileParticles::ComputeParticleAccel(const Particle& p)
 {
     D3DXVECTOR3 vAccel = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
 
-    switch(m_pType)
-    {
-        default:
-        {        
-            // rising particles
-            vAccel = -(p.vInitVel/60);
-            break;
-        }
-    }
+    // rising particles
+    vAccel = -(p.vInitVel/60);
 
     return vAccel;
 }

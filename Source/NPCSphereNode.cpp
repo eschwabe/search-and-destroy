@@ -125,7 +125,7 @@ void NPCSphereNode::Update()
     m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
 
     // update position
-    UpdatePlayerPosition();
+    UpdateObjectPosition();
 }
 
 /**

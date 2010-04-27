@@ -79,17 +79,6 @@ BeginStateMachine
 
         OnUpdate
 
-            // check if moved since last update
-            D3DXVECTOR3 vPosChange = m_owner->GetPosition() - (*vLastPos);
-            if( D3DXVec3Length(&vPosChange) < 0.01f )
-            {
-                // if object stuck, change state
-                ChangeState( STATE_Blocked );
-            }
-
-            // update last position
-            (*vLastPos) = m_owner->GetPosition();
-
             // check if player nearby
             dbCompositionList list;
             g_database.ComposeList(list, OBJECT_Player);
@@ -116,8 +105,21 @@ BeginStateMachine
                 float fYawRotate = D3DXVec3Dot(&output.normal, &vDir) * (output.length / kFrontFeelerLength);
                 m_owner->SetDirection( RotateVector(vDir, fYawRotate) );
             }
-           
-        OnPeriodicTimeInState(2.0f)
+
+        OnPeriodicTimeInState(0.5f)
+
+            // periodically check if object is blocked
+            D3DXVECTOR3 vPosChange = m_owner->GetPosition() - (*vLastPos);
+            if( D3DXVec3Length(&vPosChange) < 0.1f )
+            {
+                // if object stuck, change state
+                ChangeState( STATE_Blocked );
+            }
+
+            // update last position
+            (*vLastPos) = m_owner->GetPosition();
+
+        OnPeriodicTimeInState(1.0f)
         
             // randomly adjust direction by a small amount periodically
             float fYawRotate = D3DX_PI/3.0f * (1 - rand() % 3);

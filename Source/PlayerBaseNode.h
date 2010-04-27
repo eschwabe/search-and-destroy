@@ -19,18 +19,11 @@ class PlayerBaseNode : public GameObject
         PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
         
-        // control player movement
-        virtual void ResumeMovement()   { m_bStopMovement = false;  };
-        virtual void StopMovement()     { m_bStopMovement = true;   };
-
     protected:
 
         // draw lines
         HRESULT InitializeLines(IDirect3DDevice9* pd3dDevice);
         void DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
-
-        // update player position
-        void UpdatePlayerPosition();
 
         // defines the supported player movements
         enum PlayerActions
@@ -46,7 +39,6 @@ class PlayerBaseNode : public GameObject
             kUnknown = 0xFF
         };
 
-        bool m_bStopMovement;                   // stop all player movements
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
 
     private:

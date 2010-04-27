@@ -86,8 +86,8 @@ class GameObject
 
         // control object movement
         void ResetMovement();
-        virtual void ResumeMovement()   {};
-        virtual void StopMovement()     {};
+        virtual void ResumeMovement()   { m_bStopMovement = false;  };
+        virtual void StopMovement()     { m_bStopMovement = true;   };
 
     protected:
 
@@ -95,6 +95,9 @@ class GameObject
         virtual HRESULT Initialize(IDirect3DDevice9* pd3dDevice) = 0;
         virtual void Update() = 0;
         virtual void Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData) = 0;
+        
+        // update object position
+        void UpdateObjectPosition();
 
         // object info
         float m_fHeight;            // object height
@@ -109,12 +112,15 @@ class GameObject
         float m_fYawRotation;       // rotation (y-axis)
         float m_fPitchRotation;     // rotation (z-axis)
         float m_fRollRotation;      // rotation (x-axis)
-    
+            
+        bool m_bStopMovement;       // stop all object movements
+
         // default info
         const D3DXVECTOR3 m_vDefaultDirection;    // forward vector for all objects
 
     private:
 
+        // DATA
 	    objectID m_id;								// unique id of object (safer than a pointer)
 	    unsigned int m_type;						// type of object (can be combination)
 	    bool m_markedForDeletion;					// flag to delete this object (when it is safe to do so)

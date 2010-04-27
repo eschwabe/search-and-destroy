@@ -12,6 +12,9 @@
 #include "gameobject.h"
 #include "msgroute.h"
 #include "statemch.h"
+#include <sstream>
+
+int i = 5;
 
 /**
 * Constructor
@@ -28,13 +31,19 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
     m_fRollRotation(0.0f),
     m_fHeight(0.0f),
     m_dHealth(0),
+    m_bStopMovement(false),
     m_stateMachineManager(NULL)
 {
 	m_id = id;
 	m_type = type;
-	
-	if( strlen(name) < GAME_OBJECT_MAX_NAME_SIZE ) {
-		strcpy( m_name, name );
+
+    std::string sObjectName;
+    std::stringstream sStreamOut;
+    sStreamOut << name << "[" << id << "]";
+    sObjectName = sStreamOut.str();
+
+    if( sObjectName.length() < GAME_OBJECT_MAX_NAME_SIZE ) {
+        strcpy( m_name, sObjectName.c_str() );
 	}
 	else {
 		strcpy( m_name, "invalid_name" );
@@ -87,6 +96,7 @@ HRESULT GameObject::InitializeObject(IDirect3DDevice9* pd3dDevice)
 */
 void GameObject::UpdateObject()
 {
+    // update state machines
 	if(m_stateMachineManager)
 	{
 		m_stateMachineManager->Update();
@@ -162,3 +172,20 @@ void GameObject::SetGridDirection(const D3DXVECTOR2& dir)
     m_vDirection.x = dir.x;
     m_vDirection.z = dir.y;
 };
+
+/**
+* Update object position, velocity and acceleration
+*/
+void GameObject::UpdateObjectPosition()
+{
+    // check if movement allowed
+    if( !m_bStopMovement )
+    {
+        // update velocity and determine position delta
+        m_fVelocity += m_fAccel * g_time.GetElapsedTime();
+        D3DXVECTOR3 vPosDelta = m_vDirection * m_fVelocity * g_time.GetElapsedTime();
+        
+        // update player position
+        m_vPos += vPosDelta;
+    }
+}

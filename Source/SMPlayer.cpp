@@ -10,6 +10,7 @@
 
 #include "DXUT.h"
 #include "SMPlayer.h"
+#include "SMProjectile.h"
 #include "ProjectileParticles.h"
 
 // add new states
@@ -67,16 +68,8 @@ BeginStateMachine
 
 		OnEnter
             
-            // enable movement
-            m_owner->ResumeMovement();
-
         OnMsg( MSG_FireProjectile )
             
-            // create projectile
-            ProjectileParticles* projectile = new ProjectileParticles(m_owner->GetPosition(), ProjectileParticles::kFire);
-            projectile->InitializeObject(m_pd3dDevice);
-            g_database.Store(projectile);
-
             // change state
             ChangeState(STATE_FireProjectile);
 
@@ -87,26 +80,49 @@ BeginStateMachine
 
         OnExit
 
-            // disable movement
-            m_owner->StopMovement();
-
 	/*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FireProjectile )
 
 		OnEnter
-            
+
             // create projectile
-            ChangeStateDelayed(0.25f, STATE_Move);
+            D3DXVECTOR3 vInitPos = m_owner->GetPosition();
+            vInitPos.y = m_owner->GetHeight();            
+            ProjectileParticles* projectile = new ProjectileParticles(vInitPos, ProjectileParticles::kLightBall);
+
+            // initialize 
+            projectile->InitializeObject(m_pd3dDevice);
+
+            // create state machine and add to db
+            SMProjectile* smProj = new SMProjectile(projectile, 3.5f, 0.3f, m_owner->GetDirection(), false); 
+            projectile->GetStateMachineManager()->PushStateMachine( *smProj, STATE_MACHINE_QUEUE_0, TRUE );
+            g_database.Store(projectile);
+
+            // create projectile
+            ChangeStateDelayed(0.1f, STATE_Move);
 
 	/*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FireBigProjectile )
 
 		OnEnter
+
+            // create projectile
+            D3DXVECTOR3 vInitPos = m_owner->GetPosition();
+            vInitPos.y = m_owner->GetHeight();            
+            ProjectileParticles* projectile = new ProjectileParticles(vInitPos, ProjectileParticles::kBigLightBall);
+
+            // initialize
+            projectile->InitializeObject(m_pd3dDevice);
+
+            // create state machine and add to db
+            SMProjectile* smProj = new SMProjectile(projectile, 1.5f, 0.2f, m_owner->GetDirection(), false); 
+            projectile->GetStateMachineManager()->PushStateMachine( *smProj, STATE_MACHINE_QUEUE_0, TRUE );
+            g_database.Store(projectile);
             
             // create projectile
-            ChangeStateDelayed(0.5f, STATE_Move);
+            ChangeStateDelayed(1.0f, STATE_Move);
 
     /*-------------------------------------------------------------------------*/
 	    

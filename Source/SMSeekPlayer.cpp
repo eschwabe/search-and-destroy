@@ -118,13 +118,11 @@ BeginStateMachine
 
         OnTimeInState(5.0f)
 
-            // end state machine after duration
-            PopStateMachine();
-
-        OnExit
-
             // enable movement
             m_owner->ResumeMovement();
+
+            // end state machine after duration
+            PopStateMachine();
 
     /*-------------------------------------------------------------------------*/
 	
