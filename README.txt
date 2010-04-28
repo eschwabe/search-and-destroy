@@ -39,16 +39,16 @@ PROJECT FEATURES
 
 FEATURES
 
-SMPatrol.cpp:55 		Data passed in msg
 SMPatrol.cpp:52 		Global Message Response other than MSG_Reset or MSG_MouseClick
+SMPatrol.cpp:55 		Data passed in msg
 SMPatrol.cpp:108		RequeueStateMachine
 SMProjectile.cpp:139 	MarkForDeletion
-SMWander.cpp:113		OnPeriodicTimeInState
-SMWander.cpp:92			PushStateMachine
 SMWander.cpp:75			A persistent state variable such as DeclareStateInt
-SMWander.cpp:151		ChangeStateDelayed
-SMCombat.cpp:134		PopStateMachine
+SMWander.cpp:92			PushStateMachine
+SMWander.cpp:113		OnPeriodicTimeInState
+SMWander.cpp:150		ChangeStateDelayed
 SMCombat.cpp:128		OnTimeInState
+SMCombat.cpp:134		PopStateMachine
 
 EXTRA CREDIT
 

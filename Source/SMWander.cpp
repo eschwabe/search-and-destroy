@@ -105,7 +105,7 @@ BeginStateMachine
                 float fYawRotate = D3DXVec3Dot(&output.normal, &vDir) * (output.length / kFrontFeelerLength);
                 m_owner->SetDirection( RotateVector(vDir, fYawRotate) );
 
-                if( output.length > 2.5f )
+                if( output.length > (kFrontFeelerLength - 0.5f) )
                     ChangeState( STATE_Blocked );
 
             }
@@ -128,7 +128,6 @@ BeginStateMachine
             // randomly adjust direction by a small amount periodically
             float fYawRotate = D3DX_PI/3.0f * (1 - rand() % 3);
             m_owner->SetDirection( RotateVector(m_owner->GetDirection(), fYawRotate) );
-            ChangeStateDelayed( 0.1f, STATE_Wander );
 
         OnExit
 
