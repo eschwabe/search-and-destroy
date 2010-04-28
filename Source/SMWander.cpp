@@ -66,7 +66,7 @@ BeginStateMachine
         OnEnter
 
             m_owner->SetGridDirection( D3DXVECTOR2(12.5f, 12.5) - m_owner->GetGridPosition() );
-            ChangeStateDelayed(1.0f, STATE_Wander);
+            ChangeStateDelayed(0.5f, STATE_Wander);
 
     /*-------------------------------------------------------------------------*/
 	
