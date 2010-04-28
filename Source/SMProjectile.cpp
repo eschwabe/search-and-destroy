@@ -16,7 +16,7 @@
 enum StateName 
 {
 	STATE_Initialize,   // note: first enum is the starting state
-	STATE_FollowObject,
+	//STATE_FollowObject,
     STATE_FollowPath,
     STATE_Expired
 };
@@ -68,18 +68,18 @@ BeginStateMachine
             if(false /*bSeek*/)
             {
                 // select nearest NPC
-                dbCompositionList list;
-                g_database.ComposeList(list, OBJECT_NPC);
-                for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
-                {
-                    D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
-                    if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
-                    {
-                    }
-                }
+                //dbCompositionList list;
+                //g_database.ComposeList(list, OBJECT_NPC);
+                //for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+                //{
+                //    D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
+                //    if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
+                //    {
+                //    }
+                //}
 
-                // follow selected NPC
-                ChangeState( STATE_FollowObject );
+                //// follow selected NPC
+                //ChangeState( STATE_FollowObject );
             }
             else
             {
@@ -89,13 +89,13 @@ BeginStateMachine
             }
 
     /*-------------------------------------------------------------------------*/
-	
+	/*
     DeclareState( STATE_FollowObject )
 
 		OnEnter
 
         OnUpdate
-
+    */
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FollowPath )
@@ -114,6 +114,7 @@ BeginStateMachine
                     // send damage message on collision and expire
                     SendMsgDelayed(0.1f, MSG_Damaged, (*it)->GetID(), MSG_Data(50));
                     ChangeState( STATE_Expired );
+                    break;
                 }
             }
 

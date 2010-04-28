@@ -332,20 +332,20 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_objColl = new ObjectCollision( p_WorldNode->GetCollQuadList() );
 
     // setup NPC state machines
-    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1), STATE_MACHINE_QUEUE_0, TRUE );
-    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
 
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f)), STATE_MACHINE_QUEUE_0, TRUE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f)), STATE_MACHINE_QUEUE_0, TRUE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
 
     // setup player state machine
     g_pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(g_pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );

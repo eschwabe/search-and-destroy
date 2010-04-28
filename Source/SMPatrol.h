@@ -17,7 +17,7 @@ class SMPatrol : public StateMachine
 {
     public:
 
-	    SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos );
+	    SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos, objectID pid );
         ~SMPatrol();
 
     private:
@@ -25,5 +25,6 @@ class SMPatrol : public StateMachine
 	    virtual bool States( State_Machine_Event event, MSG_Object* msg, int state, int substate );
 
         // data
-        D3DXVECTOR2 m_vPatrolPos;
+        D3DXVECTOR2 m_vPatrolPos;       // patrol position
+        objectID m_idPlayer;            // player object id
 };

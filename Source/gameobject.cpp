@@ -30,7 +30,7 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
     m_fPitchRotation(0.0f),
     m_fRollRotation(0.0f),
     m_fHeight(0.0f),
-    m_dHealth(0),
+    m_dHealth(100),
     m_bStopMovement(false),
     m_stateMachineManager(NULL)
 {
@@ -159,9 +159,11 @@ D3DXVECTOR2 GameObject::GetGridDirection() const
 * Sets the object position. Ignores y direction.
 */
 void GameObject::SetGridPosition(const D3DXVECTOR2& pos)    
-{ 
-    m_vPos.x = pos.x;
-    m_vPos.z = pos.y;
+{
+    D3DXVECTOR3 vNewPos;
+    vNewPos.x = pos.x;
+    vNewPos.z = pos.y;
+    SetPosition(vNewPos);
 };
 
 /**
@@ -169,8 +171,10 @@ void GameObject::SetGridPosition(const D3DXVECTOR2& pos)
 */
 void GameObject::SetGridDirection(const D3DXVECTOR2& dir)   
 { 
-    m_vDirection.x = dir.x;
-    m_vDirection.z = dir.y;
+    D3DXVECTOR3 vNewDir;
+    vNewDir.x = dir.x;
+    vNewDir.z = dir.y;
+    SetDirection(vNewDir);
 };
 
 /**

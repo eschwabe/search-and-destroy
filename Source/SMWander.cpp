@@ -11,7 +11,7 @@
 
 #include "DXUT.h"
 #include "SMWander.h"
-#include "SMSeekPlayer.h"
+#include "SMCombat.h"
 #include "collision.h"
 
 // add new states
@@ -32,10 +32,11 @@ enum SubstateName
 /**
 * Constructor
 */
-SMWander::SMWander( GameObject* object ) :
+SMWander::SMWander( GameObject* object, objectID pid ) :
     StateMachine( *object ),
     kFrontFeelerLength(3.0f),
-    m_vFrontFeelerPos( 0.0f, 0.0f, 0.0f )
+    m_vFrontFeelerPos( 0.0f, 0.0f, 0.0f ),
+    m_idPlayer(pid)
 {}
 
 /**
@@ -56,7 +57,7 @@ BeginStateMachine
 
         // update health and seek player
         m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
-        PushStateMachine( *new SMSeekPlayer( m_owner, INVALID_OBJECT_ID ) );
+        PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), true) );
 
     /*-------------------------------------------------------------------------*/
 
@@ -64,8 +65,8 @@ BeginStateMachine
     
         OnEnter
 
-            m_owner->SetDirection( D3DXVECTOR3(12.5f, 0.0f, 12.5) - m_owner->GetPosition() );
-            ChangeState(STATE_Wander);
+            m_owner->SetGridDirection( D3DXVECTOR2(12.5f, 12.5) - m_owner->GetGridPosition() );
+            ChangeStateDelayed(1.0f, STATE_Wander);
 
     /*-------------------------------------------------------------------------*/
 	
@@ -83,17 +84,12 @@ BeginStateMachine
 
         OnUpdate
 
-            // check if player nearby
-            dbCompositionList list;
-            g_database.ComposeList(list, OBJECT_Player);
-            for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+            // check if player nearby               
+            D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - g_database.Find(m_idPlayer)->GetPosition();
+            if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
             {
-                D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
-                if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
-                {
-                    // push seek player state machine
-                    PushStateMachine( *new SMSeekPlayer( m_owner, (*it)->GetID()) );
-                }
+                // push combat state machine
+                PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), false) );
             }
 
             // update object feelers
@@ -108,6 +104,10 @@ BeginStateMachine
                 D3DXVECTOR3 vDir = m_owner->GetDirection();
                 float fYawRotate = D3DXVec3Dot(&output.normal, &vDir) * (output.length / kFrontFeelerLength);
                 m_owner->SetDirection( RotateVector(vDir, fYawRotate) );
+
+                if( output.length > 2.5f )
+                    ChangeState( STATE_Blocked );
+
             }
 
         OnPeriodicTimeInState(0.5f)

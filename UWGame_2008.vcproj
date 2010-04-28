@@ -878,6 +878,14 @@
 				Name="StateMachines"
 				>
 				<File
+					RelativePath=".\Source\SMCombat.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMCombat.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Source\SMGame.cpp"
 					>
 				</File>
@@ -907,14 +915,6 @@
 				</File>
 				<File
 					RelativePath=".\Source\SMProjectile.h"
-					>
-				</File>
-				<File
-					RelativePath=".\Source\SMSeekPlayer.cpp"
-					>
-				</File>
-				<File
-					RelativePath=".\Source\SMSeekPlayer.h"
 					>
 				</File>
 				<File

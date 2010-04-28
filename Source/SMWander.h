@@ -16,7 +16,7 @@ class SMWander : public StateMachine
 {
     public:
 
-        SMWander(GameObject* object);
+        SMWander(GameObject* object, objectID pid);
         virtual ~SMWander();
 
     private:
@@ -30,4 +30,5 @@ class SMWander : public StateMachine
 
         const float kFrontFeelerLength;     // length of feeler sensor
         D3DXVECTOR3 m_vFrontFeelerPos;      // front feeler position
+        objectID m_idPlayer;                // player object id
 };

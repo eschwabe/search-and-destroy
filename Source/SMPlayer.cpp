@@ -20,8 +20,8 @@ enum StateName
 	STATE_Move,
     STATE_FireProjectile,
     STATE_FireBigProjectile,
-    STATE_Stunned,
-    STATE_Dead
+    //STATE_Stunned,
+    //STATE_Dead
 };
 
 // add new substates
@@ -125,21 +125,21 @@ BeginStateMachine
             ChangeStateDelayed(1.0f, STATE_Move);
 
     /*-------------------------------------------------------------------------*/
-	    
+	/*    
     DeclareState( STATE_Stunned )
 
 		OnEnter
 
         OnUpdate
-
+    */
     /*-------------------------------------------------------------------------*/
-
+    /*
     DeclareState( STATE_Dead )
 
 		OnEnter
 
         OnUpdate
-
+    */
     /*-------------------------------------------------------------------------*/
 
 EndStateMachine

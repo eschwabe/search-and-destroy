@@ -11,14 +11,13 @@
 
 #include "DXUT.h"
 #include "SMPatrol.h"
-#include "SMSeekPlayer.h"
+#include "SMCombat.h"
 
 // add new states
 enum StateName 
 {
 	STATE_PatrolToPosition,   // note: first enum is the starting state
-	STATE_Idle,
-    STATE_Damaged
+	STATE_Idle
 };
 
 // add new substates
@@ -30,9 +29,10 @@ enum SubstateName
 /**
 * Constructor
 */
-SMPatrol::SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos ) :
+SMPatrol::SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos, objectID pid ) :
     StateMachine( *object ),
-    m_vPatrolPos(vPatrolPos)
+    m_vPatrolPos(vPatrolPos),
+    m_idPlayer(pid)
 {}
 
 /**
@@ -53,7 +53,7 @@ BeginStateMachine
 
         // update health and seek player
         m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
-        ChangeState( STATE_Damaged );
+        PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), true) );
 
     /*-------------------------------------------------------------------------*/
 	
@@ -67,17 +67,12 @@ BeginStateMachine
 
         OnUpdate
 
-            // check if player nearby
-            dbCompositionList list;
-            g_database.ComposeList(list, OBJECT_Player);
-            for(dbCompositionList::iterator it = list.begin(); it < list.end(); ++it)
+            // check if player nearby               
+            D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - g_database.Find(m_idPlayer)->GetPosition();
+            if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
             {
-                D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - (*it)->GetPosition();
-                if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
-                {
-                    // push seek player state machine
-                    PushStateMachine( *new SMSeekPlayer( m_owner, (*it)->GetID()) );
-                }
+                // push seek player state machine
+                PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), false) );
             }
 
             // determine direction (ignore height)
@@ -114,14 +109,6 @@ BeginStateMachine
             
             // requeue the state machine to the end of the patrol list
             RequeueStateMachine();
-
-	/*-------------------------------------------------------------------------*/
-
-    DeclareState( STATE_Damaged )
-
-        OnEnter
-
-            ChangeStateDelayed(2.0f, STATE_PatrolToPosition);
 
 EndStateMachine
 }

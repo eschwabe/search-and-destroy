@@ -31,6 +31,9 @@ NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos, const D3DXCOLOR& cC
 {
     // set initial position off the ground (floating sphere)
     m_vPos.y += 0.5f;
+
+    // set sphere height
+    m_fHeight = 0.5f;
 }
 
 /**
@@ -121,8 +124,8 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 */
 void NPCSphereNode::Update()
 {
-    // update object rotation
-    m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
+    // update object rotation (causes object to disappear at certain angles)
+    //m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
 
     // update position
     UpdateObjectPosition();
