@@ -10,12 +10,12 @@ in 'combat' with the player. The wander functions are implemented by detecting f
 for the NPC and steering away from walls. The detection only uses a single point in front of the
 NPC, so it occasionally becomes blocked and reverses direction. Patrolling functionality is 
 accomplished by using a state machine that moves the NPC to a specified point. The state machine is
-then requeued, and the next state machine moves the NPC to the next point. Lastly, if the NPC is in
-range of the player or is damaged, the wander and patrol state machines switch to combat. The combat
+then re-queued, and the next state machine moves the NPC to the next point. If the NPC is in range 
+of the player or is damaged, the wander and patrol state machines switch to combat. The combat 
 state machine handles following the player, taking damage, dying, and switching back to the previous
 state machine.
 
-The player and projectile state machines are reponsible for managing their respective game objects.
+The player and projectile state machines are responsible for managing their respective game objects.
 The player state machine restricts how often the player can shoot projectiles and the projectile
 state machine checks for collisions with NPCs and removes the projectile from the game after a 
 fixed duration.
@@ -26,12 +26,12 @@ The instructions for running the game are documented below.
 PROJECT EXPERIENCE
 ----------------------------------------------------------------------------------------------------
 The project was not difficult to implement, but required a reasonable amount of effort. Overall, I
-probably spent about 12 hours on the project. However, I spent extra time integrating the state
+probably spent about 10 hours on the project. However, I spent extra time integrating the state
 machine into my project since I plan on using many of the features for the 'final version'. I
 personally would have found it useful to utilize the state machine code in a previous class. This
 would have prevented me from implementing features similar to the state machine on my own. With
-that in mind, I probably should have reviewed the code prior to this class to see how it would
-integrate in the future.
+that in mind, I probably should have reviewed the code prior to this class to see how it would have
+integrated in the future.
 
 ----------------------------------------------------------------------------------------------------
 PROJECT FEATURES
@@ -41,7 +41,7 @@ FEATURES
 
 SMPatrol.cpp:52 		Global Message Response other than MSG_Reset or MSG_MouseClick
 SMPatrol.cpp:55 		Data passed in msg
-SMPatrol.cpp:108		RequeueStateMachine
+SMPatrol.cpp:111		RequeueStateMachine
 SMProjectile.cpp:139 	MarkForDeletion
 SMWander.cpp:75			A persistent state variable such as DeclareStateInt
 SMWander.cpp:92			PushStateMachine
@@ -52,7 +52,9 @@ SMCombat.cpp:134		PopStateMachine
 
 EXTRA CREDIT
 
-The game includes NPC patrolling functionality. The green spheres patrol around the edge of the map.
+1. The game includes NPC patrolling functionality. The green spheres patrol around the edge of 
+   the map as long as the player does not get in range of them.
+2. I discovered the bug where OnExit is not called if you change state machines.
 
 ----------------------------------------------------------------------------------------------------
 GAME INSTRUCTIONS
