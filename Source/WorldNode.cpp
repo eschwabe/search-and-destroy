@@ -36,11 +36,11 @@ const D3DVERTEXELEMENT9 WorldNode::m_sCustomVertexDeclaration[] =
 * @param sWallFilename wall texture file
 */
 WorldNode::WorldNode(
-        const LPCWSTR sGridFilename, 
+        const WorldFile& worldFile, 
         const LPCWSTR sFloorFilename, 
         const LPCWSTR sWallFilename) :
     GameObject(g_database.GetNewObjectID(), OBJECT_World, "WORLD"),
-    m_sGridFilename(sGridFilename),
+    m_worldFile(worldFile),
     m_sFloorFilename(sFloorFilename),
     m_sWallFilename(sWallFilename),
     m_pFloorTexture(NULL),
@@ -111,22 +111,14 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
         return E_FAIL;
     }
 
-    // load grid data
-    WorldFile grid;
-
-    if( !grid.Load(m_sGridFilename.c_str()) )
-    {
-        return E_FAIL;
-    }
-
     // save grid size
-    iWorldHeight = grid.GetHeight();
-    iWorldWidth = grid.GetWidth();
+    iWorldHeight = m_worldFile.GetHeight();
+    iWorldWidth = m_worldFile.GetWidth();
 
     // draw tiles for each row and column entry
-    for(int col = 0; col < grid.GetWidth(); col++)
+    for(int col = 0; col < m_worldFile.GetWidth(); col++)
     {
-        for(int row = 0; row < grid.GetHeight(); row++)
+        for(int row = 0; row < m_worldFile.GetHeight(); row++)
         {
             // compute cube base coordinates
             float x = col * kScale;
@@ -134,7 +126,7 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
             float z = row * kScale;
 
             // check row/col for cell
-            switch(grid(row,col))
+            switch(m_worldFile(row,col))
             {
                 case WorldFile::OCCUPIED_CELL:
                 {
@@ -144,19 +136,19 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
                     // check for occupied cells next to cell, draw cube sides if not occupied
 
                     // left
-                    if(grid(row,col-1) == WorldFile::EMPTY_CELL || grid(row,col-1) == WorldFile::INVALID_CELL)
+                    if(m_worldFile(row,col-1) == WorldFile::EMPTY_CELL || m_worldFile(row,col-1) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kLeft, kWall);
 
                     // right
-                    if(grid(row,col+1) == WorldFile::EMPTY_CELL || grid(row,col+1) == WorldFile::INVALID_CELL)
+                    if(m_worldFile(row,col+1) == WorldFile::EMPTY_CELL || m_worldFile(row,col+1) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kRight, kWall);
 
                     // upper
-                    if(grid(row+1,col) == WorldFile::EMPTY_CELL || grid(row+1,col) == WorldFile::INVALID_CELL)
+                    if(m_worldFile(row+1,col) == WorldFile::EMPTY_CELL || m_worldFile(row+1,col) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kUpper, kWall);
 
                     // lower
-                    if(grid(row-1,col) == WorldFile::EMPTY_CELL || grid(row-1,col) == WorldFile::INVALID_CELL)
+                    if(m_worldFile(row-1,col) == WorldFile::EMPTY_CELL || m_worldFile(row-1,col) == WorldFile::INVALID_CELL)
                         DrawTile(x, y, z, kScale, kLower, kWall);
 
                     break;

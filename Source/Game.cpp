@@ -54,11 +54,13 @@ Database*               g_pDatabase = NULL;         // game object database
 MsgRoute*               g_pMsgRoute = NULL;         // message router
 DebugLog*               g_pDebugLog = NULL;         // debug logger
 ObjectCollision*        g_objColl = NULL;           // collision object
+WorldPath*              g_worldPath = NULL;         // world pathfinding
 PlayerTinyNode*         g_pMainPlayerNode;          // main player
 WorldFile               g_GridData;                 // drid data loaded from file
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
 CSound*                 g_pSoundCollision = NULL;   // collision sound
 RenderData*             g_pRenderData = NULL;       // render data
+WorldFile*              g_pWorldFile = NULL;        // world data
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -250,13 +252,19 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     V_RETURN( g_DialogResourceManager.OnD3D9ResetDevice() );
     V_RETURN( g_SettingsDlg.OnD3D9ResetDevice() );
 
+    // load world file
+    g_pWorldFile = new WorldFile();
+    if( !g_pWorldFile->Load(L"level.grd") )
+        return E_FAIL;
+
     // initialize singleton objects
 	g_pTime = new Time();
 	g_pDatabase = new Database();
 	g_pMsgRoute = new MsgRoute();
 	g_pDebugLog = new DebugLog();
+    g_worldPath = new WorldPath(*g_pWorldFile);
 
-	// create a sprite to help batch calls when drawing many lines of text
+    // create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
     // initialize the font
@@ -277,7 +285,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
 
     // add world object
-    WorldNode* p_WorldNode = new WorldNode(L"level.grd", L"asphalt-damaged.jpg", L"planks-new.jpg");
+    WorldNode* p_WorldNode = new WorldNode(*g_pWorldFile, L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_database.Store(p_WorldNode);
 
     // add player node
@@ -336,15 +344,15 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
 
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
+    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
 
     // setup player state machine
@@ -383,6 +391,9 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 {
     // update time
 	g_time.MarkTimeThisTick();
+
+    // run path computations
+    g_worldPath->ComputePaths();
 
     // update database objects
 	g_database.UpdateObjects();
@@ -672,6 +683,7 @@ void CALLBACK OnLostDevice( void* pUserContext )
 	delete g_pMsgRoute;
 	delete g_pDebugLog;
     delete g_objColl;
+    delete g_worldPath;
 
     // cleanup render data
     delete g_pRenderData;

@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include "WorldPath.h"
 #include "statemch.h"
 
 class SMPatrol : public StateMachine
@@ -27,4 +28,6 @@ class SMPatrol : public StateMachine
         // data
         D3DXVECTOR2 m_vPatrolPos;       // patrol position
         objectID m_idPlayer;            // player object id
+
+        PathWaypointList waypointList;  // movement waypoint list
 };

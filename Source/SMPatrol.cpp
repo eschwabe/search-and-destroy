@@ -16,7 +16,8 @@
 // add new states
 enum StateName 
 {
-	STATE_PatrolToPosition,   // note: first enum is the starting state
+    STATE_ComputePath,      // note: first enum is the starting state 
+	STATE_PatrolToPosition,   
 	STATE_Idle
 };
 
@@ -57,10 +58,24 @@ BeginStateMachine
 
     /*-------------------------------------------------------------------------*/
 	
+    DeclareState( STATE_ComputePath )
+
+        OnEnter
+
+            // start path computation request
+            g_world.AddPathRequest(m_owner->GetGridPosition(), m_vPatrolPos, m_owner->GetID(), &waypointList);
+
+        OnMsg(MSG_PathComputed)
+            
+            // move based on waypoint list
+            ChangeState( STATE_PatrolToPosition );
+
+    /*-------------------------------------------------------------------------*/
+
     DeclareState( STATE_PatrolToPosition )
 
 		OnEnter
-
+          
             // set object speed
             m_owner->SetVelocity(2.0f);
             m_owner->SetAcceleration(0.5f);
@@ -76,13 +91,19 @@ BeginStateMachine
             }
 
             // determine direction (ignore height)
-            D3DXVECTOR2 vDirection = m_vPatrolPos - m_owner->GetGridPosition();
+            D3DXVECTOR2 vDirection = (*waypointList.begin()) - m_owner->GetGridPosition();
 
             // determine if the object has arrived
 	        if( D3DXVec2Length( &vDirection ) < 0.1f )
             {
-                // switch to idle state
-                ChangeState( STATE_Idle );
+                // pop off waypoint
+                waypointList.pop_front();
+
+                // if out of waypoints, switch to idle
+                if(waypointList.empty())
+                {
+                    ChangeState( STATE_Idle );
+                }
             }
             else
             {

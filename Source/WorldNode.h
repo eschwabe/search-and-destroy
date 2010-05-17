@@ -24,7 +24,7 @@ class WorldNode : public GameObject
 
         // constructor
         WorldNode::WorldNode(
-            const LPCWSTR sGridFilename, 
+            const WorldFile& worldFile, 
             const LPCWSTR sFloorFilename, 
             const LPCWSTR sWallFilename);
 
@@ -127,7 +127,7 @@ class WorldNode : public GameObject
         void WorldNode::CheckBufferSize(int iCVCount, int* iCVBufferSize, CustomVertex** buffer);
 
         // DATA
-        std::wstring m_sGridFilename;           // world filename
+        const WorldFile& m_worldFile;           // world file
         std::wstring m_sFloorFilename;          // floor texture filename
         std::wstring m_sWallFilename;           // wall texture filename
 

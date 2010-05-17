@@ -794,6 +794,14 @@
 				RelativePath=".\Source\WorldNode.h"
 				>
 			</File>
+			<File
+				RelativePath=".\Source\WorldPath.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\WorldPath.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="GameEngine"
