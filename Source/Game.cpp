@@ -264,6 +264,9 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	g_pDebugLog = new DebugLog();
     g_worldPath = new WorldPath(*g_pWorldFile);
 
+    // add world paths to database
+    g_database.Store(g_worldPath);
+
     // create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
 
@@ -391,9 +394,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 {
     // update time
 	g_time.MarkTimeThisTick();
-
-    // run path computations
-    g_worldPath->ComputePaths();
 
     // update database objects
 	g_database.UpdateObjects();
@@ -683,7 +683,6 @@ void CALLBACK OnLostDevice( void* pUserContext )
 	delete g_pMsgRoute;
 	delete g_pDebugLog;
     delete g_objColl;
-    delete g_worldPath;
 
     // cleanup render data
     delete g_pRenderData;

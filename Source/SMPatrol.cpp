@@ -18,7 +18,8 @@ enum StateName
 {
     STATE_ComputePath,      // note: first enum is the starting state 
 	STATE_PatrolToPosition,   
-	STATE_Idle
+	STATE_Idle,
+    STATE_SwitchToCombat
 };
 
 // add new substates
@@ -63,7 +64,7 @@ BeginStateMachine
         OnEnter
 
             // start path computation request
-            g_world.AddPathRequest(m_owner->GetGridPosition(), m_vPatrolPos, m_owner->GetID(), &waypointList);
+            g_world.AddPathRequest(m_owner->GetGridPosition(), m_vPatrolPos, m_owner->GetID());
 
         OnMsg(MSG_PathComputed)
             
@@ -82,25 +83,27 @@ BeginStateMachine
 
         OnUpdate
 
+            PathWaypointList* waypointList = g_world.GetWaypointList(m_owner->GetID());
+
             // check if player nearby               
             D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - g_database.Find(m_idPlayer)->GetPosition();
             if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
             {
-                // push seek player state machine
-                PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), false) );
+                // change state
+                ChangeState( STATE_SwitchToCombat );
             }
 
             // determine direction (ignore height)
-            D3DXVECTOR2 vDirection = (*waypointList.begin()) - m_owner->GetGridPosition();
+            D3DXVECTOR2 vDirection = (*waypointList->begin()) - m_owner->GetGridPosition();
 
             // determine if the object has arrived
 	        if( D3DXVec2Length( &vDirection ) < 0.1f )
             {
                 // pop off waypoint
-                waypointList.pop_front();
+                waypointList->pop_front();
 
                 // if out of waypoints, switch to idle
-                if(waypointList.empty())
+                if(waypointList->empty())
                 {
                     ChangeState( STATE_Idle );
                 }
@@ -113,6 +116,9 @@ BeginStateMachine
             }
 
         OnExit
+
+            // remove any waypoints
+            g_world.ClearWaypointList(m_owner->GetID());
 
             // stop object
             m_owner->ResetMovement();
@@ -130,6 +136,17 @@ BeginStateMachine
             
             // requeue the state machine to the end of the patrol list
             RequeueStateMachine();
+
+	/*-------------------------------------------------------------------------*/
+
+    DeclareState( STATE_SwitchToCombat )
+
+        OnEnter
+
+            // push seek player state machine
+            PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), false) );
+
+	/*-------------------------------------------------------------------------*/
 
 EndStateMachine
 }

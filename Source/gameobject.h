@@ -27,6 +27,7 @@
 #define OBJECT_Item         (1<<7)
 #define OBJECT_Projectile   (1<<8)
 #define OBJECT_Map          (1<<9)
+#define OBJECT_Debug        (1<<10)
 
 #define GAME_OBJECT_MAX_NAME_SIZE 64
 

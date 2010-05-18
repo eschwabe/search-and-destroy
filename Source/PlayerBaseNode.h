@@ -21,10 +21,6 @@ class PlayerBaseNode : public GameObject
         
     protected:
 
-        // draw lines
-        HRESULT InitializeLines(IDirect3DDevice9* pd3dDevice);
-        void DrawLine(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
-
         // defines the supported player movements
         enum PlayerActions
         {
@@ -42,24 +38,6 @@ class PlayerBaseNode : public GameObject
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
 
     private:
-
-        // custom FVF, which describes the custom vertex structure
-        static const DWORD D3DFVF_CUSTOMVERTEX = (D3DFVF_XYZ|D3DFVF_DIFFUSE);
-
-        /**
-        * Custom vertex type. Specifies a custom vertex that can be written
-        * to the verticies buffer for rendering.
-        */
-	    struct CustomVertex
-	    {
-            D3DXVECTOR3 vPos;   // untransformed, 3D position for the vertex
-            DWORD color;        // vertex color
-        };
-
-        static const int kNumLineVertices = 2;
-        CustomVertex m_vList[kNumLineVertices];     // debug line vertices
-        LPDIRECT3DVERTEXBUFFER9 m_lineVertexBuffer; // debug line vertex buffer
-        DWORD m_DebugLineColor;                     // debug line color
 
         // prevent copy and assignment
         PlayerBaseNode(const PlayerBaseNode&);

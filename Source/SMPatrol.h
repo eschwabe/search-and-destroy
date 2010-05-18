@@ -28,6 +28,4 @@ class SMPatrol : public StateMachine
         // data
         D3DXVECTOR2 m_vPatrolPos;       // patrol position
         objectID m_idPlayer;            // player object id
-
-        PathWaypointList waypointList;  // movement waypoint list
 };
