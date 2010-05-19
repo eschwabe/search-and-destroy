@@ -138,7 +138,7 @@ void GameObject::ResetMovement()
 */
 D3DXVECTOR2 GameObject::GetGridPosition() const     
 { 
-    D3DXVECTOR2 pos; 
+    D3DXVECTOR2 pos = D3DXVECTOR2(0.0f, 0.0f); 
     pos.x = m_vPos.x; 
     pos.y = m_vPos.z; 
     return pos; 
@@ -149,7 +149,7 @@ D3DXVECTOR2 GameObject::GetGridPosition() const
 */
 D3DXVECTOR2 GameObject::GetGridDirection() const    
 { 
-    D3DXVECTOR2 pos; 
+    D3DXVECTOR2 pos = D3DXVECTOR2(0.0f, 0.0f); 
     pos.x = m_vDirection.x; 
     pos.y = m_vDirection.z; 
     return pos; 
@@ -160,7 +160,7 @@ D3DXVECTOR2 GameObject::GetGridDirection() const
 */
 void GameObject::SetGridPosition(const D3DXVECTOR2& pos)    
 {
-    D3DXVECTOR3 vNewPos;
+    D3DXVECTOR3 vNewPos = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
     vNewPos.x = pos.x;
     vNewPos.z = pos.y;
     SetPosition(vNewPos);
@@ -171,7 +171,7 @@ void GameObject::SetGridPosition(const D3DXVECTOR2& pos)
 */
 void GameObject::SetGridDirection(const D3DXVECTOR2& dir)   
 { 
-    D3DXVECTOR3 vNewDir;
+    D3DXVECTOR3 vNewDir = D3DXVECTOR3(0.0f, 0.0f, 0.0f);
     vNewDir.x = dir.x;
     vNewDir.z = dir.y;
     SetDirection(vNewDir);
