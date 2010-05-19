@@ -20,10 +20,12 @@
 #include "PlayerTinyNode.h"
 #include "NPCSphereNode.h"
 #include "SMPatrol.h"
+#include "SMRandomPath.h"
 #include "SMWander.h"
 #include "SMPlayer.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
+#include "WorldPath.h"
 #include "MiniMapNode.h"
 #include "RenderData.h"
 #include "ProjectileParticles.h"
@@ -72,6 +74,7 @@ WorldFile*              g_pWorldFile = NULL;        // world data
 #define IDC_PREVVIEW            7
 #define IDC_RESETCAMERA         11
 #define IDC_RESETTIME           12
+#define IDC_DEBUGMODE           13
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -104,7 +107,8 @@ bool InitApp()
     g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
     g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
     g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
-
+    g_HUD.AddButton( IDC_DEBUGMODE,         L"Debug Mode",          35, iY += 24, 125, 22 );
+    
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
     
@@ -342,10 +346,11 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     // create collision object
     g_objColl = new ObjectCollision( p_WorldNode->GetCollQuadList() );
 
-    // setup NPC state machines
-    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
-    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(wanderNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    // setup random path NPCs
+    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(wanderNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(wanderNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     
+    // setup patrolling NPCs
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
     patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
@@ -656,6 +661,10 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_RESETTIME:
             DXUTGetGlobalTimer()->Reset();
+            break;
+
+        case IDC_DEBUGMODE:
+            g_world.TogglePathDebug();
             break;
     }
 }

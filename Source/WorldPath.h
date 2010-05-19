@@ -51,6 +51,12 @@ class WorldPath : public GameObject, public Singleton<WorldPath>
         // clear waypoint list
         void ClearWaypointList(objectID id);
 
+        // toggles drawing debug lines
+        void TogglePathDebug() { m_debuglines = !m_debuglines; }
+
+        // returns a random valid map location (non-wall)
+        D3DXVECTOR2 GetRandomMapLocation();
+
     protected:
 
         // game object methods
@@ -91,6 +97,7 @@ class WorldPath : public GameObject, public Singleton<WorldPath>
         const WorldFile& m_worldFile;
 
         // path options
+        bool m_debuglines;          // show path debug lines
         bool m_rubberband;          // enable path rubberbanding
         bool m_heuristicCalc;       // true for cardinal/intercardinal; false for eucladian
         bool m_smooth;              // enable catmull-rom path smoothing

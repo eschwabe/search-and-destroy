@@ -1,25 +1,24 @@
 /*******************************************************************************
 * Game Development Project
-* SMPatrol.h
+* SMRandomPath.cpp
 *
 * Eric Schwabe
-* 2010-04-20
+* 2010-05-18
 *
-* Patrol state machine
+* Random path state machine
 *
 *******************************************************************************/
 
 #include "DXUT.h"
-#include "SMPatrol.h"
+#include "SMRandomPath.h"
 #include "SMCombat.h"
 #include "WorldPath.h"
 
 // add new states
 enum StateName 
 {
-    STATE_ComputePath,      // note: first enum is the starting state 
-	STATE_PatrolToPosition,   
-	STATE_Idle,
+	STATE_PickPath,           // note: first enum is the starting state
+	STATE_FollowPath,
     STATE_SwitchToCombat
 };
 
@@ -29,25 +28,25 @@ enum SubstateName
     // none
 };
 
+
 /**
 * Constructor
 */
-SMPatrol::SMPatrol( GameObject* object, const D3DXVECTOR2& vPatrolPos, objectID pid ) :
+SMRandomPath::SMRandomPath( GameObject* object, objectID pid ) :
     StateMachine( *object ),
-    m_vPatrolPos(vPatrolPos),
     m_idPlayer(pid)
 {}
 
 /**
 * Deconstructor
 */
-SMPatrol::~SMPatrol()
+SMRandomPath::~SMRandomPath()
 {}
 
 /**
 * State machine
 */
-bool SMPatrol::States( State_Machine_Event event, MSG_Object* msg, int state, int substate )
+bool SMRandomPath::States( State_Machine_Event event, MSG_Object* msg, int state, int substate )
 {
 BeginStateMachine
 
@@ -59,27 +58,27 @@ BeginStateMachine
         PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), true) );
 
     /*-------------------------------------------------------------------------*/
-	
-    DeclareState( STATE_ComputePath )
 
+    DeclareState( STATE_PickPath )
+    
         OnEnter
 
             // start path computation request
-            g_world.AddPathRequest(m_owner->GetGridPosition(), m_vPatrolPos, m_owner->GetID());
+            g_world.AddPathRequest(m_owner->GetGridPosition(), g_world.GetRandomMapLocation(), m_owner->GetID());
 
         OnMsg(MSG_PathComputed)
-            
-            // move based on waypoint list
-            ChangeState( STATE_PatrolToPosition );
+
+            // follow path
+            ChangeStateDelayed(1.0f, STATE_FollowPath);
 
     /*-------------------------------------------------------------------------*/
+	
+    DeclareState( STATE_FollowPath )
+	
+        OnEnter
 
-    DeclareState( STATE_PatrolToPosition )
-
-		OnEnter
-          
-            // set object speed
-            m_owner->SetVelocity(2.0f);
+            // set velocity
+            m_owner->SetVelocity(5.0f);
             m_owner->SetAcceleration(0.5f);
 
         OnUpdate
@@ -90,19 +89,18 @@ BeginStateMachine
             D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - g_database.Find(m_idPlayer)->GetPosition();
             if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
             {
-                // change state
                 ChangeState( STATE_SwitchToCombat );
             }
 
-            // if out of waypoints, switch to idle
+            // if out of waypoints, pick new path
             else if(waypointList->empty())
             {
-                ChangeState( STATE_Idle );
-            }
-          
-            // move towards next waypoint
+                ChangeState( STATE_PickPath );
+            }            
+                
+            // move towards waypoint
             else
-            {                
+            {
                 // determine direction (ignore height)
                 D3DXVECTOR2 vDirection = (*waypointList->begin()) - m_owner->GetGridPosition();
 
@@ -127,31 +125,17 @@ BeginStateMachine
 
             // stop object
             m_owner->ResetMovement();
-            
 
-	/*-------------------------------------------------------------------------*/
-	
-    DeclareState( STATE_Idle )
-
-        OnEnter
-
-            // required
-
-        OnTimeInState(2.0f)
-            
-            // requeue the state machine to the end of the patrol list
-            RequeueStateMachine();
-
-	/*-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------*/
 
     DeclareState( STATE_SwitchToCombat )
 
-        OnEnter
-
-            // push seek player state machine
+    	OnEnter
+            
+            // push combat state machine
             PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), false) );
 
-	/*-------------------------------------------------------------------------*/
+    /*-------------------------------------------------------------------------*/
 
 EndStateMachine
 }

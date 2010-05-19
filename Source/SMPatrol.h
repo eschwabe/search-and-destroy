@@ -11,7 +11,6 @@
 
 #pragma once
 
-#include "WorldPath.h"
 #include "statemch.h"
 
 class SMPatrol : public StateMachine

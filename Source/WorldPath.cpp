@@ -22,7 +22,8 @@ WorldPath::WorldPath(const WorldFile& worldFile) :
     m_rubberband(true),
     m_heuristicCalc(true),
     m_smooth(true),
-    m_heuristicWeight(1.01f)
+    m_heuristicWeight(1.01f),
+    m_debuglines(true)
 {
 }
 
@@ -53,33 +54,36 @@ void WorldPath::Update()
     m_vLines.clear();
 
     // update path debug lines
-    for(std::map<objectID, PathWaypointList>::iterator list = m_completeWaypointLists.begin(); list != m_completeWaypointLists.end(); ++list)
+    if(m_debuglines)
     {
-        // get waypoint list and object
-        PathWaypointList& waypointList = (*list).second;
-        GameObject* obj = g_database.Find( (*list).first );
-          
-        // if list not empty
-        if( !waypointList.empty() )
-	    {
-            // initialize previous point to object position
-		    D3DXVECTOR3 vPrevPoint = obj->GetPosition();
-		    
-            // add lines for remaining points
-		    for( PathWaypointList::iterator point = waypointList.begin(); point != waypointList.end(); ++point )
-		    {
-                D3DXVECTOR3 vPoint = CreateLinePosition( *point );
-                D3DXVECTOR3 vPointMarker = vPoint;
-                vPointMarker.y -= 0.25f;
+        for(std::map<objectID, PathWaypointList>::iterator list = m_completeWaypointLists.begin(); list != m_completeWaypointLists.end(); ++list)
+        {
+            // get waypoint list and object
+            PathWaypointList& waypointList = (*list).second;
+            GameObject* obj = g_database.Find( (*list).first );
+              
+            // if list not empty
+            if( !waypointList.empty() )
+	        {
+                // initialize previous point to object position
+		        D3DXVECTOR3 vPrevPoint = obj->GetPosition();
+    		    
+                // add lines for remaining points
+		        for( PathWaypointList::iterator point = waypointList.begin(); point != waypointList.end(); ++point )
+		        {
+                    D3DXVECTOR3 vPoint = CreateLinePosition( *point );
+                    D3DXVECTOR3 vPointMarker = vPoint;
+                    vPointMarker.y -= 0.25f;
 
-                // add lines for path and marker
-			    AddLine( vPointMarker, vPoint, DEBUG_COLOR_CYAN, false );
-			    AddLine( vPrevPoint, vPoint, DEBUG_COLOR_GREEN, true );
-			    
-                // update previous point
-                vPrevPoint = vPoint;
-		    }
-	    }
+                    // add lines for path and marker
+			        AddLine( vPointMarker, vPoint, DEBUG_COLOR_CYAN, false );
+			        AddLine( vPrevPoint, vPoint, DEBUG_COLOR_GREEN, true );
+    			    
+                    // update previous point
+                    vPrevPoint = vPoint;
+		        }
+	        }
+        }
     }
 }
 
@@ -170,7 +174,7 @@ void WorldPath::AddLine( D3DXVECTOR3 vP1, D3DXVECTOR3 vP2, DebugDrawingColor dCo
 void WorldPath::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
     // check if any lines
-    if(m_vLines.size())
+    if(m_vLines.size() && m_debuglines)
     {
         // set the texture (or unset)
         pd3dDevice->SetTexture(0, NULL);
@@ -188,6 +192,42 @@ void WorldPath::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
         pd3dDevice->DrawPrimitiveUP( D3DPT_LINELIST, m_vLines.size()/2, &(m_vLines[0]), sizeof(m_vLines[0]) );
     }
 }
+
+/**
+* Finds a random location in the map that an object can move to (i.e. non-wall location)
+*/
+D3DXVECTOR2 WorldPath::GetRandomMapLocation()
+{
+    int iRow = rand() % m_worldFile.GetHeight();    // z
+    int iCol = rand() % m_worldFile.GetWidth();     // x
+
+    // find an empty cell
+    while( m_worldFile(iRow, iCol) != WorldFile::EMPTY_CELL )
+    {
+        // move to next row
+        ++iRow;
+
+        // move to next column if at end of row
+        if( iRow >= m_worldFile.GetHeight() )
+        {
+            iRow = 0;
+            ++iCol;
+
+            // reset to first column if at end of map
+            if( iCol >= m_worldFile.GetWidth() )
+            {
+                iCol = 0;
+            }
+        }
+    }
+
+    NodeKey key;
+    key.iRow = iRow;
+    key.iCol = iCol;
+
+    return GetCoordinates(key);
+}
+
 
 /////////////////////////////
 // PATHFINDING COMPUTATION //

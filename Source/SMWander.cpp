@@ -61,7 +61,7 @@ BeginStateMachine
 
     /*-------------------------------------------------------------------------*/
 
-    DeclareState(STATE_Initialize)
+    DeclareState( STATE_Initialize )
     
         OnEnter
 

@@ -926,6 +926,14 @@
 					>
 				</File>
 				<File
+					RelativePath=".\Source\SMRandomPath.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\Source\SMRandomPath.h"
+					>
+				</File>
+				<File
 					RelativePath=".\Source\SMWander.cpp"
 					>
 				</File>
