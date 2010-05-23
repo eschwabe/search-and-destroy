@@ -121,7 +121,7 @@ class WorldData : public GameObject, public Singleton<WorldData>
         void GenerateTerrainQuads();
         void AnalyzeTerrainOccupancy();
         void AnalyzeTerrainLineOfFire();
-        void UpdateTerrainGridCells(const int row, const int col, const int range, const float value);
+        void UpdateTerrainGridCells(float** grid, const int row, const int col, const int range, const float value);
         D3DXCOLOR GetTerrainColor(const int row, const int col);
 
         /////////////////////

@@ -102,12 +102,13 @@ void WorldData::ToggleTerrainAnalysisType()
     }
 }
 
+/**
+* Generates names for the various types of terrain analysis
+*/
 std::wstring WorldData::GetTerrainAnalysisName() const
 {
     switch(m_terrainType)
     {
-    case kTerrainAnalysisNone:
-        return std::wstring(L"None");
     case kTerrainAnalysisOccupancy:
         return std::wstring(L"Occupancy");
     case kTerrainAnalysisOpenness:
@@ -116,15 +117,26 @@ std::wstring WorldData::GetTerrainAnalysisName() const
         return std::wstring(L"LineOfFire");
     case kTerrainAnalysisAll:
         return std::wstring(L"All");
+    case kTerrainAnalysisNone:
+    default:
+        return std::wstring(L"None");
     }
 }
-
 
 /**
 * Initialize object
 */
 HRESULT WorldData::Initialize(IDirect3DDevice9* pd3dDevice)
 {
+    // initialize terrain openness
+    for(int col = 0; col < m_worldFile.GetWidth(); ++col)
+    {
+        for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        {
+            m_fTerrainOpenness[row][col] = 0.0f;
+        }
+    }
+
     // analyze terrain openness
     for(int col = 0; col < m_worldFile.GetWidth(); ++col)
     {
@@ -157,7 +169,7 @@ HRESULT WorldData::Initialize(IDirect3DDevice9* pd3dDevice)
             // no occupied cells nearby
             else
             {
-                m_fTerrainOpenness[row][col] = 0.0f;
+                m_fTerrainOpenness[row][col] = 0.15f;
             }
         }
     }
@@ -247,17 +259,17 @@ void WorldData::AnalyzeTerrainOccupancy()
         m_fTerrainOccupancy[row][col] = min(1.0f, m_fTerrainOccupancy[row][col]+1.0f);
 
         // partially occupied near player (one cell from player)
-        UpdateTerrainGridCells(row, col, 1, 0.67f);
+        UpdateTerrainGridCells(m_fTerrainOccupancy, row, col, 1, 0.67f);
 
         // partially occupied near player (two cells from player)
-        UpdateTerrainGridCells(row, col, 2, 0.33f);
+        UpdateTerrainGridCells(m_fTerrainOccupancy, row, col, 2, 0.33f);
     }
 }
 
 /**
 * Updates terrain  a distance of range from the specified row and column
 */
-void WorldData::UpdateTerrainGridCells(const int row, const int col, const int range, const float value)
+void WorldData::UpdateTerrainGridCells(float** grid, const int row, const int col, const int range, const float value)
 {
     // partially occupied near player (one cell from player)
     for(int i = col-range; i <= col+range; ++i)
@@ -270,7 +282,7 @@ void WorldData::UpdateTerrainGridCells(const int row, const int col, const int r
                 // check if valid cell
                 if( (j >= 0 && j < m_worldFile.GetHeight()) && (i >= 0 && i < m_worldFile.GetWidth()) )
                 {
-                    m_fTerrainOccupancy[j][i] = min(1.0f, m_fTerrainOccupancy[j][i]+value);
+                    grid[j][i] = min(1.0f, grid[j][i]+value);
                 }
             }
         }
@@ -298,28 +310,28 @@ void WorldData::AnalyzeTerrainLineOfFire()
     // update occupancy based on player/NPC positions
     for(dbCompositionList::iterator it = playerList.begin(); it != playerList.end(); ++it)
     {
-        int row = (int)(*it)->GetGridPosition().y;
-        int col = (int)(*it)->GetGridPosition().x;
-        int weaponRange = 5;
-
+        // get player position and direction
         D3DXVECTOR3 vDir = (*it)->GetDirection();
+        D3DXVECTOR3 vPos = (*it)->GetPosition();
         D3DXVec3Normalize(&vDir, &vDir);
 
-        // check each cell in range of player position
-        for(int i = col-weaponRange; i <= col+weaponRange; ++i)
+        // compute initial grid position
+        int row = (int)vPos.z;
+        int col = (int)vPos.x;
+
+        // until empty cell found
+        while( m_worldFile(row, col) == WorldFile::EMPTY_CELL )
         {
-            for(int j = row-weaponRange; j <= row+weaponRange; ++j)
-            {
-                // check if valid cell
-                if( (j >= 0 && j < m_worldFile.GetHeight()) && (i >= 0 && i < m_worldFile.GetWidth()) )
-                {
-                    // mark if in line of sight
-                    D3DXVECTOR3 vCellPos = D3DXVECTOR3((float)i, 0.0f, (float)j);
-                    D3DXVECTOR3 vCellDir = vCellPos - (*it)->GetPosition();
-                    D3DXVec3Normalize(&vCellDir, &vCellDir);
-                    m_fTerrainLineOfFire[j][i] = min(1.0f, D3DXVec3Dot(&vDir, &vCellDir));
-                }
-            }
+            // set cell in direct line of fire
+            m_fTerrainLineOfFire[row][col] = 1.0f;
+
+            // update cells around direct line of fire
+            UpdateTerrainGridCells(m_fTerrainLineOfFire, row, col, 1, 0.2f);
+
+            // move to next grid position
+            vPos += vDir;
+            row = (int)vPos.z;
+            col = (int)vPos.x;
         }
     }
 }
