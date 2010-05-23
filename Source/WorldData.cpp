@@ -1,21 +1,22 @@
 /*******************************************************************************
 * Game Development Project
-* WorldPath.cpp
+* WorldData.cpp
 *
 * Eric Schwabe
 * 2010-05-16
 *
-* World Pathing
+* World Data
 *
 *******************************************************************************/
 
 #include "DXUT.h"
-#include "WorldPath.h"
+#include "WorldData.h"
+#include "database.h"
 
 /**
 * Constructor
 */
-WorldPath::WorldPath(const WorldFile& worldFile) :
+WorldData::WorldData(const WorldFile& worldFile) :
     GameObject(g_database.GetNewObjectID(), OBJECT_Debug, "PATH_DEBUG"),
     m_bPathInProgress(false),
     m_worldFile(worldFile),
@@ -23,29 +24,151 @@ WorldPath::WorldPath(const WorldFile& worldFile) :
     m_heuristicCalc(true),
     m_smooth(true),
     m_heuristicWeight(1.01f),
-    m_debuglines(true)
+    m_debuglines(true),
+    m_terrainType(kTerrainAnalysisNone)
 {
+    // allocate terrain analysis grids
+    m_fTerrainOpenness = AllocateTerrainGrid();
+    m_fTerrainOccupancy = AllocateTerrainGrid();
+    m_fTerrainLineOfFire = AllocateTerrainGrid();
+
+    // initialize quad memory
+    m_vQuads.reserve(m_worldFile.GetHeight()*m_worldFile.GetWidth());
 }
 
 /**
 * Deconstructor
 */
-WorldPath::~WorldPath()
+WorldData::~WorldData()
 {
+    // delete terrain grids
+    DeleteTerrainGrid(m_fTerrainOpenness);
+    DeleteTerrainGrid(m_fTerrainOccupancy);
+    DeleteTerrainGrid(m_fTerrainLineOfFire);
 }
+
+/**
+* Allocates a new 2D grid for terrain analysis.
+*/
+float** WorldData::AllocateTerrainGrid()
+{
+    float** fGrid = NULL;
+
+    // allocate terrain analysis grid rows
+    fGrid = new float*[m_worldFile.GetHeight()];
+
+    // allocate each column
+    for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        fGrid[row] = new float[m_worldFile.GetWidth()];
+
+    return fGrid;
+}
+
+/**
+* Deletes a 2D terrain analysis grid.
+*/
+void WorldData::DeleteTerrainGrid(float** fGrid)
+{
+    // delete each column
+    for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        delete [] fGrid[row];
+
+    // delete grid rows
+    delete [] fGrid;
+}
+
+/**
+* Toggle to next terrain analysis type
+*/
+void WorldData::ToggleTerrainAnalysisType()
+{
+    switch(m_terrainType)
+    {
+    case kTerrainAnalysisNone:
+        m_terrainType = kTerrainAnalysisOccupancy;
+        break;
+    case kTerrainAnalysisOccupancy:
+        m_terrainType = kTerrainAnalysisOpenness;
+        break;
+    case kTerrainAnalysisOpenness:
+        m_terrainType = kTerrainAnalysisLineOfFire;
+        break;
+    case kTerrainAnalysisLineOfFire:
+        m_terrainType = kTerrainAnalysisAll;
+        break;
+    case kTerrainAnalysisAll:
+        m_terrainType = kTerrainAnalysisNone;
+        break;
+    }
+}
+
+std::wstring WorldData::GetTerrainAnalysisName() const
+{
+    switch(m_terrainType)
+    {
+    case kTerrainAnalysisNone:
+        return std::wstring(L"None");
+    case kTerrainAnalysisOccupancy:
+        return std::wstring(L"Occupancy");
+    case kTerrainAnalysisOpenness:
+        return std::wstring(L"Openness");
+    case kTerrainAnalysisLineOfFire:
+        return std::wstring(L"LineOfFire");
+    case kTerrainAnalysisAll:
+        return std::wstring(L"All");
+    }
+}
+
 
 /**
 * Initialize object
 */
-HRESULT WorldPath::Initialize(IDirect3DDevice9* pd3dDevice)
+HRESULT WorldData::Initialize(IDirect3DDevice9* pd3dDevice)
 {
+    // analyze terrain openness
+    for(int col = 0; col < m_worldFile.GetWidth(); ++col)
+    {
+        for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        {
+            // occupied cell
+            if( m_worldFile(row,col) == WorldFile::OCCUPIED_CELL )
+            {
+                m_fTerrainOpenness[row][col] = 1.0f;
+            }
+
+            // next to occupied cell
+            else if( m_worldFile(row-1,col) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row+1,col) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row,col-1) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row,col+1) == WorldFile::OCCUPIED_CELL )
+            {
+                m_fTerrainOpenness[row][col] = 0.67f;
+            }
+
+            // corner to occupied cell
+            else if( m_worldFile(row-1,col-1) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row+1,col+1) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row+1,col-1) == WorldFile::OCCUPIED_CELL ||
+                     m_worldFile(row-1,col+1) == WorldFile::OCCUPIED_CELL )
+            {
+                m_fTerrainOpenness[row][col] = 0.33f;
+            }
+
+            // no occupied cells nearby
+            else
+            {
+                m_fTerrainOpenness[row][col] = 0.0f;
+            }
+        }
+    }
+
     return MAKE_HRESULT(SEVERITY_SUCCESS, 0, 0);
 }
 
 /**
 * Update object
 */
-void WorldPath::Update()
+void WorldData::Update()
 {
     // compute paths
     ComputePaths();
@@ -85,12 +208,205 @@ void WorldPath::Update()
 	        }
         }
     }
+    
+    // analyze world occupancy
+    AnalyzeTerrainOccupancy();
+
+    // analyze player line of fire
+    AnalyzeTerrainLineOfFire();
+
+    // create terrain analysis debug quads
+    GenerateTerrainQuads();
+}
+
+/**
+* Update terrain occupancy based on objects in the world
+*/
+void WorldData::AnalyzeTerrainOccupancy()
+{
+    // reset terrain occupancy
+    for(int col = 0; col < m_worldFile.GetWidth(); ++col)
+    {
+        for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        {
+            m_fTerrainOccupancy[row][col] = 0.0f;
+        }
+    }
+
+    // generate list of players/NPCs
+    dbCompositionList playerList;
+    g_database.ComposeList(playerList, OBJECT_NPC | OBJECT_Player);
+
+    // update occupancy based on player/NPC positions
+    for(dbCompositionList::iterator it = playerList.begin(); it != playerList.end(); ++it)
+    {
+        int row = (int)(*it)->GetGridPosition().y;
+        int col = (int)(*it)->GetGridPosition().x;
+
+        // occupied at location of player
+        m_fTerrainOccupancy[row][col] = min(1.0f, m_fTerrainOccupancy[row][col]+1.0f);
+
+        // partially occupied near player (one cell from player)
+        UpdateTerrainGridCells(row, col, 1, 0.67f);
+
+        // partially occupied near player (two cells from player)
+        UpdateTerrainGridCells(row, col, 2, 0.33f);
+    }
+}
+
+/**
+* Updates terrain  a distance of range from the specified row and column
+*/
+void WorldData::UpdateTerrainGridCells(const int row, const int col, const int range, const float value)
+{
+    // partially occupied near player (one cell from player)
+    for(int i = col-range; i <= col+range; ++i)
+    {
+        for(int j = row-range; j <= row+range; ++j)
+        {
+            // check if along border of selected grid
+            if(i == col-range || i == col+range || j == row-range || j == row+range)
+            {
+                // check if valid cell
+                if( (j >= 0 && j < m_worldFile.GetHeight()) && (i >= 0 && i < m_worldFile.GetWidth()) )
+                {
+                    m_fTerrainOccupancy[j][i] = min(1.0f, m_fTerrainOccupancy[j][i]+value);
+                }
+            }
+        }
+    }
+}
+
+/**
+* Update terrain line of fire based on player objects and direction
+*/
+void WorldData::AnalyzeTerrainLineOfFire()
+{
+    // reset terrain occupancy
+    for(int col = 0; col < m_worldFile.GetWidth(); ++col)
+    {
+        for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        {
+            m_fTerrainLineOfFire[row][col] = 0.0f;
+        }
+    }
+
+    // generate list of players/NPCs
+    dbCompositionList playerList;
+    g_database.ComposeList(playerList, OBJECT_Player);
+
+    // update occupancy based on player/NPC positions
+    for(dbCompositionList::iterator it = playerList.begin(); it != playerList.end(); ++it)
+    {
+        int row = (int)(*it)->GetGridPosition().y;
+        int col = (int)(*it)->GetGridPosition().x;
+        int weaponRange = 5;
+
+        D3DXVECTOR3 vDir = (*it)->GetDirection();
+        D3DXVec3Normalize(&vDir, &vDir);
+
+        // check each cell in range of player position
+        for(int i = col-weaponRange; i <= col+weaponRange; ++i)
+        {
+            for(int j = row-weaponRange; j <= row+weaponRange; ++j)
+            {
+                // check if valid cell
+                if( (j >= 0 && j < m_worldFile.GetHeight()) && (i >= 0 && i < m_worldFile.GetWidth()) )
+                {
+                    // mark if in line of sight
+                    D3DXVECTOR3 vCellPos = D3DXVECTOR3((float)i, 0.0f, (float)j);
+                    D3DXVECTOR3 vCellDir = vCellPos - (*it)->GetPosition();
+                    D3DXVec3Normalize(&vCellDir, &vCellDir);
+                    m_fTerrainLineOfFire[j][i] = min(1.0f, D3DXVec3Dot(&vDir, &vCellDir));
+                }
+            }
+        }
+    }
+}
+
+/**
+* Determine the color for the specified grid
+*/
+D3DXCOLOR WorldData::GetTerrainColor(const int row, const int col)
+{
+    // alpha
+    float fGridAlpha = 0.5f;
+
+    // default color
+    D3DXCOLOR color = D3DXCOLOR(0.0f, 0.0f, 0.0f, fGridAlpha);
+
+    switch(m_terrainType)
+    {
+    case kTerrainAnalysisNone:
+        break;
+    case kTerrainAnalysisOccupancy:
+        color.r = m_fTerrainOccupancy[row][col];
+        break;
+    case kTerrainAnalysisOpenness:
+        color.g = m_fTerrainOpenness[row][col];
+        break;
+    case kTerrainAnalysisLineOfFire:
+        color.b = m_fTerrainLineOfFire[row][col];
+        break;
+    case kTerrainAnalysisAll:
+        color.r = m_fTerrainOccupancy[row][col];
+        color.g = m_fTerrainOpenness[row][col];
+        color.b = m_fTerrainLineOfFire[row][col];
+        break;
+    }
+
+    return color;
+}
+
+/**
+* Create the quads for displaying terrain analysis debug
+*/
+void WorldData::GenerateTerrainQuads()
+{
+    // update terrain analysis grid
+    float fGridHeight = 0.05f;
+
+    // clear quads
+    m_vQuads.clear();
+
+    for(int col = 0; col < m_worldFile.GetWidth(); ++col)
+    {
+        for(int row = 0; row < m_worldFile.GetHeight(); ++row)
+        {
+            // determine color
+            D3DXCOLOR color = GetTerrainColor(row, col);
+
+            // initialize vertex
+            CustomVertex vertex;
+            vertex.cColor = color;
+
+            // lower triangle
+            vertex.vPos = D3DXVECTOR3((float)col, fGridHeight, (float)row);
+            m_vQuads.push_back(vertex);
+
+            vertex.vPos = D3DXVECTOR3((float)col, fGridHeight, row+kWorldScale);
+            m_vQuads.push_back(vertex);
+
+            vertex.vPos = D3DXVECTOR3(col+kWorldScale, fGridHeight, row+kWorldScale);
+            m_vQuads.push_back(vertex);
+
+            // upper triangle
+            vertex.vPos = D3DXVECTOR3((float)col, fGridHeight, (float)row);
+            m_vQuads.push_back(vertex);
+
+            vertex.vPos = D3DXVECTOR3(col+kWorldScale, fGridHeight, row+kWorldScale);
+            m_vQuads.push_back(vertex);
+
+            vertex.vPos = D3DXVECTOR3(col+kWorldScale, fGridHeight, (float)row);
+            m_vQuads.push_back(vertex);
+        }
+    }
 }
 
 /**
 * Create line position from grid position
 */
-D3DXVECTOR3 WorldPath::CreateLinePosition(const D3DXVECTOR2& pos)
+D3DXVECTOR3 WorldData::CreateLinePosition(const D3DXVECTOR2& pos)
 {
     D3DXVECTOR3 vLinePos;
     vLinePos.x = pos.x;
@@ -103,7 +419,7 @@ D3DXVECTOR3 WorldPath::CreateLinePosition(const D3DXVECTOR2& pos)
 /**
 * Create debug drawing color
 */
-D3DXCOLOR WorldPath::GetColor( DebugDrawingColor color )
+D3DXCOLOR WorldData::GetColor( DebugDrawingColor color )
 {
 	D3DXCOLOR xColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
@@ -126,7 +442,7 @@ D3DXCOLOR WorldPath::GetColor( DebugDrawingColor color )
 /**
 * Add line to vertex buffer. Optional arrow head.
 */
-void WorldPath::AddLine( D3DXVECTOR3 vP1, D3DXVECTOR3 vP2, DebugDrawingColor dColor, bool bArrowHead )
+void WorldData::AddLine( D3DXVECTOR3 vP1, D3DXVECTOR3 vP2, DebugDrawingColor dColor, bool bArrowHead )
 {
     CustomVertex vertex;
 
@@ -171,32 +487,44 @@ void WorldPath::AddLine( D3DXVECTOR3 vP1, D3DXVECTOR3 vP2, DebugDrawingColor dCo
 /**
 * Render object (debug lines)
 */
-void WorldPath::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
+void WorldData::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 {
+    // set the texture (or unset)
+    pd3dDevice->SetTexture(0, NULL);
+
+    // set the world space transform
+    pd3dDevice->SetTransform(D3DTS_WORLD, &rData->matWorld);
+
+    // turn off D3D lighting, since we are providing our own vertex colors
+    pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
+
+    // set vertex type
+    pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );    
+    
     // check if any lines
     if(m_vLines.size() && m_debuglines)
     {
-        // set the texture (or unset)
-        pd3dDevice->SetTexture(0, NULL);
-
-        // set the world space transform
-        pd3dDevice->SetTransform(D3DTS_WORLD, &rData->matWorld);
-
-        // turn off D3D lighting, since we are providing our own vertex colors
-        pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-
-        // set vertex type
-        pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
-
         // draw
         pd3dDevice->DrawPrimitiveUP( D3DPT_LINELIST, m_vLines.size()/2, &(m_vLines[0]), sizeof(m_vLines[0]) );
+    }
+
+    // check for any terrain analysis quads
+    if(m_vQuads.size())
+    {
+        // enable alpha blending
+        pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
+        pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_ONE);
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+
+        // draw
+        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_vQuads.size()/3, &(m_vQuads[0]), sizeof(m_vQuads[0]) );
     }
 }
 
 /**
 * Finds a random location in the map that an object can move to (i.e. non-wall location)
 */
-D3DXVECTOR2 WorldPath::GetRandomMapLocation()
+D3DXVECTOR2 WorldData::GetRandomMapLocation()
 {
     int iRow = rand() % m_worldFile.GetHeight();    // z
     int iCol = rand() % m_worldFile.GetWidth();     // x
@@ -252,7 +580,7 @@ D3DXVECTOR2 WorldPath::GetRandomMapLocation()
 *     e. If taken too much time this frame, abort search for now and resume next frame
 *     f. Go to step 2
 */
-void WorldPath::AddPathRequest(
+void WorldData::AddPathRequest(
     const D3DXVECTOR2& vPos, 
     const D3DXVECTOR2& vDestPos,
     objectID id)
@@ -278,7 +606,7 @@ void WorldPath::AddPathRequest(
 /**
 * Find waypoint list for specified object id. Returns null if not found.
 */
-PathWaypointList* WorldPath::GetWaypointList(objectID id)
+PathWaypointList* WorldData::GetWaypointList(objectID id)
 {
     return &(m_completeWaypointLists[id]);
 }
@@ -286,7 +614,7 @@ PathWaypointList* WorldPath::GetWaypointList(objectID id)
 /**
 * Clears an object waypoint list.
 */
-void WorldPath::ClearWaypointList(objectID id)
+void WorldData::ClearWaypointList(objectID id)
 {
     m_completeWaypointLists.erase(id);
 }
@@ -295,7 +623,7 @@ void WorldPath::ClearWaypointList(objectID id)
 * Runs a single pass of the A* computation. Updates state when computation complete.
 * Compute paths. Only works on path calculations for a specific interval.
 */
-void WorldPath::ComputePaths()
+void WorldData::ComputePaths()
 {
     // check if a path computation in progress
     if(m_bPathInProgress)
@@ -337,7 +665,7 @@ void WorldPath::ComputePaths()
 * Runs A* computation for a specific duration on the request. 
 * If request completed, returns true; otherwise false.
 */
-bool WorldPath::RunComputationLoop(const PathRequest& req)
+bool WorldData::RunComputationLoop(const PathRequest& req)
 {
     bool bComplete = false;
 
@@ -396,7 +724,7 @@ bool WorldPath::RunComputationLoop(const PathRequest& req)
 /**
 * Push all waypoints to the movement list
 */
-void WorldPath::AddWaypoints(PathWaypointList* waypointList, NodeList::iterator position)
+void WorldData::AddWaypoints(PathWaypointList* waypointList, NodeList::iterator position)
 {
     NodeList::iterator prev = m_mNodeList.end();
     NodeList::iterator next = m_mNodeList.end();
@@ -431,7 +759,7 @@ void WorldPath::AddWaypoints(PathWaypointList* waypointList, NodeList::iterator 
 /**
 * Smooth the specified waypoint list using catmull-rom.
 */
-void WorldPath::SmoothWaypoints(PathWaypointList* waypointList)
+void WorldData::SmoothWaypoints(PathWaypointList* waypointList)
 {
     float fTotalDist = 0.0f;
     float fAvgDist = 0.0f;
@@ -536,7 +864,7 @@ void WorldPath::SmoothWaypoints(PathWaypointList* waypointList)
 * Check if node is unnecessary and should be removed from path.
 * Return true if remove, else false
 */
-bool WorldPath::CheckNodeRubberband(NodeList::iterator position, NodeList::iterator prev, NodeList::iterator next)
+bool WorldData::CheckNodeRubberband(NodeList::iterator position, NodeList::iterator prev, NodeList::iterator next)
 {
     int iMinRow = position->loc.iRow;
     int iMaxRow = position->loc.iRow;
@@ -571,7 +899,7 @@ bool WorldPath::CheckNodeRubberband(NodeList::iterator position, NodeList::itera
 /**
 * Update row and column bounds for checking rubberbanding.
 */
-void WorldPath::UpdateRubberbandBounds(NodeList::iterator node, int& iMinRow, int& iMaxRow, int& iMinCol, int& iMaxCol)
+void WorldData::UpdateRubberbandBounds(NodeList::iterator node, int& iMinRow, int& iMaxRow, int& iMinCol, int& iMaxCol)
 {
     // minimum row
     if(iMinRow > node->loc.iRow)
@@ -593,7 +921,7 @@ void WorldPath::UpdateRubberbandBounds(NodeList::iterator node, int& iMinRow, in
 /**
 * Add all neighboring nodes
 */
-void WorldPath::AddNeighborNodes(NodeList::iterator position, const NodeKey& nkDest)
+void WorldData::AddNeighborNodes(NodeList::iterator position, const NodeKey& nkDest)
 {
     NodeKey nkPos = position->loc;
     NodeKey nkNew;
@@ -671,7 +999,7 @@ void WorldPath::AddNeighborNodes(NodeList::iterator position, const NodeKey& nkD
 /**
 * Creates a new node
 */
-void WorldPath::CreateNode(const NodeKey& nkPos, const NodeKey& nkDest, NodeList::iterator parent)
+void WorldData::CreateNode(const NodeKey& nkPos, const NodeKey& nkDest, NodeList::iterator parent)
 {
     NodeData data;
 
@@ -744,7 +1072,7 @@ void WorldPath::CreateNode(const NodeKey& nkPos, const NodeKey& nkDest, NodeList
 /**
 * Compute distance cost
 */
-float WorldPath::ComputeDistanceCost(const NodeKey& nkPos, NodeList::iterator parent)
+float WorldData::ComputeDistanceCost(const NodeKey& nkPos, NodeList::iterator parent)
 {
     // get node and parent position
     D3DXVECTOR2 vNodePos = GetCoordinates(nkPos);
@@ -759,7 +1087,7 @@ float WorldPath::ComputeDistanceCost(const NodeKey& nkPos, NodeList::iterator pa
 /**
 * Compute heuristic cost
 */
-float WorldPath::ComputeHeuristicCost(const NodeKey& nkPos, const NodeKey& nkDest)
+float WorldData::ComputeHeuristicCost(const NodeKey& nkPos, const NodeKey& nkDest)
 {
     // get node and destination position
     D3DXVECTOR2 vNodePos = GetCoordinates(nkPos);
@@ -795,7 +1123,7 @@ float WorldPath::ComputeHeuristicCost(const NodeKey& nkPos, const NodeKey& nkDes
 /**
 * Find lowest cost node
 */
-WorldPath::NodeList::iterator WorldPath::FindLowestCostNode()
+WorldData::NodeList::iterator WorldData::FindLowestCostNode()
 {
     NodeList::iterator nLowest = m_mNodeList.end();
 
@@ -818,7 +1146,7 @@ WorldPath::NodeList::iterator WorldPath::FindLowestCostNode()
 /**
 * Get coordinates
 */
-D3DXVECTOR2 WorldPath::GetCoordinates( const NodeKey& key )
+D3DXVECTOR2 WorldData::GetCoordinates( const NodeKey& key )
 {
 	D3DXVECTOR2 pos;
 	pos.x = ((float)key.iCol) + 0.5f;
@@ -830,7 +1158,7 @@ D3DXVECTOR2 WorldPath::GetCoordinates( const NodeKey& key )
 /**
 * Get row and column from position
 */
-void WorldPath::GetRowColumn( const D3DXVECTOR2& pos, NodeKey* key )
+void WorldData::GetRowColumn( const D3DXVECTOR2& pos, NodeKey* key )
 {
 	key->iCol = (int)(pos.x);
 	key->iRow = (int)(pos.y);

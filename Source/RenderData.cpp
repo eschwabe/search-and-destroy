@@ -20,7 +20,8 @@
 /**
 * Constructor
 */
-RenderData::RenderData()
+RenderData::RenderData() :
+    m_bDrawShadows(false)
 {}
 
 /**

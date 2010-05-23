@@ -23,7 +23,7 @@
 #define g_debuglog DebugLog::GetSingleton()
 #define g_debugdrawing DebugDrawing::GetSingleton()
 #define g_objcollision ObjectCollision::GetSingleton()
-#define g_world WorldPath::GetSingleton()
+#define g_world WorldData::GetSingleton()
 
 
 #define INVALID_OBJECT_ID 0

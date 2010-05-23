@@ -12,10 +12,8 @@
 #include "DXUT.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
+#include "WorldData.h"
 #include "DXUT\SDKmisc.h"
-
-// world scale
-const float kScale = 1.0f;
 
 // custom vertex structure definition
 const D3DVERTEXELEMENT9 WorldNode::m_sCustomVertexDeclaration[] =
@@ -121,9 +119,9 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
         for(int row = 0; row < m_worldFile.GetHeight(); row++)
         {
             // compute cube base coordinates
-            float x = col * kScale;
+            float x = col * kWorldScale;
             float y = 0.0f;
-            float z = row * kScale;
+            float z = row * kWorldScale;
 
             // check row/col for cell
             switch(m_worldFile(row,col))
@@ -131,32 +129,32 @@ HRESULT WorldNode::Initialize(IDirect3DDevice9* pd3dDevice)
                 case WorldFile::OCCUPIED_CELL:
                 {
                     // draw cube top
-                    DrawTile(x, y, z, kScale, kTop, kWall);
+                    DrawTile(x, y, z, kWorldScale, kTop, kWall);
 
                     // check for occupied cells next to cell, draw cube sides if not occupied
 
                     // left
                     if(m_worldFile(row,col-1) == WorldFile::EMPTY_CELL || m_worldFile(row,col-1) == WorldFile::INVALID_CELL)
-                        DrawTile(x, y, z, kScale, kLeft, kWall);
+                        DrawTile(x, y, z, kWorldScale, kLeft, kWall);
 
                     // right
                     if(m_worldFile(row,col+1) == WorldFile::EMPTY_CELL || m_worldFile(row,col+1) == WorldFile::INVALID_CELL)
-                        DrawTile(x, y, z, kScale, kRight, kWall);
+                        DrawTile(x, y, z, kWorldScale, kRight, kWall);
 
                     // upper
                     if(m_worldFile(row+1,col) == WorldFile::EMPTY_CELL || m_worldFile(row+1,col) == WorldFile::INVALID_CELL)
-                        DrawTile(x, y, z, kScale, kUpper, kWall);
+                        DrawTile(x, y, z, kWorldScale, kUpper, kWall);
 
                     // lower
                     if(m_worldFile(row-1,col) == WorldFile::EMPTY_CELL || m_worldFile(row-1,col) == WorldFile::INVALID_CELL)
-                        DrawTile(x, y, z, kScale, kLower, kWall);
+                        DrawTile(x, y, z, kWorldScale, kLower, kWall);
 
                     break;
                 }
                 default:
                 {
                     // draw floor
-                    DrawTile(x, y, z, kScale, kBottom, kFloor);
+                    DrawTile(x, y, z, kWorldScale, kBottom, kFloor);
                     break;
                 }
             }
@@ -214,34 +212,36 @@ void WorldNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
 
 
     // DRAW WALL SHADOWS
-
-    // setup shaders
-    rData->EnableDirectionalShaders(pd3dDevice, true);
-
-    // set vertex declaration
-    pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
-
-    // set depth bias (prevent z-fighting)
-    float fDepthBias = -0.0000001f;
-    float fDepthBiasSlope = -1.0f;
-    pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
-    pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
-    pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
-
-    // enable alpha blending
-    pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
-    pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
-    pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
-
-    // disable z buffer
-    pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
-
-    // set wall texture and draw primitives
-    if(m_iWallTriangleCount)
+    if(rData->DrawShadows())
     {
-        // shadow texture
-        pd3dDevice->SetTexture(0, rData->pShadowTexture);
-        pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
+        // setup shaders
+        rData->EnableDirectionalShaders(pd3dDevice, true);
+
+        // set vertex declaration
+        pd3dDevice->SetVertexDeclaration(m_pCVDeclaration);
+
+        // set depth bias (prevent z-fighting)
+        float fDepthBias = -0.0000001f;
+        float fDepthBiasSlope = -1.0f;
+        pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
+        pd3dDevice->SetRenderState(D3DRS_DEPTHBIAS, *((DWORD*)&fDepthBias));
+        pd3dDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS, *((DWORD*)&fDepthBiasSlope));
+
+        // enable alpha blending
+        pd3dDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_ZERO);
+        pd3dDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_SRCALPHA);
+        pd3dDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, 1);
+
+        // disable z buffer
+        pd3dDevice->SetRenderState(D3DRS_ZWRITEENABLE, FALSE);
+
+        // set wall texture and draw primitives
+        if(m_iWallTriangleCount)
+        {
+            // shadow texture
+            pd3dDevice->SetTexture(0, rData->pShadowTexture);
+            pd3dDevice->DrawPrimitiveUP( D3DPT_TRIANGLELIST, m_iWallTriangleCount, m_WallCVBuffer, sizeof(m_WallCVBuffer[0]) );
+        }
     }
 }
 
@@ -463,10 +463,10 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
     // world left side
     for(int row = 0; row < grid.GetHeight(); row++)
     {
-        D3DXVECTOR3 p1( 0.0f, 0.0f,   (float)row );
-        D3DXVECTOR3 p2( 0.0f, kScale, (float)row );
-        D3DXVECTOR3 p3( 0.0f, kScale, (float)row+kScale );
-        D3DXVECTOR3 p4( 0.0f, 0.0f,   (float)row+kScale );
+        D3DXVECTOR3 p1( 0.0f, 0.0f,                 (float)row );
+        D3DXVECTOR3 p2( 0.0f, kWorldScale,  (float)row );
+        D3DXVECTOR3 p3( 0.0f, kWorldScale,  (float)row+kWorldScale );
+        D3DXVECTOR3 p4( 0.0f, 0.0f,                 (float)row+kWorldScale );
         
         D3DXVECTOR3 n;
         D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
@@ -477,10 +477,10 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
     // world right side
     for(int row = 0; row < grid.GetHeight(); row++)
     {
-        D3DXVECTOR3 p1( (float)grid.GetWidth(), 0.0f,   (float)row );
-        D3DXVECTOR3 p2( (float)grid.GetWidth(), 0.0f,   (float)row+kScale );
-        D3DXVECTOR3 p3( (float)grid.GetWidth(), kScale, (float)row+kScale );
-        D3DXVECTOR3 p4( (float)grid.GetWidth(), kScale, (float)row );
+        D3DXVECTOR3 p1( (float)grid.GetWidth(), 0.0f,                   (float)row );
+        D3DXVECTOR3 p2( (float)grid.GetWidth(), 0.0f,                   (float)row+kWorldScale );
+        D3DXVECTOR3 p3( (float)grid.GetWidth(), kWorldScale,    (float)row+kWorldScale );
+        D3DXVECTOR3 p4( (float)grid.GetWidth(), kWorldScale,    (float)row );
         
         D3DXVECTOR3 n;
         D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
@@ -491,10 +491,10 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
     // world lower side
     for(int col = 0; col < grid.GetWidth(); col++)
     {
-        D3DXVECTOR3 p1( (float)col,        0.0f, 0.0f );
-        D3DXVECTOR3 p2( (float)col+kScale, 0.0f, 0.0f );
-        D3DXVECTOR3 p3( (float)col+kScale, kScale, 0.0f );
-        D3DXVECTOR3 p4( (float)col,        kScale, 0.0f );
+        D3DXVECTOR3 p1( (float)col,                     0.0f, 0.0f );
+        D3DXVECTOR3 p2( (float)col+kWorldScale, 0.0f, 0.0f );
+        D3DXVECTOR3 p3( (float)col+kWorldScale, kWorldScale, 0.0f );
+        D3DXVECTOR3 p4( (float)col,                     kWorldScale, 0.0f );
         
         D3DXVECTOR3 n;
         D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));
@@ -505,10 +505,10 @@ void WorldNode::SetupWorldCollWalls(const WorldFile& grid)
     // world upper side
     for(int col = 0; col < grid.GetWidth(); col++)
     {
-        D3DXVECTOR3 p1( (float)col,        0.0f,   (float)grid.GetHeight() );
-        D3DXVECTOR3 p2( (float)col,        kScale, (float)grid.GetHeight() );
-        D3DXVECTOR3 p3( (float)col+kScale, kScale, (float)grid.GetHeight() );
-        D3DXVECTOR3 p4( (float)col+kScale, 0.0f,   (float)grid.GetHeight() );
+        D3DXVECTOR3 p1( (float)col,                     0.0f,   (float)grid.GetHeight() );
+        D3DXVECTOR3 p2( (float)col,                     kWorldScale, (float)grid.GetHeight() );
+        D3DXVECTOR3 p3( (float)col+kWorldScale, kWorldScale, (float)grid.GetHeight() );
+        D3DXVECTOR3 p4( (float)col+kWorldScale, 0.0f,   (float)grid.GetHeight() );
         
         D3DXVECTOR3 n;
         D3DXVec3Cross(&n, &(p2-p1), &(p3-p1));

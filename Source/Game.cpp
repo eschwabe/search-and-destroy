@@ -9,6 +9,8 @@
 #include "DXUT.h"
 #pragma warning(disable: 4995)
 
+#include <sstream>
+#include <iomanip>
 #include "resource.h"
 #include "DXUT\DXUTcamera.h"
 #include "DXUT\DXUTsettingsdlg.h"
@@ -25,7 +27,7 @@
 #include "SMPlayer.h"
 #include "WorldNode.h"
 #include "WorldFile.h"
-#include "WorldPath.h"
+#include "WorldData.h"
 #include "MiniMapNode.h"
 #include "RenderData.h"
 #include "ProjectileParticles.h"
@@ -56,7 +58,7 @@ Database*               g_pDatabase = NULL;         // game object database
 MsgRoute*               g_pMsgRoute = NULL;         // message router
 DebugLog*               g_pDebugLog = NULL;         // debug logger
 ObjectCollision*        g_objColl = NULL;           // collision object
-WorldPath*              g_worldPath = NULL;         // world pathfinding
+WorldData*              g_WorldData = NULL;         // world pathfinding
 PlayerTinyNode*         g_pMainPlayerNode;          // main player
 WorldFile               g_GridData;                 // drid data loaded from file
 CSoundManager*          g_pSoundManager = NULL;     // sound manager
@@ -74,7 +76,8 @@ WorldFile*              g_pWorldFile = NULL;        // world data
 #define IDC_PREVVIEW            7
 #define IDC_RESETCAMERA         11
 #define IDC_RESETTIME           12
-#define IDC_DEBUGMODE           13
+#define IDC_DEBUGPATHING        13
+#define IDC_DEBUGTERRAIN        14
 
 //--------------------------------------------------------------------------------------
 // Forward declarations
@@ -107,7 +110,8 @@ bool InitApp()
     g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
     g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
     g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
-    g_HUD.AddButton( IDC_DEBUGMODE,         L"Debug Mode",          35, iY += 24, 125, 22 );
+    g_HUD.AddButton( IDC_DEBUGPATHING,      L"Debug Pathing",       35, iY += 24, 125, 22 );
+    g_HUD.AddButton( IDC_DEBUGTERRAIN,      L"Debug Terrain Analysis", 35, iY += 24, 125, 22 );
     
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
@@ -164,8 +168,7 @@ bool CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,
         D3DRTYPE_TEXTURE, 
         D3DFMT_A8R8G8B8)) )
     {
-        return false;
-    }
+        return false;    }
 
     return true;
 }
@@ -266,10 +269,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	g_pDatabase = new Database();
 	g_pMsgRoute = new MsgRoute();
 	g_pDebugLog = new DebugLog();
-    g_worldPath = new WorldPath(*g_pWorldFile);
-
-    // add world paths to database
-    g_database.Store(g_worldPath);
+    g_WorldData = new WorldData(*g_pWorldFile);
 
     // create a sprite to help batch calls when drawing many lines of text
     V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
@@ -335,6 +335,9 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     //p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
     ////p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
     //g_database.Store(p_MiniMap);
+
+    // add world data debug drawing to database
+    g_database.Store(g_WorldData);
 
     // initialize database objects
     if( FAILED(g_database.InitializeObjects(pd3dDevice)) )
@@ -499,30 +502,30 @@ void RenderText()
     // configure text
     txtHelper.Begin();
     txtHelper.SetInsertionPos( 5, 5 );
-    txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+    std::wstringstream stream;
 
     // frame and device stats
     //txtHelper.DrawTextLine( DXUTGetFrameStats() );
     //txtHelper.DrawTextLine( DXUTGetDeviceStats() );
 
     // statistics
-    txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"Time:", DXUTGetGlobalTimer()->GetTime() );
-    txtHelper.DrawFormattedTextLine( L"%-8s %.2f", L"FPS:", DXUTGetFPS() );
+    stream << std::setprecision(4) << std::setw(4);
+    stream << "Time: " << DXUTGetGlobalTimer()->GetTime() << std::endl;
+    stream << "FPS:  " << DXUTGetFPS() << std::endl << std::endl;
 
     // camera details
-    txtHelper.SetInsertionPos( 5, 40 );
-    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"Eye:", g_Camera->GetEyePt()->x, g_Camera->GetEyePt()->y, g_Camera->GetEyePt()->z);
-    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"LookAt:", g_Camera->GetLookAtPt()->x, g_Camera->GetLookAtPt()->y, g_Camera->GetLookAtPt()->z);
-    txtHelper.DrawFormattedTextLine(L"%-8s (%.2f, %.2f, %.2f)", 
-        L"Player:", g_pMainPlayerNode->GetPosition().x, g_pMainPlayerNode->GetPosition().y, g_pMainPlayerNode->GetPosition().z);
+    stream << "Eye:    (" << g_Camera->GetEyePt()->x << ", " << g_Camera->GetEyePt()->y << ", " << g_Camera->GetEyePt()->z << ")" << std::endl;
+    stream << "LookAt: (" << g_Camera->GetLookAtPt()->x << ", " << g_Camera->GetLookAtPt()->y << ", " << g_Camera->GetLookAtPt()->z << ")" << std::endl;
+    stream << "Player: (" << g_pMainPlayerNode->GetPosition().x << ", " << g_pMainPlayerNode->GetPosition().y << ", " << g_pMainPlayerNode->GetPosition().z << ")" << std::endl;
+    stream << std::endl;
     
+    // terrain analysis
+    stream << "TerrainAnalysis: " << g_world.GetTerrainAnalysisName() << std::endl;
+    stream << std::endl;
+
     // state details
 	dbCompositionList list;
 	g_database.ComposeList( list, OBJECT_Ignore_Type );
-    int starttext = 5;
-	int count = 10;
 	dbCompositionList::iterator i;
 	for( i=list.begin(); i!=list.end(); ++i )
 	{
@@ -540,27 +543,28 @@ void RenderText()
 			mbstowcs(unicode_substatename, substatename, strlen(substatename)+1);
 			if( substatename[0] != 0 )
 			{
-				txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
-				txtHelper.SetInsertionPos( 5, starttext-1+(12*count) );
-				txtHelper.DrawFormattedTextLine( L"%s:   %s, %s", unicode_name, unicode_statename, unicode_substatename );
-				txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
-				txtHelper.SetInsertionPos( 4, starttext+(12*count++) );
-				txtHelper.DrawFormattedTextLine( L"%s:   %s, %s", unicode_name, unicode_statename, unicode_substatename );
+                stream << unicode_name << ":   " << unicode_statename << unicode_substatename << std::endl;
 			}
 			else
 			{
-				txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
-				txtHelper.SetInsertionPos( 4, starttext-1+(12*count) );
-				txtHelper.DrawFormattedTextLine( L"%s:   %s", unicode_name, unicode_statename );
-				txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
-				txtHelper.SetInsertionPos( 5, starttext+(12*count++) );
-				txtHelper.DrawFormattedTextLine( L"%s:   %s", unicode_name, unicode_statename );
+                stream << unicode_name << ":   " << unicode_statename << std::endl;
 			}
 			delete unicode_name;
 			delete unicode_statename;
 			delete unicode_substatename;
 		}
 	}
+
+    // draw text shadow
+    POINT pt = txtHelper.GetInsertPos();
+	txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
+    txtHelper.SetInsertionPos( 4, pt.y );
+    txtHelper.DrawTextLine( stream.str().c_str() );
+
+    // reset and draw text
+	txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
+    txtHelper.SetInsertionPos( 5, pt.y );
+    txtHelper.DrawTextLine( stream.str().c_str() );
 
     txtHelper.End();
 }
@@ -616,6 +620,9 @@ void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUse
             case VK_F1:
 				g_bShowHelp = !g_bShowHelp;
 				break;
+            case 'L':
+                g_world.ToggleTerrainAnalysisType();
+                break;
         }
     }
 }
@@ -663,8 +670,12 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
             DXUTGetGlobalTimer()->Reset();
             break;
 
-        case IDC_DEBUGMODE:
+        case IDC_DEBUGPATHING:
             g_world.TogglePathDebug();
+            break;
+
+        case IDC_DEBUGTERRAIN:
+            g_world.ToggleTerrainAnalysisType();
             break;
     }
 }

@@ -12,7 +12,7 @@
 #include "DXUT.h"
 #include "SMPatrol.h"
 #include "SMCombat.h"
-#include "WorldPath.h"
+#include "WorldData.h"
 
 // add new states
 enum StateName 

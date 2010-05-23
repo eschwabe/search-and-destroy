@@ -376,9 +376,7 @@ void PlayerTinyNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rDat
     // update player transform
     ComputeTransform();
 
-
     // DRAW PLAYER
-
     // compute world player model transform matrix
     matWorld = m_matPlayer * rData->matWorld;
 
@@ -388,17 +386,18 @@ void PlayerTinyNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rDat
     // recursively draw the root frame
     DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData, false);
 
-
     // DRAW PLAYER SHADOW
+    if(rData->DrawShadows())
+    {
+        // compute shadow world player model transform matrix
+        matWorld = m_matPlayer * rData->ComputeShadowWorldMatrix();
 
-    // compute shadow world player model transform matrix
-    matWorld = m_matPlayer * rData->ComputeShadowWorldMatrix();
+        // update frame transform matrices
+        UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
 
-    // update frame transform matrices
-    UpdateFrameTransforms((EXTD3DXFRAME*)m_FrameRoot, matWorld);
-
-    // recursively draw the root frame
-    DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData, true);
+        // recursively draw the root frame
+        DrawFrame(pd3dDevice, (EXTD3DXFRAME*)m_FrameRoot, rData, true);
+    }
 }
 
 /**

@@ -1,11 +1,11 @@
 /*******************************************************************************
 * Game Development Project
-* WorldPath.h
+* WorldData.h
 *
 * Eric Schwabe
 * 2010-05-16
 *
-* World Pathing
+* World Data
 *
 *******************************************************************************/
 
@@ -18,6 +18,8 @@
 
 /* path waypoint list */
 typedef std::list<D3DXVECTOR2> PathWaypointList;
+        
+const float kWorldScale = 1.0f;;
 
 /* debug drawing color */
 enum DebugDrawingColor
@@ -35,27 +37,41 @@ enum DebugDrawingColor
 };
 
 /* world path computations */
-class WorldPath : public GameObject, public Singleton<WorldPath>
+class WorldData : public GameObject, public Singleton<WorldData>
 {
     public:
 
-        WorldPath(const WorldFile& worldFile);
-        virtual ~WorldPath();
+        /**
+        * Terrain analysis type
+        */
+        enum TerrainAnalysisType
+        {
+            kTerrainAnalysisNone,
+            kTerrainAnalysisOpenness,
+            kTerrainAnalysisOccupancy,
+            kTerrainAnalysisLineOfFire,
+            kTerrainAnalysisAll
+        };
 
-        // add new path request
+        // constructor
+        WorldData(const WorldFile& worldFile);
+        virtual ~WorldData();
+
+        // path requests
         void AddPathRequest(const D3DXVECTOR2& vCurPos, const D3DXVECTOR2& vDestPos, objectID id);
+        D3DXVECTOR2 GetRandomMapLocation();
 
-        // get waypoint list for object
+        // waypoint lsits
         PathWaypointList* GetWaypointList(objectID id);
-
-        // clear waypoint list
         void ClearWaypointList(objectID id);
 
-        // toggles drawing debug lines
-        void TogglePathDebug() { m_debuglines = !m_debuglines; }
+        // debugging
+        void SetTerrainAnalysisType(TerrainAnalysisType type) { m_terrainType = type; }
+        void ToggleTerrainAnalysisType();
+        TerrainAnalysisType GetTerrainAnalysisType() const { return m_terrainType; }
+        std::wstring GetTerrainAnalysisName() const;
 
-        // returns a random valid map location (non-wall)
-        D3DXVECTOR2 GetRandomMapLocation();
+        void TogglePathDebug() { m_debuglines = !m_debuglines; }
 
     protected:
 
@@ -88,6 +104,25 @@ class WorldPath : public GameObject, public Singleton<WorldPath>
         };
 
         std::vector<CustomVertex> m_vLines;     // debug line vertices
+
+        //////////////////////
+        // TERRAIN ANALYSIS //
+        //////////////////////
+
+        float** m_fTerrainOpenness;
+        float** m_fTerrainOccupancy;
+        float** m_fTerrainLineOfFire;
+
+        TerrainAnalysisType m_terrainType;      // terrain analysis type
+        std::vector<CustomVertex> m_vQuads;     // debug line vertices
+
+        float** AllocateTerrainGrid();
+        void DeleteTerrainGrid(float** fGrid);
+        void GenerateTerrainQuads();
+        void AnalyzeTerrainOccupancy();
+        void AnalyzeTerrainLineOfFire();
+        void UpdateTerrainGridCells(const int row, const int col, const int range, const float value);
+        D3DXCOLOR GetTerrainColor(const int row, const int col);
 
         /////////////////////
         // PATHING OPTIONS //

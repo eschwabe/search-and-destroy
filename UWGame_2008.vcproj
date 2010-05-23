@@ -779,6 +779,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\WorldData.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\WorldData.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\WorldFile.cpp"
 				>
 			</File>
@@ -792,14 +800,6 @@
 			</File>
 			<File
 				RelativePath=".\Source\WorldNode.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\WorldPath.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\Source\WorldPath.h"
 				>
 			</File>
 		</Filter>

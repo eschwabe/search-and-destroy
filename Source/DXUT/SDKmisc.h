@@ -134,6 +134,7 @@ public:
     void Init( ID3DXFont* pFont9 = NULL, ID3DXSprite* pSprite9 = NULL, ID3DX10Font* pFont10 = NULL, ID3DX10Sprite* pSprite10 = NULL, int nLineHeight = 15 );
 
     void SetInsertionPos( int x, int y ) { m_pt.x = x; m_pt.y = y; }
+    POINT GetInsertPos() { return m_pt; }
     void SetForegroundColor( D3DXCOLOR clr ) { m_clr = clr; }
 
     void Begin();

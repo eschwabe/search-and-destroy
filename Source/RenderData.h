@@ -30,6 +30,7 @@ class RenderData
 
         // computes a world matrix for drawing shadows (on x-z plane)
         D3DXMATRIX ComputeShadowWorldMatrix() const;
+        bool DrawShadows() const { return m_bDrawShadows; }
 
         // setup lights
         void SetAmbientLight(const D3DXCOLOR& cColor);
@@ -58,6 +59,8 @@ class RenderData
         LPDIRECT3DTEXTURE9 pShadowTexture;          // shadow texture
 
     private:
+
+        bool m_bDrawShadows;
 
         LPDIRECT3DVERTEXSHADER9 m_pVertexShader;    // vertex shader
         LPDIRECT3DPIXELSHADER9 m_pPixelShader;      // pixel shader

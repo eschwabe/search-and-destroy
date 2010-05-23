@@ -42,7 +42,7 @@ class WorldNode : public GameObject
         HRESULT Initialize(IDirect3DDevice9* pd3dDevice);                   // initialize world node
 	    void Update();                                                      // update traversal for physics, AI, etc.
 	    void Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData); // render traversal for drawing objects
-
+       
     private:
         
 	    /**
@@ -62,8 +62,8 @@ class WorldNode : public GameObject
                 vPos(0.0f, 0.0f, 0.0f), 
                 vNormal(0.0f, 0.0f, 0.0f), 
                 vTexCoord(0.0f, 0.0f),
-                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1)),
-                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1))
+                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f)),
+                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f))
             {}
 
             // initialization constructor
@@ -71,10 +71,11 @@ class WorldNode : public GameObject
                 vPos(ivPos), 
                 vNormal(ivNormal), 
                 vTexCoord(ivTexCoord), 
-                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1)),
-                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1))
+                cDiffuse(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f)),
+                cSpecular(D3DXCOLOR(0.0f, 0.0f, 0.0f, 1.0f))
             {}
 	    };
+
 
         static const D3DVERTEXELEMENT9 m_sCustomVertexDeclaration[];    // custom vertex structure definition
         LPDIRECT3DVERTEXDECLARATION9 m_pCVDeclaration;                  // custom vertex declaration
