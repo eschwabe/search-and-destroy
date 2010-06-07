@@ -20,8 +20,7 @@ enum StateName
 	STATE_Move,
     STATE_FireProjectile,
     STATE_FireBigProjectile,
-    //STATE_Stunned,
-    //STATE_Dead
+    STATE_Dead
 };
 
 // add new substates
@@ -53,6 +52,15 @@ bool SMPlayer::States( State_Machine_Event event, MSG_Object* msg, int state, in
 BeginStateMachine
 
 	// global message responses go here
+    OnMsg(MSG_Damaged)
+
+        // player damaged, dead
+        ChangeState(STATE_Dead);
+
+    OnMsg(MSG_Reset)
+
+        // reinitialize state machine
+        ChangeState( STATE_Initialize );
 
     /*-------------------------------------------------------------------------*/
 	
@@ -124,22 +132,16 @@ BeginStateMachine
             // create projectile
             ChangeStateDelayed(1.0f, STATE_Move);
 
-    /*-------------------------------------------------------------------------*/
-	/*    
-    DeclareState( STATE_Stunned )
 
-		OnEnter
-
-        OnUpdate
-    */
     /*-------------------------------------------------------------------------*/
-    /*
+    
     DeclareState( STATE_Dead )
 
 		OnEnter
 
-        OnUpdate
-    */
+            m_owner->StopMovement();
+            m_owner->SetHealth(0);
+    
     /*-------------------------------------------------------------------------*/
 
 EndStateMachine

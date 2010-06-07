@@ -22,7 +22,7 @@ class PlayerTinyNode : public PlayerBaseNode
         virtual ~PlayerTinyNode();
 
         // handle user controls
-        LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+        virtual LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
     protected:
 

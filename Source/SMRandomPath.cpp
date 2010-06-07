@@ -57,6 +57,11 @@ BeginStateMachine
         m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
         PushStateMachine( *new SMCombat( m_owner, g_database.Find(m_idPlayer)->GetID(), true) );
 
+    OnMsg(MSG_Reset)
+
+        // reset machine
+        ChangeState(STATE_PickPath);
+
     /*-------------------------------------------------------------------------*/
 
     DeclareState( STATE_PickPath )

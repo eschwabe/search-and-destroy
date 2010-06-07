@@ -15,7 +15,8 @@
 /**
 * Constructor
 */
-CDebugCamera::CDebugCamera()
+CDebugCamera::CDebugCamera() :
+    m_vNewEye(0.0f, 0.0f, 0.0f)
 {
     // initialize camera movements
     for(int i =0; i < sizeof(m_CameraMovement); i++)
@@ -30,6 +31,16 @@ CDebugCamera::CDebugCamera()
 */
 CDebugCamera::~CDebugCamera()
 {}
+
+/**
+* Set view parameters
+*/
+void CDebugCamera::SetViewParams( D3DXVECTOR3* pvEyePt, D3DXVECTOR3* pvLookAtPt )
+{
+    m_vNewEye = *pvEyePt;
+
+    CBaseCamera::SetViewParams(pvEyePt, pvLookAtPt);
+}
 
 /**
 * Handle user input messages. 
@@ -195,7 +206,12 @@ void CDebugCamera::FrameMove( FLOAT fElapsedTime )
 
     // move eye position: the eye does not need to transformed by the rotation matrix
     // since the yaw and pitch rotations occur independently of the current camera position
-    m_vEye += vPosDelta;
+         
+    // determine final eye position
+    m_vNewEye += vPosDelta;
+
+    // move eye a percentage towards the final position
+    m_vEye += (m_vNewEye - m_vEye)*0.15f;
 
     // update lookAt position based on the eye position 
     m_vLookAt = m_vEye + vWorldAhead;

@@ -28,6 +28,7 @@
 #define OBJECT_Projectile   (1<<8)
 #define OBJECT_Map          (1<<9)
 #define OBJECT_Debug        (1<<10)
+#define OBJECT_GameControl  (1<<11)
 
 #define GAME_OBJECT_MAX_NAME_SIZE 64
 
@@ -45,9 +46,9 @@ class GameObject
 	    virtual ~GameObject( void );
 
         // game object info
-	    inline objectID GetID( void )			{ return( m_id ); }
-	    inline unsigned int GetType( void )		{ return( m_type ); }
-	    inline char* GetName( void )			{ return( m_name ); }
+	    inline objectID GetID( void ) 	    { return( m_id ); }
+	    inline unsigned int GetType( void )	{ return( m_type ); }
+	    inline char* GetName( void )        { return( m_name ); }
     	
 	    // state machine
 	    StateMachineManager* GetStateMachineManager( void );
@@ -61,9 +62,12 @@ class GameObject
         void UpdateObject();
         void RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rData);
         
+        void EnableObjectRender()               { m_enableRender = true; }
+        void DisableObjectRender()              { m_enableRender = false; }
+
         // object info
         int GetHealth() const                   { return m_dHealth;         };
-        void SetHealth(int health)              { if(m_dHealth < health) health = 0; else m_dHealth = health; };
+        void SetHealth(int health)              { if(health < 0) health = 0; m_dHealth = health; };
         float GetHeight() const                 { return m_fHeight;         };
 
         // object position and movement info
@@ -79,6 +83,7 @@ class GameObject
         
         // set object position and movement
         void SetPosition(const D3DXVECTOR3& pos)        { m_vPos = pos;                             };
+        void ResetPosition()                            { m_vPos = m_vResetPos;                     };
         void SetDirection(const D3DXVECTOR3& dir)       { D3DXVec3Normalize(&m_vDirection, &dir);   };
         void SetGridPosition(const D3DXVECTOR2& pos);
         void SetGridDirection(const D3DXVECTOR2& dir);
@@ -89,6 +94,9 @@ class GameObject
         void ResetMovement();
         virtual void ResumeMovement()   { m_bStopMovement = false;  };
         virtual void StopMovement()     { m_bStopMovement = true;   };
+
+        // user object controls
+        virtual LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) { return TRUE; }
 
     protected:
 
@@ -106,6 +114,7 @@ class GameObject
 
         // object position info
         D3DXVECTOR3 m_vPos;         // position
+        D3DXVECTOR3 m_vResetPos;    // reset position
         D3DXVECTOR3 m_vDirection;   // direction
         float m_fVelocity;          // velocity
         float m_fAccel;             // acceleration
@@ -127,6 +136,8 @@ class GameObject
 	    bool m_markedForDeletion;					// flag to delete this object (when it is safe to do so)
 	    char m_name[GAME_OBJECT_MAX_NAME_SIZE];		// string name of object
   
+        bool m_enableRender;                        // enable render
+
         IDirect3DStateBlock9* m_pStateBlock;        // state block
 
 	    StateMachineManager* m_stateMachineManager; // state machine manager

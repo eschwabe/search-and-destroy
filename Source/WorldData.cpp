@@ -24,7 +24,7 @@ WorldData::WorldData(const WorldFile& worldFile) :
     m_heuristicCalc(true),
     m_smooth(true),
     m_heuristicWeight(1.01f),
-    m_debuglines(true),
+    m_debuglines(false),
     m_terrainType(kTerrainAnalysisNone)
 {
     // allocate terrain analysis grids
@@ -255,8 +255,11 @@ void WorldData::AnalyzeTerrainOccupancy()
         int row = (int)(*it)->GetGridPosition().y;
         int col = (int)(*it)->GetGridPosition().x;
 
+        // check if out of bounds
+        if( (row >= 0 && row < m_worldFile.GetHeight()) && (col >= 0 && col < m_worldFile.GetWidth()) )
+            m_fTerrainOccupancy[row][col] = min(1.0f, m_fTerrainOccupancy[row][col]+1.0f);
+
         // occupied at location of player
-        m_fTerrainOccupancy[row][col] = min(1.0f, m_fTerrainOccupancy[row][col]+1.0f);
 
         // partially occupied near player (one cell from player)
         UpdateTerrainGridCells(m_fTerrainOccupancy, row, col, 1, 0.67f);
@@ -323,7 +326,8 @@ void WorldData::AnalyzeTerrainLineOfFire()
         while( m_worldFile(row, col) == WorldFile::EMPTY_CELL )
         {
             // set cell in direct line of fire
-            m_fTerrainLineOfFire[row][col] = 1.0f;
+            if( (row >= 0 && row < m_worldFile.GetHeight()) && (col >= 0 && col < m_worldFile.GetWidth()) )
+                m_fTerrainLineOfFire[row][col] = 1.0f;
 
             // update cells around direct line of fire
             UpdateTerrainGridCells(m_fTerrainLineOfFire, row, col, 1, 0.2f);

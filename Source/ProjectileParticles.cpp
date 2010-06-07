@@ -33,6 +33,7 @@ ProjectileParticles::ProjectileParticles(const D3DXVECTOR3& vPos, const Particle
 {
     // set initial position
     m_vPos = vPos;
+    m_vResetPos = vPos;
 
     // set height
     if(type == kLightBall)

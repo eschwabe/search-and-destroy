@@ -31,6 +31,7 @@ NPCSphereNode::NPCSphereNode(const D3DXVECTOR3& vInitialPos, const D3DXCOLOR& cC
 {
     // set initial position off the ground (floating sphere)
     m_vPos.y += 0.5f;
+    m_vResetPos.y += 0.5f;
 
     // set sphere height
     m_fHeight = 0.5f;

@@ -18,29 +18,16 @@ class MiniMapNode : public GameObject
 {
     public:
 
-        /**
-        * Player type for minimap tracking
-        */
-        enum PlayerType
-        {
-            PLAYER, // human
-            NPC     // computer
-        };
-
         // constructor
         MiniMapNode(const LPCWSTR sMapTexture, 
                     const LPCWSTR sMapMaskTexture, 
                     const LPCWSTR sMapBorderTexture, 
                     const LPCWSTR sPlayerLocTexture, 
                     const LPCWSTR sNPCLocTexture, 
+                    const WorldNode* world,
                     const int iMapsize);
+
         virtual ~MiniMapNode();
-
-        // add player tracking
-        void AddPlayerTracking(const PlayerBaseNode* pPlayer, const PlayerType type);
-
-        // set world node
-        void SetWorldNode(const WorldNode* world) { m_WorldNode = world; }
 
     protected:
 
@@ -76,24 +63,28 @@ class MiniMapNode : public GameObject
             {}
 	    };
 
+
         /**
         * Minimap player tracking data
         */
         struct PlayerMapInfo
         {
-            CustomVertex* cvPlayerLocVertices;      // player location vertices
-            int iTriangleCount;                     // number of triangles
-            int iVertexCount;                       // number of vertices
+            CustomVertex cvPlayerLocVertices[4];            // player location vertices
+            int iTriangleCount;                             // number of triangles
+            int iVertexCount;                               // number of vertices
 
-            const PlayerBaseNode* pPlayer;          // player object
-            PlayerType type;                        // player object type
+            GameObject* pObject;                            // player object
 
             // default constructor
             PlayerMapInfo() :
-                cvPlayerLocVertices(NULL), iTriangleCount(0), iVertexCount(0), pPlayer(NULL), type(PLAYER)
+                iTriangleCount(2), 
+                iVertexCount(4), 
+                pObject(NULL)
             {}
         };
 
+        // update player minimap tracking
+        void UpdatePlayerTracking();
 
         // transform texture coordinates from world coordinates
         D3DXVECTOR2 ComputeTextureCoordsFromWorld(const D3DXVECTOR3& vWorldLoc);

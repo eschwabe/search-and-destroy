@@ -25,6 +25,9 @@ class CDebugCamera : public CBaseCamera
 
         // Move and update camera
         virtual void FrameMove( FLOAT fElapsedTime );
+
+        // set view parameters
+        void SetViewParams( D3DXVECTOR3* pvEyePt, D3DXVECTOR3* pvLookAtPt );
         
     private:
 
@@ -51,6 +54,8 @@ class CDebugCamera : public CBaseCamera
         // DATA
         int m_nActiveMouseButtonMask;           // mask to determine which mouse buttons to enable for rotation
         bool m_CameraMovement[kMaxMovement];    // camera movements currently requested
+        
+        D3DXVECTOR3 m_vNewEye;                  // new eye position
 
         // prevent copy and assignment
         CDebugCamera(const CDebugCamera&);

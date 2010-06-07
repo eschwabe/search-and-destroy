@@ -71,6 +71,8 @@ class WorldData : public GameObject, public Singleton<WorldData>
         TerrainAnalysisType GetTerrainAnalysisType() const { return m_terrainType; }
         std::wstring GetTerrainAnalysisName() const;
 
+        void ShowPathDebug() { m_debuglines = true; }
+        void HidePathDebug() { m_debuglines = false; }
         void TogglePathDebug() { m_debuglines = !m_debuglines; }
 
     protected:

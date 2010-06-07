@@ -119,6 +119,7 @@ public:
     void SetScalers( FLOAT fRotationScaler = 0.01f, FLOAT fMoveScaler = 5.0f )  { m_fRotationScaler = fRotationScaler; m_fMoveScaler = fMoveScaler; }
     void SetNumberOfFramesToSmoothMouseData( int nFrames ) { if( nFrames > 0 ) m_fFramesToSmoothMouseData = (float)nFrames; }
     void SetResetCursorAfterMove( bool bResetCursorAfterMove ) { m_bResetCursorAfterMove = bResetCursorAfterMove; }
+    void SetEyeFromCamera( const CBaseCamera* camera ) { m_vEye = *camera->GetEyePt(); }
 
     // Functions to get state
     const D3DXMATRIX*  GetViewMatrix() const { return &m_mView; }

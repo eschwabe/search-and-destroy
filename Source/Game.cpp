@@ -9,62 +9,52 @@
 #include "DXUT.h"
 #pragma warning(disable: 4995)
 
-#include <sstream>
-#include <iomanip>
 #include "resource.h"
 #include "DXUT\DXUTcamera.h"
 #include "DXUT\DXUTsettingsdlg.h"
 #include "DXUT\SDKmisc.h"
-#include "DXUT\SDKsound.h"
-#include "DebugCamera.h"
-#include "PlayerCamera.h"
+
 #include "Game.h"
-#include "PlayerTinyNode.h"
-#include "NPCSphereNode.h"
-#include "SMPatrol.h"
-#include "SMRandomPath.h"
-#include "SMWander.h"
-#include "SMPlayer.h"
-#include "WorldNode.h"
-#include "WorldFile.h"
-#include "WorldData.h"
-#include "MiniMapNode.h"
+#include "GameController.h"
 #include "RenderData.h"
-#include "ProjectileParticles.h"
 #include "database.h"
 #include "msgroute.h"
 #include "debuglog.h"
 #include "time.h"
+
+#include "PlayerTinyNode.h"
+#include "NPCSphereNode.h"
+
+#include "SMPatrol.h"
+#include "SMRandomPath.h"
+#include "SMWander.h"
+#include "SMPlayer.h"
+#include "SMGame.h"
+
+#include "WorldNode.h"
+#include "WorldFile.h"
+#include "WorldData.h"
+#include "MiniMapNode.h"
+#include "ProjectileParticles.h"
 
 using namespace std;
 
 //--------------------------------------------------------------------------------------
 // Global variables
 //--------------------------------------------------------------------------------------
-ID3DXFont*              g_pFont = NULL;             // font for drawing text
-ID3DXSprite*            g_pTextSprite = NULL;       // sprite for batching draw text calls
-CDebugCamera            g_DebugCamera;              // debug camera
-CPlayerCamera           g_PlayerCamera;             // player camera
-CBaseCamera*            g_Camera = &g_PlayerCamera; // current camera (default player)
-bool                    g_PlayerMode = true;        // controlling main player
-CDXUTDialogResourceManager g_DialogResourceManager; // manager for shared resources of dialogs
-CD3DSettingsDlg         g_SettingsDlg;              // device settings dialog
-CDXUTDialog             g_HUD;                      // dialog for standard controls
-CDXUTDialog             g_SampleUI;                 // dialog for sample specific controls
-bool                    g_bShowHelp = true;         // render the UI control text if true
-bool                    g_bPlaySounds = true;       // play sounds if true
-Time*                   g_pTime = NULL;             // time manager
-Database*               g_pDatabase = NULL;         // game object database
-MsgRoute*               g_pMsgRoute = NULL;         // message router
-DebugLog*               g_pDebugLog = NULL;         // debug logger
-ObjectCollision*        g_objColl = NULL;           // collision object
-WorldData*              g_WorldData = NULL;         // world pathfinding
-PlayerTinyNode*         g_pMainPlayerNode;          // main player
-WorldFile               g_GridData;                 // drid data loaded from file
-CSoundManager*          g_pSoundManager = NULL;     // sound manager
-CSound*                 g_pSoundCollision = NULL;   // collision sound
-RenderData*             g_pRenderData = NULL;       // render data
-WorldFile*              g_pWorldFile = NULL;        // world data
+CDXUTDialogResourceManager  g_DialogResourceManager;    // manager for shared resources of dialogs
+CD3DSettingsDlg             g_SettingsDlg;              // device settings dialog
+CDXUTDialog                 g_HUD;                      // dialog for standard controls
+CDXUTDialog                 g_SampleUI;                 // dialog for sample specific controls
+Time*                       g_pTime = NULL;             // time manager
+Database*                   g_pDatabase = NULL;         // game object database
+MsgRoute*                   g_pMsgRoute = NULL;         // message router
+DebugLog*                   g_pDebugLog = NULL;         // debug logger
+ObjectCollision*            g_objColl = NULL;           // collision object
+WorldData*                  g_WorldData = NULL;         // world pathfinding
+RenderData*                 g_pRenderData = NULL;       // render data
+WorldFile*                  g_pWorldFile = NULL;        // world data
+GameController*             g_pGameController = NULL;   // game control
 
 //--------------------------------------------------------------------------------------
 // UI control IDs
@@ -85,9 +75,6 @@ WorldFile*              g_pWorldFile = NULL;        // world data
 
 void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, void* pUserContext );
 
-HRESULT LoadMesh( IDirect3DDevice9* pd3dDevice, WCHAR* strFileName, ID3DXMesh** ppMesh );
-void RenderText();
-
 //--------------------------------------------------------------------------------------
 // Initialize Application
 //--------------------------------------------------------------------------------------
@@ -101,29 +88,16 @@ bool InitApp()
     // Setup HUD
     int iY = 0;
     g_HUD.SetCallback( OnGUIEvent );
-    g_HUD.AddButton( IDC_TOGGLEFULLSCREEN,  L"Toggle Full Screen",  35, iY += 10, 125, 22 );
-    g_HUD.AddButton( IDC_TOGGLEREF,         L"Toggle REF (F3)",     35, iY += 24, 125, 22, VK_F3 );
+    g_HUD.AddButton( IDC_TOGGLEFULLSCREEN,  L"Full Screen (F1)",    35, iY += 10, 125, 22, VK_F1 );
     g_HUD.AddButton( IDC_CHANGEDEVICE,      L"Change Device (F2)",  35, iY += 24, 125, 22, VK_F2 );
-
-    g_HUD.SetCallback( OnGUIEvent );
-    g_HUD.AddButton( IDC_NEXTVIEW,          L"Next View (N)",       35, iY += 72, 125, 22, L'N' );
-    g_HUD.AddButton( IDC_PREVVIEW,          L"Previous View (P)",   35, iY += 24, 125, 22, L'P' );
-    g_HUD.AddButton( IDC_RESETCAMERA,       L"Reset View (R)",      35, iY += 24, 125, 22, L'R' );
-    g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 24, 125, 22 );
+    g_HUD.AddButton( IDC_TOGGLEREF,         L"Toggle REF (F3)",     35, iY += 24, 125, 22, VK_F3 );
+    g_HUD.AddButton( IDC_RESETTIME,         L"Reset Time",          35, iY += 48, 125, 22 );
     g_HUD.AddButton( IDC_DEBUGPATHING,      L"Debug Pathing",       35, iY += 24, 125, 22 );
-    g_HUD.AddButton( IDC_DEBUGTERRAIN,      L"Debug Terrain Analysis", 35, iY += 24, 125, 22 );
+    g_HUD.AddButton( IDC_DEBUGTERRAIN,      L"Terrain Analysis",    35, iY += 24, 125, 22 );
     
     // Add mixed vp to the available vp choices in device settings dialog.
     DXUTGetD3D9Enumeration()->SetPossibleVertexProcessingList( true, false, false, true );
-    
-    // setup the camera with view matrix
-    D3DXVECTOR3 vEye(-5.0f, 2.0f, -5.0f);
-    D3DXVECTOR3 vAt(0.0f, 0.0f, 0.0f);
-
-    // setup debug camera movement parameters
-    g_DebugCamera.SetViewParams( &vEye, &vAt );
-    g_DebugCamera.SetScalers( 0.01f, 5.0f );
-
+   
 	return true;
 }
 
@@ -168,7 +142,8 @@ bool CALLBACK IsDeviceAcceptable( D3DCAPS9* pCaps, D3DFORMAT AdapterFormat,
         D3DRTYPE_TEXTURE, 
         D3DFMT_A8R8G8B8)) )
     {
-        return false;    }
+        return false;    
+    }
 
     return true;
 }
@@ -271,46 +246,23 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
 	g_pDebugLog = new DebugLog();
     g_WorldData = new WorldData(*g_pWorldFile);
 
-    // create a sprite to help batch calls when drawing many lines of text
-    V_RETURN( D3DXCreateSprite( pd3dDevice, &g_pTextSprite ) );
-
-    // initialize the font
-    if( g_pFont )
-        V_RETURN( g_pFont->OnResetDevice() );
-
-    V_RETURN( D3DXCreateFont( pd3dDevice, 15, 0, FW_BOLD, 1, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, 
-                              DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas", &g_pFont ) );
-
-    // initialize sound manager
-    g_pSoundManager = new CSoundManager();
-    g_pSoundManager->Initialize(DXUTGetHWND(), DSSCL_PRIORITY);
-    g_pSoundManager->SetPrimaryBufferFormat(2, 22050, 16);
-
-    // initialize collision sound
-    WCHAR szSoundPath[MAX_PATH];
-    DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"alarm.wav" );
-    g_pSoundManager->Create(&g_pSoundCollision, szSoundPath, 0, GUID_NULL);
-
     // add world object
     WorldNode* p_WorldNode = new WorldNode(*g_pWorldFile, L"asphalt-damaged.jpg", L"planks-new.jpg");
     g_database.Store(p_WorldNode);
 
     // add player node
-    g_pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(12.5f,0.0f,2.0f) );
-    g_database.Store(g_pMainPlayerNode);
-    g_PlayerCamera.SetPlayer(g_pMainPlayerNode->GetID());
+    PlayerTinyNode* pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(12.5f,0.0f,2.0f) );
+    g_database.Store(pMainPlayerNode);
 
     // add sphere NPCs
-    NPCSphereNode* patrolNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,22.5f));
-    NPCSphereNode* patrolNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,2.5f));
-    g_database.Store( patrolNPC1 );
-    g_database.Store( patrolNPC2 );
-
-    // add wandering NPC
-    NPCSphereNode* wanderNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,2.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
-    NPCSphereNode* wanderNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,22.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
-    g_database.Store( wanderNPC1 );
-    g_database.Store( wanderNPC2 );
+    NPCSphereNode* pNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,22.5f));
+    NPCSphereNode* pNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,2.5f));
+    NPCSphereNode* pNPC3 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,2.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    NPCSphereNode* pNPC4 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,22.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    g_database.Store( pNPC1 );
+    g_database.Store( pNPC2 );
+    g_database.Store( pNPC3 );
+    g_database.Store( pNPC4 );
 
     // add particle emitter and fire particles
     ProjectileParticles* fb1 = new ProjectileParticles(D3DXVECTOR3(3.0f, 0.2f, 3.0f), ProjectileParticles::kFire);
@@ -322,22 +274,24 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     ProjectileParticles* fb4 = new ProjectileParticles(D3DXVECTOR3(22.0f, 0.2f, 3.0f), ProjectileParticles::kFire);
     g_database.Store(fb4);
 
-    // add minimap node (note: draw 2D elements after rendering 3D)
-    //MiniMapNode* p_MiniMap = new MiniMapNode(
-    //    L"level-collision-map.png", 
-    //    L"level-collision-map-alpha.png", 
-    //    L"minimap-border.png", 
-    //    L"minimap-player.png", 
-    //    L"minimap-npc.png", 
-    //    200);
-
-    //p_MiniMap->SetWorldNode(p_WorldNode);
-    //p_MiniMap->AddPlayerTracking(g_pMainPlayerNode, MiniMapNode::PLAYER);
-    ////p_MiniMap->AddPlayerTracking(g_pNPCNode, MiniMapNode::NPC);
-    //g_database.Store(p_MiniMap);
-
     // add world data debug drawing to database
     g_database.Store(g_WorldData);
+
+    // add minimap node (note: draw 2D elements after rendering 3D)
+    MiniMapNode* p_MiniMap = new MiniMapNode(
+        L"level-collision-map.png", 
+        L"level-collision-map-alpha.png", 
+        L"minimap-border.png", 
+        L"minimap-player.png", 
+        L"minimap-npc.png", 
+        p_WorldNode,
+        200);
+    g_database.Store(p_MiniMap);
+
+    // create game controller
+    g_pGameController = new GameController(pMainPlayerNode->GetID());
+    g_pGameController->ConfigureCameras(pBackBufferSurfaceDesc);
+    g_database.Store(g_pGameController);
 
     // initialize database objects
     if( FAILED(g_database.InitializeObjects(pd3dDevice)) )
@@ -349,35 +303,22 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     // create collision object
     g_objColl = new ObjectCollision( p_WorldNode->GetCollQuadList() );
 
-    // setup random path NPCs
-    wanderNPC1->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(wanderNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
-    wanderNPC2->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(wanderNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    // setup NPC state machines
+    pNPC1->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC1, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    pNPC2->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC2, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    pNPC3->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC3, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    pNPC4->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC4, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     
-    // setup patrolling NPCs
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC1, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC1->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC1, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
-
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMWander(patrolNPC2, g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(2.5f, 22.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, FALSE );
-    patrolNPC2->GetStateMachineManager()->PushStateMachine( *new SMPatrol(patrolNPC2, D3DXVECTOR2(22.5f, 2.5f), g_pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
-
     // setup player state machine
-    g_pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(g_pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );
+    pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );
+
+    // setup game controller state machine
+    g_pGameController->GetStateMachineManager()->PushStateMachine( *new SMGame(g_pGameController, p_MiniMap->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
 
     // initialize render data
     g_pRenderData = new RenderData();
     if( FAILED(g_pRenderData->Initialize(pd3dDevice)) )
         return E_FAIL;
-
-    // setup the camera's projection parameters
-    float fAspectRatio = pBackBufferSurfaceDesc->Width / (FLOAT)pBackBufferSurfaceDesc->Height;
-    g_DebugCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
-    g_PlayerCamera.SetProjParams( D3DX_PI/3, fAspectRatio, 0.001f, 100.0f );
 
     // configure lights
     g_pRenderData->SetDirectionalLight( D3DXVECTOR4(-0.5f, 0.1f, -0.25f, 1.0f), D3DXCOLOR(1.0f, 1.0f, 1.0f, 1.0f) );
@@ -405,9 +346,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
 
     // update database objects
 	g_database.UpdateObjects();
-
-    // update the camera's position based on user input
-    g_Camera->FrameMove(fElapsedTime);
 
     // generate list of players and NPCs
     dbCompositionList pList;
@@ -454,20 +392,20 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
     }
 
     // clear screen
-    pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
-                       D3DCOLOR_ARGB( 0, 0x44, 0xAA, 0xDD ), 1.0f, 0L );
+    pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 0x44, 0xAA, 0xDD ), 1.0f, 0L );
 
+    // begin scene
     if( SUCCEEDED( pd3dDevice->BeginScene() ) )
     {
         HRESULT hr;
 
         // set static transforms
-        V( pd3dDevice->SetTransform( D3DTS_VIEW, g_Camera->GetViewMatrix()) );
-        V( pd3dDevice->SetTransform( D3DTS_PROJECTION, g_Camera->GetProjMatrix()) );
+        V( pd3dDevice->SetTransform( D3DTS_VIEW, g_pGameController->GetCameraViewMatrix()) );
+        V( pd3dDevice->SetTransform( D3DTS_PROJECTION, g_pGameController->GetCameraProjMatrix()) );
 
         // set rendering view and projection matrix
-        g_pRenderData->matProjection = *g_Camera->GetProjMatrix();
-        g_pRenderData->matView = *g_Camera->GetViewMatrix();
+        g_pRenderData->matView = *g_pGameController->GetCameraViewMatrix();
+        g_pRenderData->matProjection = *g_pGameController->GetCameraProjMatrix();
 
         // set world matrix
         D3DXMATRIX matIdentity;
@@ -477,96 +415,12 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
         // render all nodes
         g_database.RenderObjects(pd3dDevice, g_pRenderData);
 
-        // display text on hud
-        RenderText();
-
-        V( g_HUD.OnRender( fElapsedTime ) );
+        // render hud if debug mode
+        if( g_pGameController->DebugEnabled() )
+            V( g_HUD.OnRender( fElapsedTime ) );
 
         pd3dDevice->EndScene();
     }
-}
-
-//--------------------------------------------------------------------------------------
-// Render the help and statistics text. This function uses the ID3DXFont interface for
-// efficient text rendering.
-//--------------------------------------------------------------------------------------
-void RenderText()
-{
-    // The helper object simply helps keep track of text position, and color
-    // and then it calls pFont->DrawText( m_pSprite, strMsg, -1, &rc, DT_NOCLIP, m_clr );
-    // If NULL is passed in as the sprite object, then it will work however the
-    // pFont->DrawText() will not be batched together.  Batching calls will improves performance.
-    CDXUTTextHelper txtHelper( g_pFont, g_pTextSprite, 15 );
-    const D3DSURFACE_DESC* pd3dsdBackBuffer = DXUTGetD3D9BackBufferSurfaceDesc();
-
-    // configure text
-    txtHelper.Begin();
-    txtHelper.SetInsertionPos( 5, 5 );
-    std::wstringstream stream;
-
-    // frame and device stats
-    //txtHelper.DrawTextLine( DXUTGetFrameStats() );
-    //txtHelper.DrawTextLine( DXUTGetDeviceStats() );
-
-    // statistics
-    stream << std::setprecision(4) << std::setw(4);
-    stream << "Time: " << DXUTGetGlobalTimer()->GetTime() << std::endl;
-    stream << "FPS:  " << DXUTGetFPS() << std::endl << std::endl;
-
-    // camera details
-    stream << "Eye:    (" << g_Camera->GetEyePt()->x << ", " << g_Camera->GetEyePt()->y << ", " << g_Camera->GetEyePt()->z << ")" << std::endl;
-    stream << "LookAt: (" << g_Camera->GetLookAtPt()->x << ", " << g_Camera->GetLookAtPt()->y << ", " << g_Camera->GetLookAtPt()->z << ")" << std::endl;
-    stream << "Player: (" << g_pMainPlayerNode->GetPosition().x << ", " << g_pMainPlayerNode->GetPosition().y << ", " << g_pMainPlayerNode->GetPosition().z << ")" << std::endl;
-    stream << std::endl;
-    
-    // terrain analysis
-    stream << "TerrainAnalysis: " << g_world.GetTerrainAnalysisName() << std::endl;
-    stream << std::endl;
-
-    // state details
-	dbCompositionList list;
-	g_database.ComposeList( list, OBJECT_Ignore_Type );
-	dbCompositionList::iterator i;
-	for( i=list.begin(); i!=list.end(); ++i )
-	{
-		StateMachine* pStateMachine = (*i)->GetStateMachineManager()->GetStateMachine(STATE_MACHINE_QUEUE_0);
-		if( pStateMachine )
-		{
-			char* name = (*i)->GetName();
-			char* statename = pStateMachine->GetCurrentStateNameString();
-			char* substatename = pStateMachine->GetCurrentSubstateNameString();
-			TCHAR* unicode_name = new TCHAR[strlen(name)+1];
-			TCHAR* unicode_statename = new TCHAR[strlen(statename)+1];
-			TCHAR* unicode_substatename = new TCHAR[strlen(substatename)+1];
-			mbstowcs(unicode_name, name, strlen(name)+1);
-			mbstowcs(unicode_statename, statename, strlen(statename)+1);
-			mbstowcs(unicode_substatename, substatename, strlen(substatename)+1);
-			if( substatename[0] != 0 )
-			{
-                stream << unicode_name << ":   " << unicode_statename << unicode_substatename << std::endl;
-			}
-			else
-			{
-                stream << unicode_name << ":   " << unicode_statename << std::endl;
-			}
-			delete unicode_name;
-			delete unicode_statename;
-			delete unicode_substatename;
-		}
-	}
-
-    // draw text shadow
-    POINT pt = txtHelper.GetInsertPos();
-	txtHelper.SetForegroundColor( D3DXCOLOR( 0.0f, 0.0f, 0.0f, 1.0f ) );
-    txtHelper.SetInsertionPos( 4, pt.y );
-    txtHelper.DrawTextLine( stream.str().c_str() );
-
-    // reset and draw text
-	txtHelper.SetForegroundColor( D3DXCOLOR( 1.0f, 1.0f, 1.0f, 1.0f ) );
-    txtHelper.SetInsertionPos( 5, pt.y );
-    txtHelper.DrawTextLine( stream.str().c_str() );
-
-    txtHelper.End();
 }
 
 //--------------------------------------------------------------------------------------
@@ -596,11 +450,9 @@ LRESULT CALLBACK MsgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bo
     if( *pbNoFurtherProcessing )
         return 0;
 
-    // pass messages to camera or player depending on mode
-    if(g_PlayerMode)
-        g_pMainPlayerNode->HandleMessages( hWnd, uMsg, wParam, lParam );
-    else
-        g_Camera->HandleMessages( hWnd, uMsg, wParam, lParam );
+    // pass messages to game controller
+    if(g_pGameController)
+        g_pGameController->HandleMessages( hWnd, uMsg, wParam, lParam );
     
     return 0;
 }
@@ -618,11 +470,8 @@ void CALLBACK KeyboardProc( UINT nChar, bool bKeyDown, bool bAltDown, void* pUse
         switch( nChar )
         {
             case VK_F1:
-				g_bShowHelp = !g_bShowHelp;
+                // do nothing
 				break;
-            case 'L':
-                g_world.ToggleTerrainAnalysisType();
-                break;
         }
     }
 }
@@ -644,26 +493,6 @@ void CALLBACK OnGUIEvent( UINT nEvent, int nControlID, CDXUTControl* pControl, v
 
         case IDC_CHANGEDEVICE:     
             g_SettingsDlg.SetActive( !g_SettingsDlg.IsActive() ); 
-            break;
-
-        case IDC_NEXTVIEW:
-        case IDC_PREVVIEW:
-            // toggle between player control mode and debug camera mode
-            if(g_PlayerMode)
-            {
-                g_Camera = &g_DebugCamera;
-                g_PlayerMode = false;
-            }
-            else
-            {
-                g_Camera = &g_PlayerCamera;
-                g_PlayerMode = true;
-            }
-            break;
-
-        case IDC_RESETCAMERA:
-            g_Camera = &g_PlayerCamera;
-            g_PlayerMode = true;
             break;
 
         case IDC_RESETTIME:
@@ -692,11 +521,6 @@ void CALLBACK OnLostDevice( void* pUserContext )
     g_DialogResourceManager.OnD3D9LostDevice();
     g_SettingsDlg.OnD3D9LostDevice();
 
-    if( g_pFont )
-        g_pFont->OnLostDevice();
-
-    SAFE_RELEASE( g_pTextSprite );
-
     // cleanup game singletons and objects
 	delete g_pTime;
 	delete g_pDatabase;
@@ -706,12 +530,6 @@ void CALLBACK OnLostDevice( void* pUserContext )
 
     // cleanup render data
     delete g_pRenderData;
-
-    // cleanup font
-    SAFE_RELEASE(g_pFont);
-
-    // cleanup sound manager
-    SAFE_DELETE(g_pSoundManager);
 }
 
 //--------------------------------------------------------------------------------------

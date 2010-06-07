@@ -20,7 +20,8 @@ MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture,
                          const LPCWSTR sMapMaskTexture, 
                          const LPCWSTR sMapBorderTexture, 
                          const LPCWSTR sPlayerLocTexture, 
-                         const LPCWSTR sNPCLocTexture, 
+                         const LPCWSTR sNPCLocTexture,                    
+                         const WorldNode* world,
                          const int iMapsize) :
     GameObject(g_database.GetNewObjectID(), OBJECT_Map, "MAP"),
     m_sMapTexture(sMapTexture),
@@ -28,7 +29,7 @@ MiniMapNode::MiniMapNode(const LPCWSTR sMapTexture,
     m_sMapBorderTexture(sMapBorderTexture),
     m_sPlayerLocTexture(sPlayerLocTexture),
     m_sNPCLocTexture(sNPCLocTexture),
-    m_WorldNode(NULL),
+    m_WorldNode(world),
     m_iMapSize(iMapsize),
     m_iWinHeight(0),
     m_iWinWidth(0)
@@ -49,33 +50,11 @@ MiniMapNode::~MiniMapNode()
     delete m_cvMapVertices;
     delete m_cvRefVertices;
 
-    for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
-    {
-        delete m_vPlayerMapInfo[i].cvPlayerLocVertices;
-    }
-
     SAFE_RELEASE(m_pMiniMapTexture);
     SAFE_RELEASE(m_pMiniMapMaskTexture);
     SAFE_RELEASE(m_pMiniMapBorderTexture);
     SAFE_RELEASE(m_pPlayerLocTexture);
     SAFE_RELEASE(m_pNPCLocTexture);
-}
-
-/**
-* Add player tracking. Displays player location on minimap.
-*/
-void MiniMapNode::AddPlayerTracking(const PlayerBaseNode* pPlayer, const PlayerType type) 
-{ 
-    PlayerMapInfo info;
-    
-    info.iTriangleCount = 2;
-    info.iVertexCount = 4;
-    info.cvPlayerLocVertices = new CustomVertex[info.iVertexCount];
-
-    info.pPlayer = pPlayer;
-    info.type = type;
-
-    m_vPlayerMapInfo.push_back(info);
 }
 
 /**
@@ -160,10 +139,37 @@ void MiniMapNode::InitializeReferenceVertices()
 }
 
 /**
+* Add player tracking. Displays player location on minimap.
+*/
+void MiniMapNode::UpdatePlayerTracking() 
+{ 
+    // clear player list
+    m_vPlayerMapInfo.clear();
+
+    // generate list of players and NPCs
+    dbCompositionList pList;
+    g_database.ComposeList( pList, OBJECT_NPC | OBJECT_Player );
+
+    // check for player collisions with environment
+    for(dbCompositionList::iterator it = pList.begin(); it != pList.end(); ++it)
+    {
+        // setup player map info
+        PlayerMapInfo info;
+        info.pObject = *it;
+
+        // add info to list
+        m_vPlayerMapInfo.push_back(info);
+    }
+}
+
+/**
 * Update minimap
 */
 void MiniMapNode::Update()
 {
+    // find and update all players and NPCs in world
+    UpdatePlayerTracking();
+
     // initialize reference vertices if needed   
     if(m_iWinHeight == 0 || m_iWinWidth == 0)
         InitializeReferenceVertices();
@@ -175,11 +181,11 @@ void MiniMapNode::Update()
     // find player
     for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
     {
-        if( m_vPlayerMapInfo[i].type == PLAYER )
+        if( m_vPlayerMapInfo[i].pObject->GetType() == OBJECT_Player )
         {
             // save location and rotation, no transform required
-            vPlayerLoc = m_vPlayerMapInfo[i].pPlayer->GetPosition();
-            fPlayerRot = m_vPlayerMapInfo[i].pPlayer->GetYawRotation();
+            vPlayerLoc = m_vPlayerMapInfo[i].pObject->GetPosition();
+            fPlayerRot = m_vPlayerMapInfo[i].pObject->GetYawRotation();
             break;
         }
     }
@@ -208,7 +214,7 @@ void MiniMapNode::Update()
         m_vPlayerMapInfo[i].cvPlayerLocVertices[3] = m_cvRefVertices[3];
 
         // transform npc vertices
-        if( m_vPlayerMapInfo[i].type == NPC )
+        if( m_vPlayerMapInfo[i].pObject->GetType() == OBJECT_NPC )
         {           
             // transform NPC texture using same parameters as minimap texture
             // (orients NPC texture to player location and rotation)
@@ -219,7 +225,7 @@ void MiniMapNode::Update()
                 m_vPlayerMapInfo[i].cvPlayerLocVertices);
             
             // translate NPC texture to NPC location
-            D3DXVECTOR2 vNPCTextureCoords = ComputeTextureCoordsFromWorld(m_vPlayerMapInfo[i].pPlayer->GetPosition());
+            D3DXVECTOR2 vNPCTextureCoords = ComputeTextureCoordsFromWorld(m_vPlayerMapInfo[i].pObject->GetPosition());
 
             // invert coordinates (fixes inverted result?)
             vNPCTextureCoords.x = -vNPCTextureCoords.x;
@@ -346,7 +352,7 @@ void MiniMapNode::Render(IDirect3DDevice9* pd3dDevice, const RenderData* rData)
     // draw player locations
     for(UINT i = 0; i < m_vPlayerMapInfo.size(); i++)
     {
-        if(m_vPlayerMapInfo[i].type == PLAYER)
+        if(m_vPlayerMapInfo[i].pObject->GetType() == OBJECT_Player)
         {
             // set player location texture
             pd3dDevice->SetTexture(0, m_pPlayerLocTexture);

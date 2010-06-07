@@ -65,8 +65,11 @@ void CPlayerCamera::FrameMove( FLOAT fElapsedTime )
     D3DXMatrixRotationYawPitchRoll( &mMoveRot, fPlayerRotation, 0, 0 );
     D3DXVec3TransformCoord( &vEyeDelta, &vEyeDelta, &mMoveRot);
 
-    // apply offset to player head position to get eye position
-    m_vEye = m_vLookAt + vEyeDelta;
+    // determine final eye position
+    D3DXVECTOR3 vNewEye = m_vLookAt + vEyeDelta;
+
+    // move eye a percentage towards the final position
+    m_vEye += (vNewEye - m_vEye)*0.15f;
 
     // update the view matrix
     D3DXVECTOR3 vWorldUp = D3DXVECTOR3(0,1,0);

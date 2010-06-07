@@ -22,6 +22,7 @@ int i = 5;
 GameObject::GameObject( objectID id, unsigned int type, char* name ) : 
     m_markedForDeletion(false),
     m_vPos(0.0f, 0.0f, 0.0f),
+    m_vResetPos(0.0f, 0.0f, 0.0f),
     m_vDefaultDirection(0.0f, 0.0f, 1.0f),
     m_vDirection(0.0f, 0.0f, 1.0f),
     m_fVelocity(0.0f),
@@ -32,6 +33,7 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
     m_fHeight(0.0f),
     m_dHealth(100),
     m_bStopMovement(false),
+    m_enableRender(true),
     m_stateMachineManager(NULL)
 {
 	m_id = id;
@@ -114,23 +116,27 @@ void GameObject::RenderObject(IDirect3DDevice9* pd3dDevice, const RenderData* rD
     assert(pd3dDevice);
     assert(rData);
 
-    // capture state
-    m_pStateBlock->Capture();
+    if(m_enableRender)
+    {
+        // capture state
+        m_pStateBlock->Capture();
 
-    // implemented by derived object
-    Render(pd3dDevice, rData);
+        // implemented by derived object
+        Render(pd3dDevice, rData);
 
-    // restore state
-    m_pStateBlock->Apply();
+        // restore state
+        m_pStateBlock->Apply();
+    }
 }
 
 /**
-* Sets the object parameters to hold at the current position.
+* Resets the object movement parameters.
 */
 void GameObject::ResetMovement()
 {
     m_fVelocity = 0.0f;
     m_fAccel = 0.0f;
+    m_bStopMovement = false;
 }
 
 /**

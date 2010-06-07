@@ -60,6 +60,12 @@ BeginStateMachine
         m_owner->SetHealth( m_owner->GetHealth() - msg->GetIntData() );
         ChangeState( STATE_Damaged );
 
+    OnMsg(MSG_Reset)
+
+        // reinitialize state machine
+        m_bDamaged = false;
+        ChangeState( STATE_Initialize );
+
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_Initialize )
@@ -91,8 +97,12 @@ BeginStateMachine
             D3DXVECTOR2 vNewDir = player->GetGridPosition() - m_owner->GetGridPosition();
             m_owner->SetGridDirection(vNewDir);
 
+            // check if touched player
+            if( D3DXVec2Length(&vNewDir) < 0.1f )
+                g_database.SendMsgFromSystem(m_idPlayer, MSG_Damaged);
+
             // change state if player out of range
-            if( D3DXVec2Length(&vNewDir) > 5.0f )
+            else if( D3DXVec2Length(&vNewDir) > 5.0f )
                 ChangeState( STATE_LostPlayer );
 
         OnExit
