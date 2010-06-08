@@ -99,7 +99,7 @@ class ProjectileParticles : public GameObject
         // METHODS
         D3DXVECTOR3 ComputeParticleAccel(const Particle& p);
         void CreateParticles(const DWORD& dNumParticles);
-
+        void UpdateParticlesExplode();
 
         // DATA
         static const DWORD dParticleVertexCount = 6;
@@ -111,6 +111,7 @@ class ProjectileParticles : public GameObject
         LPDIRECT3DTEXTURE9 m_pParticleTexture;  // particle texture
         std::wstring m_sParticleFilename;       // particle texture filename
 
+        bool m_bExploded;                       // particle projectile exploded
 
         // prevent copy and assignment
         ProjectileParticles(const ProjectileParticles&);

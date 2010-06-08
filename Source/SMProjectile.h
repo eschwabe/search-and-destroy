@@ -15,7 +15,7 @@ class SMProjectile : public StateMachine
 {
     public:
 
-        SMProjectile( GameObject* object, const float fVel, const float fAccel, const D3DXVECTOR3 vDir, const bool bSeek );
+        SMProjectile( GameObject* object, const float fVel, const float fAccel, const D3DXVECTOR3 vDir );
         virtual ~SMProjectile();
 
     private:
@@ -24,8 +24,9 @@ class SMProjectile : public StateMachine
 
         float m_fVel;
         float m_fAccel;
+        float m_fDist;
+        D3DXVECTOR3 m_vInitialPos;
         D3DXVECTOR3 m_vDir;
-        bool m_bSeek;
 
         objectID m_pID;
 };

@@ -348,6 +348,7 @@ bool ObjectCollision::RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3&
     assert(output);
 
     bool coll = false;
+    (*output).length = 0.0f;
 
     // run sphere vs quad checks on entire list
     for(size_t i = 0; i < m_vQuadList.size(); i++)
@@ -359,10 +360,16 @@ bool ObjectCollision::RunLineCollision(const D3DXVECTOR3& p1, const D3DXVECTOR3&
         // check for collision
         if(line.VsQuad(m_vQuadList[i]))
         {
-            // if collision, modify line end point
-            *output = gCollOutput;
+            // update collision data if closer to line start
+            if(gCollOutput.length > (*output).length)
+            {
+                // if collision, modify line end point
+                *output = gCollOutput;
+                coll = true;
+            }
+
+            // reset collision data
             gCollOutput.Reset();
-            coll = true;
         }
     }
 

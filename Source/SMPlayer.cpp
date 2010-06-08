@@ -103,7 +103,7 @@ BeginStateMachine
             projectile->InitializeObject(m_pd3dDevice);
 
             // create state machine and add to db
-            SMProjectile* smProj = new SMProjectile(projectile, 3.5f, 0.3f, m_owner->GetDirection(), false); 
+            SMProjectile* smProj = new SMProjectile(projectile, 8.5f, 0.5f, m_owner->GetDirection()); 
             projectile->GetStateMachineManager()->PushStateMachine( *smProj, STATE_MACHINE_QUEUE_0, TRUE );
             g_database.Store(projectile);
 
@@ -125,7 +125,7 @@ BeginStateMachine
             projectile->InitializeObject(m_pd3dDevice);
 
             // create state machine and add to db
-            SMProjectile* smProj = new SMProjectile(projectile, 1.5f, 0.2f, m_owner->GetDirection(), false); 
+            SMProjectile* smProj = new SMProjectile(projectile, 5.0f, 0.2f, m_owner->GetDirection()); 
             projectile->GetStateMachineManager()->PushStateMachine( *smProj, STATE_MACHINE_QUEUE_0, TRUE );
             g_database.Store(projectile);
             
@@ -139,6 +139,7 @@ BeginStateMachine
 
 		OnEnter
 
+            m_owner->ResetMovement();
             m_owner->StopMovement();
             m_owner->SetHealth(0);
     

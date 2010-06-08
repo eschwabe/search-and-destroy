@@ -17,8 +17,7 @@ enum StateName
 	STATE_Initialize,   // note: first enum is the starting state
 	STATE_PursuePlayer,
 	STATE_LostPlayer,
-    //STATE_Flee,
-    //STATE_CapturePlayer,
+    STATE_AttackPlayer,
     STATE_Damaged,
     STATE_Dying,
     STATE_Dead
@@ -98,8 +97,8 @@ BeginStateMachine
             m_owner->SetGridDirection(vNewDir);
 
             // check if touched player
-            if( D3DXVec2Length(&vNewDir) < 0.1f )
-                g_database.SendMsgFromSystem(m_idPlayer, MSG_Damaged);
+            if( D3DXVec2Length(&vNewDir) < 0.3f )
+                ChangeState(STATE_AttackPlayer);
 
             // change state if player out of range
             else if( D3DXVec2Length(&vNewDir) > 5.0f )
@@ -111,21 +110,17 @@ BeginStateMachine
             m_owner->ResetMovement();
 
 	/*-------------------------------------------------------------------------*/
-	/*
-    DeclareState( STATE_Flee )
+	
+    DeclareState( STATE_AttackPlayer )
 
 		OnEnter
+            
+            // send damage message to player
+            SendMsgDelayed(0.1f, MSG_Damaged, m_idPlayer);
 
-        OnUpdate
-    */
-	/*-------------------------------------------------------------------------*/
-	/*
-    DeclareState( STATE_CapturePlayer )
-
-		OnEnter
-
-        OnUpdate
-    */
+            // end state machine after duration
+            PopStateMachine();
+    
     /*-------------------------------------------------------------------------*/
 
     DeclareState( STATE_LostPlayer )

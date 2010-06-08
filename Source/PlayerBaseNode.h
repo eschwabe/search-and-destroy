@@ -37,6 +37,8 @@ class PlayerBaseNode : public GameObject
 
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
 
+        void ResetPlayerMovement();             // resets player movements
+
     private:
 
         // prevent copy and assignment

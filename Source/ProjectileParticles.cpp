@@ -29,7 +29,8 @@ ProjectileParticles::ProjectileParticles(const D3DXVECTOR3& vPos, const Particle
     GameObject(g_database.GetNewObjectID(), OBJECT_Projectile, "PROJECTILE"),
     m_sParticleFilename(L"particle-point.png"),
     m_pType(type),
-    m_fLastParticleCreateTime(0.0f)
+    m_fLastParticleCreateTime(0.0f),
+    m_bExploded(false)
 {
     // set initial position
     m_vPos = vPos;
@@ -78,14 +79,27 @@ HRESULT ProjectileParticles::Initialize(IDirect3DDevice9* pd3dDevice)
 */
 void ProjectileParticles::Update()                             
 {
-    // create new particles
-    if(g_time.GetCurTime() - m_fLastParticleCreateTime > 0.1f)
+    // if exploded, do not add particles
+    if(m_bExploded)
+    {
+        // nothing
+    }    
+    
+    // else if projectile stopped, update particles to explode
+    else if(m_bStopMovement)
+    {
+        UpdateParticlesExplode();
+        m_bExploded = true;
+    }
+
+    // else if enough time passed, create new particles
+    else if(g_time.GetCurTime() - m_fLastParticleCreateTime > 0.1f)
     {
         CreateParticles(3);
         m_fLastParticleCreateTime = g_time.GetCurTime();
     }
 
-    // update existing particles in all sources
+    // update existing particles
     std::list<Particle>::iterator itParticle = m_pList.begin();
 
     // update each particle
@@ -124,6 +138,34 @@ void ProjectileParticles::Update()
 
     // update object position
     UpdateObjectPosition();
+}
+
+/**
+* Add and update all particles to create explosion effect
+*/
+void ProjectileParticles::UpdateParticlesExplode()
+{
+    // add new particles
+    CreateParticles(75);
+
+    // update existing particles
+    std::list<Particle>::iterator itParticle = m_pList.begin();
+
+    // update each particle
+    while(itParticle != m_pList.end())
+    {
+        Particle& p = *itParticle;
+
+        // update particle data to create explosion effect
+        p.fSize = 0.025f;
+        float rangeFactor = (float)(RAND_MAX*20);
+        p.vVel.x = (float)(rand()-RAND_MAX/2)/rangeFactor;
+        p.vVel.y = (float)(rand()-RAND_MAX/2)/rangeFactor;
+        p.vVel.z = (float)(rand()-RAND_MAX/2)/rangeFactor;
+
+        // move to next particle
+        ++itParticle;
+    }
 }
 
 /**

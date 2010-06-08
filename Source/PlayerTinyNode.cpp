@@ -241,6 +241,10 @@ void PlayerTinyNode::SetupBoneMatrices(EXTD3DXFRAME *pFrame)
 void PlayerTinyNode::Update()
 {
     const float kMaxSpeed = 3.0f;
+    
+    // if dead, ignore movements
+    if(m_dHealth <= 0)
+        ResetPlayerMovement();
 
     // update player velocity
     if( m_PlayerMovement[kMoveForward] )
