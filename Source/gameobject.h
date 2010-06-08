@@ -91,7 +91,7 @@ class GameObject
         void SetAcceleration(const float& accel)        { m_fAccel = accel;     };
 
         // control object movement
-        void ResetMovement();
+        virtual void ResetMovement();
         virtual void ResumeMovement()   { m_bStopMovement = false;  };
         virtual void StopMovement()     { m_bStopMovement = true;   };
 

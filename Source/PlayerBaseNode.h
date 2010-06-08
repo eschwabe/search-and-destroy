@@ -19,6 +19,8 @@ class PlayerBaseNode : public GameObject
         PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsigned int type, char* name);
         virtual ~PlayerBaseNode();
         
+        virtual void ResetMovement();     // resets player movements
+
     protected:
 
         // defines the supported player movements
@@ -36,8 +38,6 @@ class PlayerBaseNode : public GameObject
         };
 
         bool m_PlayerMovement[kMaxMovement];    // player movements currently requested
-
-        void ResetPlayerMovement();             // resets player movements
 
     private:
 

@@ -82,6 +82,7 @@ BeginStateMachine
 
             for(dbCompositionList::iterator it = pList.begin(); it != pList.end(); ++it)
             {
+                (*it)->ResetMovement();
                 (*it)->StopMovement();
             }
 

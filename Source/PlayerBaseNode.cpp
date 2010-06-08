@@ -21,7 +21,7 @@ PlayerBaseNode::PlayerBaseNode(const D3DXVECTOR3& vInitialPos, objectID id, unsi
     m_vPos = vInitialPos;
     m_vResetPos = vInitialPos;
 
-    ResetPlayerMovement();
+    ResetMovement();
 }
 
 /**
@@ -34,9 +34,11 @@ PlayerBaseNode::~PlayerBaseNode()
 /**
 * Resets the player movements
 */
-void PlayerBaseNode::ResetPlayerMovement()
+void PlayerBaseNode::ResetMovement()
 {
     // initialize movement to default state
     for(int i =0; i < sizeof(m_PlayerMovement); i++)
         m_PlayerMovement[i] = false;
+
+    GameObject::ResetMovement();
 }

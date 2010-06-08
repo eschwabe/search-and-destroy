@@ -137,8 +137,9 @@ BeginStateMachine
 
 		OnEnter
 
-            // stop movement (plays explosion animation)
+            // stop movement and set health to 0 (plays explosion animation)
             m_owner->StopMovement();
+            m_owner->SetHealth(0);
 
         OnTimeInState(0.5f)
 

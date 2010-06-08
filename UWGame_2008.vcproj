@@ -787,6 +787,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Source\RotationCamera.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Source\RotationCamera.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Source\WorldData.cpp"
 				>
 			</File>
@@ -1053,14 +1061,6 @@
 		</File>
 		<File
 			RelativePath=".\Source\Game.h"
-			>
-		</File>
-		<File
-			RelativePath=".\Source\RotationCamera.cpp"
-			>
-		</File>
-		<File
-			RelativePath=".\Source\RotationCamera.h"
 			>
 		</File>
 		<File

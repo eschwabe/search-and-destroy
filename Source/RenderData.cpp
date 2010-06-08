@@ -21,7 +21,7 @@
 * Constructor
 */
 RenderData::RenderData() :
-    m_bDrawShadows(false)
+    m_bDrawShadows(true)
 {}
 
 /**

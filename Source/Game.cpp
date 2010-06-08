@@ -247,7 +247,7 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_WorldData = new WorldData(*g_pWorldFile);
 
     // add world object
-    WorldNode* p_WorldNode = new WorldNode(*g_pWorldFile, L"asphalt-damaged.jpg", L"planks-new.jpg");
+    WorldNode* p_WorldNode = new WorldNode(*g_pWorldFile, L"asphalt-damaged.jpg", L"painted_metal.jpg");
     g_database.Store(p_WorldNode);
 
     // add player node
@@ -356,23 +356,6 @@ void CALLBACK OnFrameMove( double fTime, float fElapsedTime, void* pUserContext 
     {
         g_objColl->RunWorldCollision(*it);
     }
-
-    // check for collisions between players
-    //static bool bPlayerCollision = false;
-
-    //if( coll.RunPlayerCollision(g_pMainPlayerNode, g_pNPCNode) )
-    //{
-    //    if( !bPlayerCollision )
-    //    {
-    //        // play sound
-    //        //g_pSoundCollision->Play(0, 0);
-    //        bPlayerCollision = true;
-    //    }
-    //}
-    //else
-    //{
-    //    bPlayerCollision = false;
-    //}
 }
 
 //--------------------------------------------------------------------------------------
@@ -392,7 +375,7 @@ void CALLBACK OnFrameRender( IDirect3DDevice9* pd3dDevice, double fTime, float f
     }
 
     // clear screen
-    pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 0x44, 0xAA, 0xDD ), 1.0f, 0L );
+    pd3dDevice->Clear( 0L, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_ARGB( 0, 0x22, 0x55, 0x88 ), 1.0f, 0L );
 
     // begin scene
     if( SUCCEEDED( pd3dDevice->BeginScene() ) )

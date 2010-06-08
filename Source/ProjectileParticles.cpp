@@ -86,7 +86,7 @@ void ProjectileParticles::Update()
     }    
     
     // else if projectile stopped, update particles to explode
-    else if(m_bStopMovement)
+    else if(m_dHealth <= 0)
     {
         UpdateParticlesExplode();
         m_bExploded = true;
