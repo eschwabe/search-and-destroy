@@ -110,7 +110,7 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 
         SAFE_RELEASE(pCVIndexBuffer);
     }
-   
+
     // create vertex declaration
     if( SUCCEEDED(result) )
     {
@@ -125,6 +125,21 @@ HRESULT NPCSphereNode::Initialize(IDirect3DDevice9* pd3dDevice)
 */
 void NPCSphereNode::Update()
 {
+    D3DXCOLOR newColor = D3DXCOLOR(0.0f, 0.0f, 0.0f, 0.0f);
+
+    // if alive, set healthy color
+    if(m_dHealth > 0)
+        newColor = m_cColor;
+
+    // update vertex color (if not already set)
+    if(m_CVBuffer[0].cDiffuse != newColor)
+    {
+        for(DWORD i = 0; i < m_CVBufferSize; i++)
+        {
+            m_CVBuffer[i].cDiffuse = newColor;
+        }
+    }
+
     // update object rotation (causes object to disappear at certain angles)
     //m_fYawRotation = acos( D3DXVec3Dot(&m_vDefaultDirection, &m_vDirection) );
 

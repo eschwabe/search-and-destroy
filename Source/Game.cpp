@@ -251,18 +251,22 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     g_database.Store(p_WorldNode);
 
     // add player node
-    PlayerTinyNode* pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(12.5f,0.0f,2.0f) );
+    PlayerTinyNode* pMainPlayerNode = new PlayerTinyNode( L"tiny.x", D3DXVECTOR3(12.5f,0.0f,3.0f) );
     g_database.Store(pMainPlayerNode);
 
     // add sphere NPCs
     NPCSphereNode* pNPC1 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,22.5f));
     NPCSphereNode* pNPC2 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,2.5f));
-    NPCSphereNode* pNPC3 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,2.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    NPCSphereNode* pNPC3 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,2.5f),   D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
     NPCSphereNode* pNPC4 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,22.5f), D3DXCOLOR(0.3f, 0.4f, 0.7f, 1));
+    NPCSphereNode* pNPC5 = new NPCSphereNode(D3DXVECTOR3(2.5f,0.0f,13.5f),   D3DXCOLOR(0.7f, 0.4f, 0.3f, 1));
+    NPCSphereNode* pNPC6 = new NPCSphereNode(D3DXVECTOR3(22.5f,0.0f,13.5f), D3DXCOLOR(0.7f, 0.4f, 0.3f, 1));
     g_database.Store( pNPC1 );
     g_database.Store( pNPC2 );
     g_database.Store( pNPC3 );
     g_database.Store( pNPC4 );
+    g_database.Store( pNPC5 );
+    g_database.Store( pNPC6 );
 
     // add particle emitter and fire particles
     ProjectileParticles* fb1 = new ProjectileParticles(D3DXVECTOR3(3.0f, 0.2f, 3.0f), ProjectileParticles::kFire);
@@ -308,6 +312,8 @@ HRESULT CALLBACK OnResetDevice( IDirect3DDevice9* pd3dDevice,
     pNPC2->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC2, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     pNPC3->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC3, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     pNPC4->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC4, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    pNPC5->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC5, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
+    pNPC6->GetStateMachineManager()->PushStateMachine( *new SMRandomPath(pNPC6, pMainPlayerNode->GetID()), STATE_MACHINE_QUEUE_0, TRUE );
     
     // setup player state machine
     pMainPlayerNode->GetStateMachineManager()->PushStateMachine( *new SMPlayer(pMainPlayerNode, pd3dDevice), STATE_MACHINE_QUEUE_0, TRUE );

@@ -31,7 +31,8 @@ GameObject::GameObject( objectID id, unsigned int type, char* name ) :
     m_fPitchRotation(0.0f),
     m_fRollRotation(0.0f),
     m_fHeight(0.0f),
-    m_dHealth(100),
+    m_dHealth(250),
+    m_dResetHealth(m_dHealth),
     m_bStopMovement(false),
     m_enableRender(true),
     m_stateMachineManager(NULL)

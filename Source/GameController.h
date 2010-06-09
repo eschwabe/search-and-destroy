@@ -46,6 +46,9 @@ class GameController : public GameObject
         const D3DXMATRIX* GetCameraViewMatrix();
         const D3DXMATRIX* GetCameraProjMatrix();
 
+        // sound methods
+        void PlayLaserSound();
+
         // handle user input
         LRESULT HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -102,8 +105,9 @@ class GameController : public GameObject
         ////////////
         // SOUNDS //
         ////////////
-        CSoundManager*  m_pSoundManager;     // sound manager
-        CSound*         m_pSoundCollision;   // collision sound
+        CSoundManager*  m_pSoundManager;    // sound manager
+        CSound*         m_pSoundLaser;      // laser sound
+        bool            m_bEnableSound;     // sound toggle
 
         /////////////
         // CAMERAS //

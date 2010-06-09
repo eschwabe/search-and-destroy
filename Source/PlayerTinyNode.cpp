@@ -91,16 +91,25 @@ LRESULT PlayerTinyNode::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
             break; 
         }
 
-        // left mouse
+        // left mouse down
         case WM_LBUTTONDOWN:
         {
-            g_database.SendMsgFromSystem(GetID(), MSG_FireProjectile); 
+            g_database.SendMsgFromSystem(GetID(), MSG_StartFireProjectiles); 
+            break;
+        }
+
+        // left mouse up
+        case WM_LBUTTONUP:
+        {
+            g_database.SendMsgFromSystem(GetID(), MSG_StopFireProjectiles); 
+            break;
         }
 
         // right mouse
         case WM_RBUTTONDOWN:
         {
             g_database.SendMsgFromSystem(GetID(), MSG_FireBigProjectile);
+            break;
         }
 
         // Unsupported message

@@ -68,6 +68,7 @@ class GameObject
         // object info
         int GetHealth() const                   { return m_dHealth;         };
         void SetHealth(int health)              { if(health < 0) health = 0; m_dHealth = health; };
+        void ResetHealth()                      { m_dHealth = m_dResetHealth; }
         float GetHeight() const                 { return m_fHeight;         };
 
         // object position and movement info
@@ -111,6 +112,7 @@ class GameObject
         // object info
         float m_fHeight;            // object height
         int m_dHealth;              // object health
+        int m_dResetHealth;         // object reset health
 
         // object position info
         D3DXVECTOR3 m_vPos;         // position

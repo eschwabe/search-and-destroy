@@ -23,4 +23,6 @@ class SMPlayer : public StateMachine
         virtual bool States( State_Machine_Event event, MSG_Object* msg, int state, int substate );
 
         IDirect3DDevice9* m_pd3dDevice;
+
+        int m_iProjectileCount;         // number of projectiles shot recently
 };

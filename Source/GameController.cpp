@@ -30,7 +30,8 @@ GameController::GameController(objectID pid) :
     m_PlayerObject(NULL),
     m_CurrentCamera(CAMERA_WORLDVIEW),
     m_pSoundManager(NULL),
-    m_pSoundCollision(NULL),
+    m_pSoundLaser(NULL),
+    m_bEnableSound(true),
     m_pDebugFont(NULL),
     m_pGameFontLarge(NULL),
     m_pGameFontSmall(NULL),
@@ -156,6 +157,8 @@ LRESULT GameController::HandleMessages( HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
                 case 'L':
                     g_database.SendMsgFromSystem(GetID(), MSG_DebugMode); 
+                case 'M':
+                    m_bEnableSound = !m_bEnableSound;
             }
     }
 
@@ -315,6 +318,18 @@ void GameController::RenderGameHelpText()
 }
 
 /**
+* Player laser sound
+*/
+void GameController::PlayLaserSound()
+{
+    if(m_pSoundLaser && m_bEnableSound)
+    {
+        m_pSoundLaser->Reset();
+        m_pSoundLaser->Play();
+    }
+}
+
+/**
 * Initialize
 */
 HRESULT GameController::Initialize(IDirect3DDevice9* pd3dDevice)
@@ -339,8 +354,8 @@ HRESULT GameController::Initialize(IDirect3DDevice9* pd3dDevice)
 
     // initialize collision sound
     WCHAR szSoundPath[MAX_PATH];
-    DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"alarm.wav" );
-    m_pSoundManager->Create(&m_pSoundCollision, szSoundPath, 0, GUID_NULL);
+    DXUTFindDXSDKMediaFileCch( szSoundPath, MAX_PATH, L"laser.wav" );
+    m_pSoundManager->Create(&m_pSoundLaser, szSoundPath, 0, GUID_NULL);
 
     // setup player camera
     m_PlayerCamera.SetPlayer(m_pid);

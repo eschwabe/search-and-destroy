@@ -32,11 +32,12 @@ enum SubstateName
 /**
 * Constructor
 */
-SMProjectile::SMProjectile( GameObject* object, const float fVel, const float fAccel, const D3DXVECTOR3 vDir ) :
+SMProjectile::SMProjectile( GameObject* object, const float fVel, const float fAccel, const int iDmg, const D3DXVECTOR3 vDir ) :
     StateMachine( *object ),
     m_fVel(fVel),
     m_fAccel(fAccel),
     m_fDist(0.0f),
+    m_iDmg(iDmg),
     m_vDir(vDir),
     m_vInitialPos(0.0f, 0.0f, 0.0f),
     m_pID(INVALID_OBJECT_ID)
@@ -74,6 +75,14 @@ BeginStateMachine
             // save initial object position
             m_vInitialPos = m_owner->GetPosition();
 
+            // play sound
+            dbCompositionList list;
+            g_database.ComposeList(list, OBJECT_GameControl);
+            if(!list.empty())
+            {
+                SendMsg( MSG_PlaySound, list.at(0)->GetID() );
+            }
+
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_FollowPath )
@@ -107,7 +116,7 @@ BeginStateMachine
                 if( g_objcollision.RunObjectCollision(m_owner, (*it)) )
                 {
                     // send damage message on collision and expire
-                    SendMsgDelayed(0.1f, MSG_Damaged, (*it)->GetID(), MSG_Data(50));
+                    SendMsgDelayed(0.1f, MSG_Damaged, (*it)->GetID(), MSG_Data(m_iDmg));
                     bExpire = true;
                     break;
                 }

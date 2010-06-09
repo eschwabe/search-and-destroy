@@ -159,7 +159,7 @@ BeginStateMachine
 
             // stunned, rotate or shake each update
 
-        OnTimeInState(5.0f)
+        OnTimeInState(0.5f)
 
             // enable movement
             m_owner->ResumeMovement();

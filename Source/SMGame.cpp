@@ -101,7 +101,7 @@ BeginStateMachine
             {
                 (*it)->ResetMovement();
                 (*it)->ResetPosition();
-                (*it)->SetHealth(100);
+                (*it)->ResetHealth();
                 g_database.SendMsgFromSystem((*it)->GetID(), MSG_Reset);
             }
 
@@ -154,6 +154,11 @@ BeginStateMachine
 
             // go to debug mode
             ChangeState(STATE_GameDebug);
+
+        OnMsg(MSG_PlaySound)
+
+            // play laser sound (default)
+            m_controller->PlayLaserSound();
 
 	/*-------------------------------------------------------------------------*/
 	
