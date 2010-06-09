@@ -63,6 +63,8 @@ BeginStateMachine
         // reinitialize state machine
         ChangeState( STATE_Initialize );
 
+
+
     /*-------------------------------------------------------------------------*/
 	
     DeclareState( STATE_Initialize )
@@ -76,18 +78,16 @@ BeginStateMachine
     DeclareState( STATE_Move )
 
 		OnEnter
-            
+
         OnMsg( MSG_StartFireProjectiles )
-            
-            // change state
-            ChangeState(STATE_FireProjectiles);
+                
+                // change state
+                ChangeState(STATE_FireProjectiles);
 
         OnMsg( MSG_FireBigProjectile )
-            
-            // change state
-            ChangeState(STATE_FireBigProjectile);
-
-        OnExit
+                
+                // change state
+                ChangeState(STATE_FireBigProjectile);
 
 	/*-------------------------------------------------------------------------*/
 	
@@ -127,7 +127,7 @@ BeginStateMachine
         OnMsg(MSG_StopFireProjectiles)
 
             // stop firing
-            ChangeStateDelayed(0.1f, STATE_Move);
+            ChangeState(STATE_Move);
 
 	/*-------------------------------------------------------------------------*/
 	
@@ -144,7 +144,7 @@ BeginStateMachine
             projectile->InitializeObject(m_pd3dDevice);
 
             // create state machine and add to db
-            SMProjectile* smProj = new SMProjectile(projectile, 5.0f, 0.2f, 250, m_owner->GetDirection()); 
+            SMProjectile* smProj = new SMProjectile(projectile, 2.0f, 0.2f, 250, m_owner->GetDirection()); 
             projectile->GetStateMachineManager()->PushStateMachine( *smProj, STATE_MACHINE_QUEUE_0, TRUE );
             g_database.Store(projectile);
             

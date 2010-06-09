@@ -92,7 +92,7 @@ BeginStateMachine
 
             // check if player nearby               
             D3DXVECTOR3 vPlayerDist = m_owner->GetPosition() - g_database.Find(m_idPlayer)->GetPosition();
-            if( D3DXVec3Length( &vPlayerDist ) <= 3.0f )
+            if( D3DXVec3Length( &vPlayerDist ) < 4.0f && g_database.Find(m_idPlayer)->GetHealth() > 0 )
             {
                 ChangeState( STATE_SwitchToCombat );
             }

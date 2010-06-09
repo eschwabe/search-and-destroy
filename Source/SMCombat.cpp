@@ -10,12 +10,15 @@
 
 #include "DXUT.h"
 #include "SMCombat.h"
+#include "global.h"
+#include "WorldData.h"
 
 // add new states
 enum StateName 
 {
 	STATE_Initialize,   // note: first enum is the starting state
 	STATE_PursuePlayer,
+    STATE_FollowPlayerPath,
 	STATE_LostPlayer,
     STATE_AttackPlayer,
     STATE_Damaged,
@@ -85,26 +88,78 @@ BeginStateMachine
 
 		OnEnter
 
+            // create path to player
+            GameObject* player = g_database.Find(m_idPlayer);
+
+            // start path computation request
+            g_world.AddPathRequest(m_owner->GetGridPosition(), player->GetGridPosition(), m_owner->GetID());
+
+        OnMsg(MSG_PathComputed)
+
+            // follow path
+            ChangeStateDelayed(0.1f, STATE_FollowPlayerPath);
+
+    /*-------------------------------------------------------------------------*/
+	
+    DeclareState( STATE_FollowPlayerPath )
+
+        OnEnter
+
             // set velocity and acceleration
-            m_owner->SetVelocity(1.5f);
-            m_owner->SetAcceleration(0.0f);
+            m_owner->SetVelocity(2.0f);
+            m_owner->SetAcceleration(0.5f);
 
         OnUpdate
 
-            // follow player
-            GameObject* player = g_database.Find(m_idPlayer);
-            D3DXVECTOR2 vNewDir = player->GetGridPosition() - m_owner->GetGridPosition();
-            m_owner->SetGridDirection(vNewDir);
+            PathWaypointList* waypointList = g_world.GetWaypointList(m_owner->GetID());
 
             // check if touched player
-            if( D3DXVec2Length(&vNewDir) < 0.3f )
+            D3DXVECTOR2 vPlayerDist = m_owner->GetGridPosition() - g_database.Find(m_idPlayer)->GetGridPosition();
+            if( D3DXVec2Length(&vPlayerDist) < 0.5f )
+            {
                 ChangeState(STATE_AttackPlayer);
+            }
 
-            // change state if player out of range
-            else if( D3DXVec2Length(&vNewDir) > 5.0f )
-                ChangeState( STATE_LostPlayer );
+            // if out of waypoints
+            else if(waypointList->empty())
+            {
+                // check if player out of range
+                if( D3DXVec2Length(&vPlayerDist) > 5.0f )
+                {
+                    ChangeState(STATE_LostPlayer);
+                }
+
+                // else, pick new path
+                else
+                {
+                    ChangeState( STATE_PursuePlayer );
+                }
+            }            
+                
+            // move towards waypoint
+            else
+            {
+                // determine direction (ignore height)
+                D3DXVECTOR2 vDirection = (*waypointList->begin()) - m_owner->GetGridPosition();
+
+                // determine if the object has arrived
+	            if( D3DXVec2Length( &vDirection ) < 0.1f )
+                {
+                    // pop off waypoint
+                    waypointList->pop_front();
+                }
+                else
+                {
+                    // set object direction towards position
+                    D3DXVec2Normalize(&vDirection, &vDirection);
+                    m_owner->SetGridDirection(vDirection);
+                }
+            }
 
         OnExit
+
+            // remove any waypoints
+            g_world.ClearWaypointList(m_owner->GetID());
 
             // reset object
             m_owner->ResetMovement();
@@ -144,7 +199,7 @@ BeginStateMachine
 
 		OnEnter
 
-            // stop object from moving
+            // stop object from moving (stunned)
             m_owner->StopMovement();
 
         OnUpdate
@@ -157,9 +212,7 @@ BeginStateMachine
                 ChangeState( STATE_Dying );
             }
 
-            // stunned, rotate or shake each update
-
-        OnTimeInState(0.5f)
+        OnTimeInState(1.0f)
 
             // enable movement
             m_owner->ResumeMovement();
@@ -194,6 +247,9 @@ BeginStateMachine
 
 		OnEnter
         
+            // remove any waypoints
+            g_world.ClearWaypointList(m_owner->GetID());
+
             // can no longer move (or do anything)
             m_owner->StopMovement();
 
